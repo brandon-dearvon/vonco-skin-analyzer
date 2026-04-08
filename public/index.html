@@ -1,0 +1,3033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Von & Co Aesthetics - Complimentary Skin Analysis</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Fira+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --evergreen: #516b62;
+            --von-white: #ebe4d5;
+            --sand: #c1a890;
+            --dove: #ebe9e4;
+            --gold: #c68c2f;
+            --peach: #c58b7a;
+            --mint: #c0c8a9;
+            --moss: #b0a074;
+            --black: #1d1d1b;
+        }
+
+        body {
+            font-family: 'Fira Sans', sans-serif;
+            color: var(--black);
+            line-height: 1.6;
+            background-color: var(--von-white);
+        }
+
+        /* HEADER SECTION */
+        .header {
+            background-color: var(--evergreen);
+            padding: 70px 20px 60px;
+            text-align: center;
+            position: relative;
+            overflow: visible;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at 50% 0%, rgba(193, 168, 144, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            width: 340px;
+            height: auto;
+            margin-bottom: 10px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .logo-tagline {
+            font-family: 'Fira Sans', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 400;
+            letter-spacing: 3.5px;
+            text-transform: uppercase;
+            color: var(--sand);
+            margin-bottom: 45px;
+            animation: fadeInDown 0.8s ease-out 0.1s both;
+        }
+
+        .header h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 4rem;
+            font-weight: 500;
+            color: #ffffff;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+            line-height: 1.1;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .header p {
+            font-family: 'Fira Sans', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 400;
+            color: var(--von-white);
+            max-width: 500px;
+            margin: 0 auto;
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+
+        /* UPLOAD SECTION */
+        .upload-section {
+            background-color: var(--dove);
+            padding: 60px 20px;
+        }
+
+        .upload-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .upload-section h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.2rem;
+            color: var(--evergreen);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .upload-intro {
+            text-align: center;
+            color: var(--black);
+            font-size: 1rem;
+            margin-bottom: 30px;
+            opacity: 0.75;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.7;
+        }
+
+        .visia-callout {
+            background: white;
+            border-radius: 12px;
+            padding: 30px 35px;
+            max-width: 640px;
+            margin: 0 auto 35px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border-left: 4px solid var(--sand);
+        }
+
+        .visia-callout-header {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--evergreen);
+            margin-bottom: 6px;
+        }
+
+        .visia-callout-sub {
+            font-size: 0.88rem;
+            color: var(--black);
+            opacity: 0.6;
+            margin-bottom: 18px;
+            line-height: 1.5;
+        }
+
+        .visia-list {
+            list-style: none;
+            padding: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px 20px;
+        }
+
+        .visia-list li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            color: var(--black);
+            opacity: 0.8;
+        }
+
+        .visia-list li svg {
+            flex-shrink: 0;
+        }
+
+        .upload-privacy {
+            text-align: center;
+            font-size: 0.78rem;
+            color: var(--black);
+            opacity: 0.45;
+            margin-top: 12px;
+        }
+
+        .upload-buttons-row {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .drop-zone {
+            flex: 1;
+            min-width: 250px;
+            padding: 50px 30px;
+            border: 2px dashed var(--sand);
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--von-white) 0%, #f5f2eb 100%);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .drop-zone:hover {
+            border-color: var(--gold);
+            background: linear-gradient(135deg, #fff9f3 0%, #f5f2eb 100%);
+            transform: translateY(-2px);
+        }
+
+        .drop-zone.dragover {
+            border-color: var(--evergreen);
+            background-color: rgba(81, 107, 98, 0.05);
+        }
+
+        .drop-zone-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            opacity: 0.6;
+        }
+
+        .drop-zone-text {
+            font-weight: 500;
+            color: var(--evergreen);
+            margin-bottom: 5px;
+        }
+
+        .drop-zone-subtext {
+            font-size: 0.85rem;
+            color: #999;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-family: 'Fira Sans', sans-serif;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background-color: var(--sand);
+            color: white;
+            border: 1px solid var(--sand);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--gold);
+            border-color: var(--gold);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(198, 140, 47, 0.3);
+        }
+
+        .btn-secondary {
+            background-color: var(--evergreen);
+            color: var(--von-white);
+            border: 1px solid var(--evergreen);
+        }
+
+        .btn-secondary:hover {
+            background-color: #3f5350;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(81, 107, 98, 0.3);
+        }
+
+        .btn-secondary:active {
+            background-color: var(--evergreen);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        /* WEBCAM MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: var(--von-white);
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            animation: slideUp 0.4s ease;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .modal-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            color: var(--evergreen);
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--black);
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+
+        .close-btn:hover {
+            opacity: 1;
+        }
+
+        #webcamVideo {
+            width: 100%;
+            border-radius: 8px;
+            background: #000;
+            position: relative;
+        }
+
+        .webcam-guide {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 250px;
+            border: 2px solid var(--sand);
+            border-radius: 50%;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .webcam-instruction {
+            text-align: center;
+            color: var(--black);
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+            margin-top: 0;
+            opacity: 0.7;
+        }
+
+        .webcam-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .webcam-buttons button {
+            flex: 1;
+        }
+
+        /* GUIDED CAPTURE */
+        .guided-video-wrap {
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            max-height: 45vh;
+        }
+        .guided-video-wrap video {
+            width: 100%;
+            display: block;
+            border-radius: 10px;
+            background: #000;
+            max-height: 45vh;
+            object-fit: cover;
+        }
+        .guided-oval {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 55%;
+            height: 72%;
+            border: 2.5px dashed var(--sand);
+            border-radius: 50%;
+            pointer-events: none;
+            transition: border-color 0.4s;
+        }
+        .guided-oval.good { border-color: var(--mint); }
+        .guided-oval.bad  { border-color: #c58b7a; }
+
+        .guided-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 6rem;
+            font-weight: 900;
+            color: #FF0000;
+            text-shadow: 0 0 20px rgba(255, 0, 0, 0.8), 0 0 40px rgba(255, 0, 0, 0.5), 0 3px 8px rgba(0,0,0,0.7);
+            pointer-events: none;
+            opacity: 1;
+            z-index: 20;
+            animation: pulse-arrow 1s ease-in-out infinite;
+        }
+        .guided-arrow.left-arrow  { right: 5%; }
+        .guided-arrow.right-arrow { left: 5%; }
+        @keyframes pulse-arrow {
+            0%, 100% { opacity: 0.85; transform: translateY(-50%) translateX(0) scale(1); }
+            50% { opacity: 1; transform: translateY(-50%) translateX(-16px) scale(1.3); }
+        }
+
+        .guided-steps {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .guided-step-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: var(--dove);
+            transition: background 0.3s, transform 0.3s;
+        }
+        .guided-step-dot.active { background: var(--evergreen); transform: scale(1.3); }
+        .guided-step-dot.done   { background: var(--mint); }
+
+        .guided-thumbs {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .guided-thumb {
+            width: 60px; height: 60px;
+            border-radius: 8px;
+            border: 2px solid var(--dove);
+            overflow: hidden;
+            background: #f5f3f0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.65rem; color: #aaa; text-align: center;
+            position: relative;
+            cursor: pointer;
+        }
+        .guided-thumb.captured {
+            border-color: var(--evergreen);
+        }
+        .guided-thumb.captured::after {
+            content: 'Tap to retake';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            background: rgba(81,107,98,0.8);
+            color: #fff;
+            font-size: 0.55rem;
+            padding: 2px 0;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .guided-thumb.captured:hover::after,
+        .guided-thumb.captured:active::after {
+            opacity: 1;
+        }
+        .guided-thumb.retaking {
+            border-color: var(--sand);
+            animation: pulse-border 1s infinite;
+        }
+        @keyframes pulse-border {
+            0%, 100% { border-color: var(--sand); }
+            50% { border-color: var(--evergreen); }
+        }
+        .guided-thumb img {
+            width: 100%; height: 100%; object-fit: cover;
+        }
+
+        .lighting-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .lighting-badge.good { background: rgba(192,200,169,0.25); color: #516b62; }
+        .lighting-badge.dim  { background: rgba(197,139,122,0.2);  color: #c58b7a; }
+        .lighting-badge.bright { background: rgba(198,140,47,0.15); color: #c68c2f; }
+
+        .capture-mode-picker {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .capture-mode-picker button {
+            flex: 1;
+            padding: 8px 6px;
+            border: 1.5px solid var(--dove);
+            border-radius: 10px;
+            background: #fff;
+            cursor: pointer;
+            font-family: 'Fira Sans', sans-serif;
+            font-size: 0.82rem;
+            text-align: center;
+            transition: all 0.3s;
+            color: var(--black);
+        }
+        .capture-mode-picker button.active {
+            border-color: var(--evergreen);
+            background: rgba(81,107,98,0.07);
+            font-weight: 600;
+        }
+        .capture-mode-picker button small {
+            display: block;
+            font-size: 0.72rem;
+            color: #999;
+            margin-top: 2px;
+            font-weight: 400;
+        }
+
+        /* ANALYSIS SECTION */
+        .analysis-section {
+            display: none;
+            background-color: var(--von-white);
+            padding: 60px 20px;
+        }
+
+        .analysis-section.show {
+            display: block;
+        }
+
+        .analysis-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .analysis-title {
+            text-align: center;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.2rem;
+            color: var(--evergreen);
+            margin-bottom: 40px;
+        }
+
+        .analysis-steps {
+            margin-bottom: 40px;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            opacity: 0.3;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            transform: translateX(-8px);
+        }
+
+        .step.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .step.done {
+            opacity: 0.5;
+            transform: translateX(0);
+        }
+
+        .step-dot {
+            width: 12px;
+            height: 12px;
+            background-color: #ddd;
+            border-radius: 50%;
+            margin-right: 15px;
+            flex-shrink: 0;
+            transition: background-color 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        .step.active .step-dot {
+            background-color: var(--evergreen);
+            box-shadow: 0 0 8px rgba(81, 107, 98, 0.5);
+        }
+
+        .step.done .step-dot {
+            background-color: var(--sand);
+        }
+
+        .step-text {
+            color: var(--black);
+            opacity: 0.8;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background-color: #e0dcd4;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--evergreen) 0%, var(--sand) 50%, var(--gold) 100%);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 3px;
+        }
+
+        .analysis-timer {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 28px;
+        }
+
+        .analysis-timer .elapsed {
+            font-weight: 500;
+            color: var(--evergreen);
+        }
+
+        /* progress bar driven by JS. No keyframes needed */
+
+        /* RESULTS DASHBOARD */
+        .results-section {
+            display: none;
+            background-color: var(--dove);
+            padding: 60px 20px;
+        }
+
+        .results-section.show {
+            display: block;
+        }
+
+        .results-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .results-title {
+            text-align: center;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.2rem;
+            color: var(--evergreen);
+            margin-bottom: 50px;
+        }
+
+        .score-ring-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 60px;
+        }
+
+        .score-explainer {
+            margin: 14px auto 0;
+            font-size: 0.95rem;
+            color: var(--black);
+            opacity: 0.55;
+            text-align: center;
+            max-width: 420px;
+            line-height: 1.5;
+        }
+
+        .score-ring {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            animation: scaleIn 0.8s ease;
+        }
+
+        .score-ring-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .score-ring-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .score-ring-value {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 600;
+            color: var(--sand);
+            line-height: 1;
+        }
+
+        .score-ring-label {
+            font-size: 0.9rem;
+            color: var(--black);
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        .concerns-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .concern-card {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            opacity: 0;
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .concern-card:nth-child(1) { animation-delay: 0.2s; }
+        .concern-card:nth-child(2) { animation-delay: 0.35s; }
+        .concern-card:nth-child(3) { animation-delay: 0.5s; }
+        .concern-card:nth-child(4) { animation-delay: 0.65s; }
+        .concern-card:nth-child(5) { animation-delay: 0.8s; }
+
+        .concern-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            color: var(--evergreen);
+            margin-bottom: 12px;
+        }
+
+        .concern-score-label {
+            font-size: 0.8rem;
+            color: var(--black);
+            opacity: 0.6;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .concern-score-bar {
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .concern-score-fill {
+            height: 100%;
+            border-radius: 4px;
+            animation: slideRight 0.8s ease forwards;
+            width: 0%;
+        }
+
+        .concern-severity {
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-bottom: 12px;
+        }
+
+        .severity-good {
+            background-color: rgba(192, 200, 169, 0.25);
+            color: #4a6040;
+        }
+
+        .severity-moderate {
+            background-color: rgba(198, 140, 47, 0.2);
+            color: #8a6a10;
+        }
+
+        .severity-concern {
+            background-color: rgba(197, 139, 122, 0.2);
+            color: #9a4a35;
+        }
+
+        /* HAUT.AI-INSPIRED: Score interpretation badge */
+        .score-interpretation {
+            text-align: center;
+            margin-top: 14px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* HAUT.AI-INSPIRED: Radar chart container */
+        .skin-radar-container {
+            max-width: 520px;
+            margin: 0 auto 50px;
+            text-align: center;
+        }
+
+        .skin-radar-container h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            color: var(--evergreen);
+            margin-bottom: 16px;
+        }
+
+        .radar-chart {
+            width: 100%;
+            max-width: 380px;
+            margin: 0 auto;
+        }
+
+        /* HAUT.AI-INSPIRED: Concern card score number */
+        .concern-score-number {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 600;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .concern-score-of {
+            font-size: 0.72rem;
+            color: var(--black);
+            opacity: 0.4;
+            margin-bottom: 12px;
+        }
+
+        /* HAUT.AI-INSPIRED: Top priority badge */
+        .top-priority-badge {
+            display: inline-block;
+            background: var(--peach);
+            color: #fff;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 4px 12px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+
+        /* HAUT.AI-INSPIRED: Summary insights bar */
+        .insights-bar {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 20px auto 40px;
+            max-width: 600px;
+        }
+
+        .insight-chip {
+            background: white;
+            border: 1px solid var(--dove);
+            border-radius: 24px;
+            padding: 10px 20px;
+            font-size: 0.82rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        }
+
+        .insight-chip .insight-icon {
+            font-size: 1.1rem;
+        }
+
+        .insight-chip .insight-label {
+            color: #888;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .insight-chip .insight-value {
+            font-weight: 600;
+            color: var(--evergreen);
+        }
+
+        .concern-description {
+            font-size: 0.9rem;
+            color: var(--black);
+            opacity: 0.7;
+            line-height: 1.5;
+        }
+
+        /* RECOMMENDATIONS */
+        .recommendations-section {
+            display: none;
+            background-color: var(--von-white);
+            padding: 60px 20px;
+        }
+
+        .recommendations-section.show {
+            display: block;
+        }
+
+        .recommendations-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .recommendations-title {
+            text-align: center;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.2rem;
+            color: var(--evergreen);
+            margin-bottom: 50px;
+        }
+
+        .recommendation-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+        }
+
+        .recommendation-card {
+            background: white;
+            border-left: 4px solid var(--sand);
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            opacity: 0;
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .recommendation-card:nth-child(1) { animation-delay: 0.2s; }
+        .recommendation-card:nth-child(2) { animation-delay: 0.35s; }
+        .recommendation-card:nth-child(3) { animation-delay: 0.5s; }
+        .recommendation-card:nth-child(4) { animation-delay: 0.65s; }
+        .recommendation-card:nth-child(5) { animation-delay: 0.8s; }
+
+        .rec-header {
+            background: linear-gradient(135deg, var(--evergreen) 0%, #3f5350 100%);
+            color: #ffffff;
+            padding: 15px;
+            margin: -25px -25px 20px -25px;
+            border-radius: 4px 4px 0 0;
+        }
+
+        .rec-treatment {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            margin: 0;
+        }
+
+        .rec-priority {
+            display: inline-block;
+            background-color: var(--sand);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 10px;
+            text-transform: uppercase;
+        }
+
+        .rec-reason {
+            margin-bottom: 15px;
+            color: var(--black);
+            opacity: 0.8;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .rec-targets {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .rec-tag {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .tag-mint { background-color: rgba(192, 200, 169, 0.3); color: #4a6040; }
+        .tag-gold { background-color: rgba(198, 140, 47, 0.3); color: #8a6a10; }
+        .tag-peach { background-color: rgba(197, 139, 122, 0.3); color: #9a4a35; }
+
+        /* SKIN AGE BADGE */
+        .skin-age-badge {
+            display: none;
+            margin: 20px auto 0;
+            text-align: center;
+        }
+        .skin-age-badge.show { display: block; }
+        .skin-age-label {
+            font-family: 'Fira Sans', sans-serif;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--sand);
+            margin-bottom: 4px;
+        }
+        .skin-age-value {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.6rem;
+            color: var(--evergreen);
+            font-weight: 600;
+        }
+
+        /* LEAD CAPTURE GATE */
+        .lead-gate-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(29, 29, 27, 0.65);
+            backdrop-filter: blur(6px);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .lead-gate-overlay.show { display: flex; }
+
+        .lead-gate-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 50px 40px;
+            max-width: 460px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        .lead-gate-card h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            color: var(--evergreen);
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        .lead-gate-card p {
+            font-size: 0.95rem;
+            color: #666;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+        .lead-gate-card input {
+            display: block;
+            width: 100%;
+            padding: 14px 18px;
+            border: 1.5px solid var(--dove);
+            border-radius: 8px;
+            font-family: 'Fira Sans', sans-serif;
+            font-size: 1rem;
+            margin-bottom: 12px;
+            transition: border-color 0.3s;
+            outline: none;
+        }
+        .lead-gate-card input:focus {
+            border-color: var(--sand);
+        }
+        .lead-gate-card input::placeholder {
+            color: #aaa;
+        }
+        .lead-gate-submit {
+            width: 100%;
+            padding: 15px;
+            background: var(--evergreen);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Fira Sans', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.3s, transform 0.2s;
+        }
+        .lead-gate-submit:hover {
+            background: #3f5350;
+            transform: translateY(-2px);
+        }
+        .lead-gate-skip {
+            display: block;
+            margin-top: 15px;
+            font-size: 0.85rem;
+            color: #999;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-family: 'Fira Sans', sans-serif;
+            text-decoration: underline;
+        }
+        .lead-gate-skip:hover { color: #666; }
+        .lead-gate-new-guest {
+            margin-top: 18px;
+            padding: 12px 16px;
+            background: rgba(198, 140, 47, 0.08);
+            border-radius: 8px;
+            border-left: 3px solid var(--gold);
+        }
+        .lead-gate-new-guest p {
+            font-size: 0.82rem;
+            color: var(--evergreen);
+            margin-bottom: 0;
+            font-weight: 500;
+        }
+
+        /* PROMO BANNER IN RECOMMENDATIONS */
+        .promo-banner {
+            background: linear-gradient(135deg, rgba(198, 140, 47, 0.1) 0%, rgba(193, 168, 144, 0.15) 100%);
+            border: 1.5px solid var(--gold);
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin-top: 30px;
+            text-align: center;
+        }
+        .promo-banner-icon {
+            font-size: 1.4rem;
+            margin-bottom: 6px;
+        }
+        .promo-banner h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            color: var(--evergreen);
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .promo-banner p {
+            font-size: 0.88rem;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        /* CLUB MEMBERSHIP UPSELL */
+        .club-upsell {
+            background: var(--evergreen);
+            border-radius: 12px;
+            padding: 28px 30px;
+            margin-top: 25px;
+            text-align: center;
+            color: #fff;
+        }
+        .club-upsell h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            color: #fff;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .club-upsell p {
+            font-size: 0.88rem;
+            color: var(--von-white);
+            line-height: 1.5;
+            opacity: 0.9;
+        }
+        .club-upsell .club-link {
+            display: inline-block;
+            margin-top: 12px;
+            color: var(--sand);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            border-bottom: 1px solid var(--sand);
+            transition: color 0.3s;
+        }
+        .club-upsell .club-link:hover {
+            color: var(--gold);
+            border-color: var(--gold);
+        }
+
+        /* CTA SECTION */
+        .cta-section {
+            display: none;
+            background: linear-gradient(135deg, var(--evergreen) 0%, #3f5350 100%);
+            padding: 80px 20px;
+            text-align: center;
+        }
+
+        .cta-section.show {
+            display: block;
+        }
+
+        .cta-content {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .cta-heading {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            color: #ffffff;
+            margin-bottom: 25px;
+            font-weight: 500;
+            opacity: 0;
+            animation: fadeInDown 0.8s ease forwards 0.3s;
+        }
+
+        .cta-text {
+            color: var(--von-white);
+            font-size: 1.05rem;
+            font-weight: 400;
+            margin-bottom: 35px;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards 0.5s;
+        }
+
+        .btn-cta {
+            background-color: var(--sand);
+            color: var(--evergreen);
+            font-weight: 600;
+            font-size: 1.1rem;
+            padding: 15px 50px;
+            border: 2px solid var(--sand);
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards 0.7s;
+        }
+
+        .btn-cta:hover {
+            background-color: var(--gold);
+            border-color: var(--gold);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(198, 140, 47, 0.4);
+        }
+
+        /* FOOTER */
+        footer {
+            background-color: var(--evergreen);
+            color: #ffffff;
+            padding: 30px 20px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .footer-content {
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.8;
+        }
+
+        /* ANIMATIONS */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideRight {
+            from {
+                width: 0%;
+            }
+            to {
+                width: var(--score);
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.8rem;
+            }
+
+            .logo {
+                width: 320px;
+            }
+
+            .header p {
+                font-size: 1rem;
+            }
+
+            .upload-buttons-row {
+                flex-direction: column;
+            }
+
+            .drop-zone {
+                min-width: 100%;
+            }
+
+            .score-ring {
+                width: 150px;
+                height: 150px;
+            }
+
+            .score-ring-value {
+                font-size: 2.5rem;
+            }
+
+            .concerns-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .recommendation-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .cta-heading {
+                font-size: 1.8rem;
+            }
+
+            .modal-content {
+                width: 95%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 40px 15px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .upload-section,
+            .analysis-section,
+            .results-section,
+            .recommendations-section,
+            .cta-section {
+                padding: 40px 15px;
+            }
+
+            .logo {
+                width: 240px;
+            }
+
+            .upload-section h2,
+            .results-title,
+            .recommendations-title,
+            .analysis-title {
+                font-size: 1.6rem;
+            }
+
+            .cta-heading {
+                font-size: 1.5rem;
+            }
+
+            .visia-list {
+                grid-template-columns: 1fr;
+            }
+
+            .visia-callout {
+                padding: 22px 20px;
+            }
+            .lead-gate-card {
+                padding: 35px 25px;
+            }
+            .lead-gate-card h2 {
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-content">
+                <img class="logo" src="data:image/png;base64,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" alt="Von & Co Aesthetics">
+            <p class="logo-tagline">Aesthetics</p>
+            <h1>Illuminating Results, Expertly Delivered</h1>
+            <p>See what your skin reveals. Powered by the same clinical insight behind every Von & Co Aesthetics consultation</p>
+        </div>
+    </header>
+
+    <!-- UPLOAD SECTION -->
+    <section class="upload-section">
+        <div class="upload-container">
+            <h2>Your Skin Story Starts Here</h2>
+            <p class="upload-intro">Upload a selfie in natural lighting and our AI will approximate the kind of analysis you'd receive in-studio at Von & Co Aesthetics.</p>
+
+            <div class="visia-callout">
+                <div class="visia-callout-header">Powered by VISIA-Style Analysis</div>
+                <p class="visia-callout-sub">Our AI scores your skin the same way our in-studio VISIA system does, then recommends specific Von & Co treatments matched to what it sees.</p>
+                <ul class="visia-list">
+                    <li>
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" stroke="#c1a890" stroke-width="1.5"/><path d="M5.5 9.5L7.5 11.5L12.5 6.5" stroke="#516b62" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Wrinkles & Fine Lines
+                    </li>
+                    <li>
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" stroke="#c1a890" stroke-width="1.5"/><path d="M5.5 9.5L7.5 11.5L12.5 6.5" stroke="#516b62" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Redness & Rosacea
+                    </li>
+                    <li>
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" stroke="#c1a890" stroke-width="1.5"/><path d="M5.5 9.5L7.5 11.5L12.5 6.5" stroke="#516b62" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Dark Spots & Sun Damage
+                    </li>
+                    <li>
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" stroke="#c1a890" stroke-width="1.5"/><path d="M5.5 9.5L7.5 11.5L12.5 6.5" stroke="#516b62" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Texture & Smoothness
+                    </li>
+                    <li>
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" stroke="#c1a890" stroke-width="1.5"/><path d="M5.5 9.5L7.5 11.5L12.5 6.5" stroke="#516b62" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Pore Size & Congestion
+                    </li>
+                </ul>
+            </div>
+
+            <div style="max-width:400px; margin:0 auto 30px; text-align:center;">
+                <div style="display:flex; gap:20px; justify-content:center; align-items:flex-end; flex-wrap:wrap;">
+                    <div>
+                        <label for="ageInput" style="font-family:'Fira Sans',sans-serif; font-size:0.9rem; color:var(--evergreen); font-weight:500; display:block; margin-bottom:8px;">Your Age</label>
+                        <input type="number" id="ageInput" min="18" max="99" placeholder="18+" style="width:120px; padding:12px 16px; border:1.5px solid var(--sand); border-radius:8px; font-family:'Fira Sans',sans-serif; font-size:1.1rem; text-align:center; outline:none; background:#fff; transition:border-color 0.3s;" onfocus="this.style.borderColor='var(--evergreen)'" onblur="this.style.borderColor='var(--sand)'" />
+                    </div>
+                    <div>
+                        <label for="bodyAreaSelect" style="font-family:'Fira Sans',sans-serif; font-size:0.9rem; color:var(--evergreen); font-weight:500; display:block; margin-bottom:8px;">Area of Focus</label>
+                        <select id="bodyAreaSelect" style="padding:12px 16px; border:1.5px solid var(--sand); border-radius:8px; font-family:'Fira Sans',sans-serif; font-size:1rem; outline:none; background:#fff; color:var(--black); transition:border-color 0.3s; cursor:pointer; min-width:160px;" onfocus="this.style.borderColor='var(--evergreen)'" onblur="this.style.borderColor='var(--sand)'">
+                            <option value="face">Face</option>
+                            <option value="neck_chest">Neck & Chest</option>
+                            <option value="hands">Hands</option>
+                            <option value="back">Back</option>
+                            <option value="legs">Legs</option>
+                        </select>
+                    </div>
+                </div>
+                <p style="font-size:0.78rem; color:var(--black); opacity:0.45; margin-top:10px;">Helps us tailor your analysis and treatment recommendations</p>
+            </div>
+
+            <div style="text-align:center; margin-bottom:20px;">
+                <button class="btn btn-primary" id="webcamBtn" style="font-size:1.05rem; padding:16px 36px;">Start Guided Capture</button>
+                <p style="font-size:0.82rem; color:var(--evergreen); opacity:0.65; margin-top:10px;">We'll walk you through 3 angles for the most accurate analysis</p>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:16px; max-width:360px; margin:18px auto;">
+                <div style="flex:1; height:1px; background:var(--sand); opacity:0.4;"></div>
+                <span style="font-size:0.82rem; color:#999; white-space:nowrap;">Or upload a photo</span>
+                <div style="flex:1; height:1px; background:var(--sand); opacity:0.4;"></div>
+            </div>
+
+            <div class="upload-buttons-row" style="margin-top:14px;">
+                <div class="drop-zone" id="dropZone" style="padding:22px 16px;">
+                    <div class="drop-zone-icon" style="font-size:1.4rem;">📸</div>
+                    <div class="drop-zone-text" style="font-size:0.92rem;">Tap to upload a photo</div>
+                    <div class="drop-zone-subtext">JPG, PNG • Max 10MB</div>
+                </div>
+            </div>
+            <p class="upload-privacy">Your image is never stored. Results in about 30 seconds.</p>
+        </div>
+    </section>
+
+    <!-- WEBCAM MODAL (Quick Snap + Guided Capture) -->
+    <div class="modal" id="webcamModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="webcamTitle">Capture Selfie</h2>
+                <button class="close-btn" id="closeWebcam">&times;</button>
+            </div>
+
+            <!-- Mode picker -->
+            <div class="capture-mode-picker">
+                <button id="modeQuick" onclick="setCaptureMode('quick')">
+                    Quick Snap<small>Single photo</small>
+                </button>
+                <button id="modeGuided" class="active" onclick="setCaptureMode('guided')">
+                    Guided Capture<small>3 angles, better results</small>
+                </button>
+            </div>
+
+            <!-- Video feed -->
+            <div class="guided-video-wrap" id="videoWrap">
+                <video id="webcamVideo" autoplay playsinline></video>
+                <div class="guided-oval" id="guidedOval"></div>
+                <div class="guided-arrow left-arrow" id="arrowLeft" style="display:none;">&#10096;&#10096;</div>
+                <div class="guided-arrow right-arrow" id="arrowRight" style="display:none;">&#10097;&#10097;</div>
+            </div>
+
+            <!-- Lighting indicator -->
+            <div style="text-align:center;">
+                <span class="lighting-badge good" id="lightingBadge">Checking lighting...</span>
+            </div>
+
+            <!-- Guided step dots -->
+            <div class="guided-steps" id="guidedSteps" style="display:flex;">
+                <div class="guided-step-dot active" id="dot0"></div>
+                <div class="guided-step-dot" id="dot1"></div>
+                <div class="guided-step-dot" id="dot2"></div>
+            </div>
+
+            <!-- Instruction text -->
+            <p class="webcam-instruction" id="webcamInstruction">Step 1/3: Look straight at the camera. Chin level, relaxed expression</p>
+
+            <!-- Guided capture thumbnails. Tap any to retake -->
+            <div class="guided-thumbs" id="guidedThumbs" style="display:flex;">
+                <div class="guided-thumb" id="thumb0" onclick="retakePhoto(0)"><span>Front</span></div>
+                <div class="guided-thumb" id="thumb1" onclick="retakePhoto(1)"><span>Left</span></div>
+                <div class="guided-thumb" id="thumb2" onclick="retakePhoto(2)"><span>Right</span></div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="webcam-buttons">
+                <button class="btn btn-secondary" id="captureBtn">Capture Front</button>
+                <button class="btn btn-primary" id="analyzeGuidedBtn" style="display:none;" onclick="submitGuidedCapture()">Analyze My Skin</button>
+                <button class="btn btn-primary" id="cancelWebcamBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ANALYSIS SECTION -->
+    <section class="analysis-section" id="analysisSection">
+        <div class="analysis-container">
+            <h2 class="analysis-title">Analyzing Your Skin...</h2>
+            <p style="text-align: center; color: #777; font-size: 0.9rem; margin: -28px 0 30px;">Analyzing your skin. About 30 seconds.</p>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="analysisProgressFill"></div>
+            </div>
+            <div class="analysis-timer" id="analysisTimer">
+                <span class="elapsed" id="analysisElapsed">0s</span> elapsed
+            </div>
+
+            <div class="analysis-steps" id="analysisSteps">
+                <div class="step" id="analysisStep0">
+                    <div class="step-dot"></div>
+                    <div class="step-text">Uploading & processing your photo...</div>
+                </div>
+                <div class="step" id="analysisStep1">
+                    <div class="step-dot"></div>
+                    <div class="step-text">Mapping your skin's unique profile...</div>
+                </div>
+                <div class="step" id="analysisStep2">
+                    <div class="step-dot"></div>
+                    <div class="step-text">Evaluating texture, pigmentation & tone...</div>
+                </div>
+                <div class="step" id="analysisStep3">
+                    <div class="step-dot"></div>
+                    <div class="step-text">Analyzing sun damage, pores & hydration levels...</div>
+                </div>
+                <div class="step" id="analysisStep4">
+                    <div class="step-dot"></div>
+                    <div class="step-text">Identifying surface & subsurface concerns...</div>
+                </div>
+                <div class="step" id="analysisStep5">
+                    <div class="step-dot"></div>
+                    <div class="step-text">Building your personalized treatment recommendations...</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- RESULTS DASHBOARD -->
+    <section class="results-section" id="resultsSection">
+        <div class="results-container">
+            <h2 class="results-title">Your Personalized Skin Profile</h2>
+            
+            <div class="score-ring-container">
+                <div class="score-ring">
+                    <svg viewBox="0 0 200 200" class="score-ring-svg">
+                        <circle cx="100" cy="100" r="90" fill="none" stroke="#e0e0e0" stroke-width="8"/>
+                        <circle id="scoreCircle" cx="100" cy="100" r="90" fill="none" stroke="#516b62" stroke-width="8" 
+                                style="stroke-dasharray: 565.48; stroke-dashoffset: 565.48; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset 1.5s ease;" 
+                                stroke-linecap="round"/>
+                    </svg>
+                    <div class="score-ring-text">
+                        <div class="score-ring-value" id="overallScore">0</div>
+                        <div class="score-ring-label">Overall Score</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="score-interpretation" id="scoreInterpretation"></div>
+            <p class="score-explainer">
+                All scores: higher is better. 90+ Excellent, 75+ Very Good, 60+ Good, below 60 Needs Attention.
+            </p>
+
+            <div class="skin-age-badge" id="skinAgeBadge">
+                <div class="skin-age-label">Estimated Skin Age</div>
+                <div class="skin-age-value" id="skinAgeValue">...</div>
+            </div>
+
+            <!-- HAUT.AI-INSPIRED: Quick insights bar -->
+            <div class="insights-bar" id="insightsBar"></div>
+
+            <!-- HAUT.AI-INSPIRED: Radar chart overview -->
+            <div class="skin-radar-container" id="radarContainer" style="display:none;">
+                <h3>Your Skin Profile at a Glance</h3>
+                <canvas id="radarChart" class="radar-chart" width="480" height="480"></canvas>
+            </div>
+
+            <div class="concerns-grid" id="concernsGrid">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- RECOMMENDATIONS SECTION -->
+    <section class="recommendations-section" id="recommendationsSection">
+        <div class="recommendations-container">
+            <h2 class="recommendations-title">Curated for You</h2>
+            <div class="recommendation-cards" id="recommendationCards">
+                <!-- Populated by JavaScript -->
+            </div>
+
+            <!-- PROMO BANNER - evergreen new guest offer -->
+            <div id="promoBanner" style="background:linear-gradient(135deg, rgba(198,140,47,0.12), rgba(198,140,47,0.06)); border-radius:16px; padding:32px 28px; margin-top:36px; text-align:center; border:2px solid var(--gold);">
+                <div style="font-family:'Cormorant Garamond',serif; font-size:2.2rem; font-weight:600; color:var(--evergreen); margin-bottom:8px;">New to Von & Co?</div>
+                <div style="font-size:1.4rem; font-weight:700; color:var(--gold); margin-bottom:12px;">15% Off Your First Visit</div>
+                <div style="font-size:1rem; color:var(--black); opacity:0.7; max-width:400px; margin:0 auto 16px;">Treatments and same-day skincare purchases. No code needed.</div>
+                <a href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" style="display:inline-block; padding:14px 36px; background:var(--gold); color:#fff; border-radius:30px; font-size:1rem; font-weight:600; text-decoration:none; transition:all 0.3s; box-shadow:0 4px 12px rgba(198,140,47,0.3);" onmouseover="this.style.background='var(--sand)'" onmouseout="this.style.background='var(--gold)'">Claim Your 15% Off</a>
+            </div>
+
+            <!-- THE CLUB MEMBERSHIP UPSELL -->
+            <div class="club-upsell" id="clubUpsell" style="background:linear-gradient(135deg, #2c3e3a 0%, var(--evergreen) 40%, #3f5350 100%); color:var(--von-white); border-radius:16px; padding:44px 36px 40px; text-align:center; margin-top:32px; position:relative; overflow:hidden; border:1px solid rgba(198,140,47,0.25);">
+                <div style="position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg, transparent, var(--sand), var(--gold), var(--sand), transparent);"></div>
+                <div style="font-family:'Cormorant Garamond',serif; font-size:2.4rem; font-weight:600; color:#fff; letter-spacing:1px; margin-bottom:6px;">The Club</div>
+                <div style="font-size:0.8rem; text-transform:uppercase; letter-spacing:3px; color:var(--sand); font-weight:600; margin-bottom:22px;">Von & Co Membership</div>
+                <div style="font-size:3.2rem; font-family:'Cormorant Garamond',serif; font-weight:700; color:var(--sand); line-height:1;">$149<span style="font-size:1.2rem; font-weight:400; opacity:0.8;">/month</span></div>
+                <div style="font-size:0.95rem; color:rgba(255,255,255,0.7); margin-top:4px; margin-bottom:24px;">or $1,499/year (save $289)</div>
+                <div style="font-size:1.1rem; color:#fff; line-height:1.7; max-width:500px; margin:0 auto 28px; font-weight:400;">Every dollar you pay converts to <strong style="color:var(--sand);">Club Funds</strong> you spend on any treatment or product. Bank them, share them, or gift them. Your money never disappears.</div>
+                <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin-bottom:28px;">
+                    <div style="background:rgba(255,255,255,0.12); backdrop-filter:blur(4px); border-radius:12px; padding:20px 28px; min-width:180px; border:1px solid rgba(198,140,47,0.2);">
+                        <div style="font-size:2.2rem; font-weight:700; color:var(--sand); line-height:1;">20%</div>
+                        <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; color:var(--sand); font-weight:600; margin:4px 0 8px;">off every time</div>
+                        <div style="font-size:0.95rem; color:rgba(255,255,255,0.85); line-height:1.5;">Lasers, Microneedling, Hair Removal</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.12); backdrop-filter:blur(4px); border-radius:12px; padding:20px 28px; min-width:180px; border:1px solid rgba(198,140,47,0.2);">
+                        <div style="font-size:2.2rem; font-weight:700; color:var(--sand); line-height:1;">15%</div>
+                        <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; color:var(--sand); font-weight:600; margin:4px 0 8px;">off every time</div>
+                        <div style="font-size:0.95rem; color:rgba(255,255,255,0.85); line-height:1.5;">Injectables, Facials, Peels, Skincare</div>
+                    </div>
+                </div>
+                <a href="https://www.vonandcoaesthetics.com/membership/" target="_blank" style="display:inline-block; padding:18px 48px; background:linear-gradient(135deg, var(--sand), var(--gold)); color:#fff; border-radius:30px; font-size:1.15rem; font-weight:700; text-decoration:none; transition:all 0.3s; box-shadow:0 6px 20px rgba(198,140,47,0.35); letter-spacing:0.5px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 28px rgba(198,140,47,0.45)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 20px rgba(198,140,47,0.35)'">Join The Club</a>
+                <div style="margin-top:16px; font-size:0.88rem; color:rgba(255,255,255,0.6);">Member-only events + exclusive specials year-round</div>
+            </div>
+
+            <!-- DOWNLOAD/PREVIEW REPORT BUTTONS -->
+            <div style="text-align:center; margin-top:35px;">
+                <div style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
+                    <button id="downloadReportBtn" onclick="downloadReport()" style="background:var(--evergreen); color:#fff; border:none; padding:16px 36px; border-radius:30px; font-family:'Fira Sans',sans-serif; font-size:1rem; font-weight:600; cursor:pointer; transition:all 0.3s; box-shadow:0 4px 12px rgba(81,107,98,0.3);" onmouseover="this.style.background='#3f5350'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='var(--evergreen)'; this.style.transform='translateY(0)'">&#128196; View My Treatment Plan</button>
+                </div>
+                <p style="font-size:0.78rem; color:var(--black); opacity:0.45; margin-top:10px;">Opens your personalized report. Save or print from there</p>
+            </div>
+
+            <!-- INLINE REPORT PREVIEW -->
+            <div id="reportPreviewContainer" style="display:none; margin-top:30px; border:1px solid var(--dove); border-radius:12px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+                <div style="background:var(--dove); padding:10px 16px; display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:0.85rem; font-weight:500; color:var(--black);">Treatment Plan Preview</span>
+                    <button onclick="document.getElementById('reportPreviewContainer').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#888;">&times;</button>
+                </div>
+                <iframe id="reportPreviewFrame" style="width:100%; height:700px; border:none;"></iframe>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA SECTION -->
+    <section class="cta-section" id="ctaSection">
+        <div class="cta-content">
+            <h2 class="cta-heading">Experience the Von & Co Aesthetics Difference</h2>
+            <p class="cta-text">Your journey begins with a complimentary consultation: an in-depth conversation with one of our expert providers, plus a full VISIA skin analysis at the studio. Our physician-led team has over 35 years of combined aesthetic experience, and we're open 7 days a week because taking care of yourself shouldn't be hard to fit into your life.</p>
+            <a href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" class="btn btn-cta">Book My Complimentary Consultation</a>
+            <p style="margin-top: 16px; opacity: 0.7; font-size: 0.9rem; color: var(--von-white);">Or call us directly: <a href="tel:2397994866" style="color: var(--sand); text-decoration: none; font-weight: 600;">239.799.4866</a></p>
+            <button onclick="downloadReport()" style="margin-top: 20px; background: transparent; border: 1.5px solid var(--sand); color: var(--sand); padding: 12px 35px; border-radius: 30px; font-family: 'Fira Sans', sans-serif; font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: all 0.3s; opacity: 0; animation: fadeInUp 0.8s ease forwards 0.9s;" onmouseover="this.style.background='var(--sand)'; this.style.color='var(--evergreen)'" onmouseout="this.style.background='transparent'; this.style.color='var(--sand)'">Download My Treatment Plan</button>
+        </div>
+    </section>
+
+    <!-- LEAD CAPTURE GATE -->
+    <div class="lead-gate-overlay" id="leadGateOverlay">
+        <div class="lead-gate-card">
+            <h2>Your Results Are Ready</h2>
+            <p>Enter your info below to see your personalized skin analysis and treatment recommendations from Von & Co Aesthetics</p>
+            <form id="leadForm" onsubmit="return false;">
+                <input type="text" id="leadName" placeholder="First Name" autocomplete="given-name" />
+                <input type="email" id="leadEmail" placeholder="Email Address" autocomplete="email" />
+                <input type="tel" id="leadPhone" placeholder="Phone (optional)" autocomplete="tel" />
+                <button type="button" class="lead-gate-submit" onclick="submitLeadForm()">See My Results</button>
+            </form>
+            <button class="lead-gate-skip" onclick="skipLeadGate()">Skip for now</button>
+            <div style="margin-top:20px; padding:16px 20px; background:linear-gradient(135deg, rgba(198,140,47,0.12), rgba(198,140,47,0.06)); border-radius:12px; border:1.5px solid var(--gold); text-align:center;">
+                <div style="font-size:1.3rem; font-weight:700; color:var(--gold); margin-bottom:4px;">15% Off Your First Visit</div>
+                <div style="font-size:0.9rem; color:var(--evergreen); font-weight:500;">Treatments + same-day skincare. No code needed.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-content">
+            <p><strong>Von & Co Aesthetics</strong></p>
+            <p style="font-size: 0.88rem; margin-top: 8px;"><a href="tel:2397994866" style="color: var(--von-white); text-decoration: none;">239.799.4866</a> &nbsp;•&nbsp; Naples, FL &nbsp;•&nbsp; Open 7 Days a Week</p>
+            <p style="font-size: 0.75rem; margin-top: 12px; opacity: 0.6;">This AI analysis is a preview of the personalized care at Von & Co Aesthetics and does not replace a professional consultation.</p>
+            <p style="margin-top: 10px; font-size: 0.8rem; opacity: 0.7;">&copy; 2026 Von & Co Aesthetics. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <input type="file" id="fileInput" accept="image/*" />
+
+    <script>
+        const API_BASE = window.location.origin;
+        const concernNames = {
+            wrinkles: 'Wrinkles & Fine Lines',
+            redness: 'Redness & Rosacea',
+            darkSpots: 'Dark Spots & Hyperpigmentation',
+            texture: 'Skin Texture & Smoothness',
+            pores: 'Pore Size & Visibility',
+            laxity: 'Skin Laxity & Crepiness',
+            sunDamage: 'Sun Damage & Photoaging',
+            veins: 'Visible Veins & Vascularity',
+            scarring: 'Scarring & Marks',
+            hairRemoval: 'Unwanted Hair',
+            acne: 'Body Acne & Breakouts',
+            dryness: 'Dryness & Dehydration',
+            unevenTone: 'Uneven Skin Tone'
+        };
+
+        const treatments = [
+            'Botox', 'Dysport', 'Xeomin', 'Versa', 'Sculptra', 'SkinVive',
+            'Lyft', 'Contour', 'Kysse', 'Refyne', 'Defyne', 'Belotero',
+            'PDO Threads', 'Sciton Moxi', 'Sciton BBL', 'Sciton Halo',
+            'HydraFacial', 'SaltFacial', 'Chemical Peel', 'VI Peel',
+            'Signature Cleansing Facial', 'Deep Pore Cleansing Facial',
+            'Anti-Aging Facial', 'Microneedling', 'RF Microneedling',
+            'Laser Hair Removal', 'Hair Restoration (PRP)'
+        ];
+
+        let demoMode = false;
+        let uploadedImage = null;
+        let pendingAnalysisData = null;  // holds data while lead gate is shown
+
+        // Check API health on page load
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/api/health`);
+                if (!response.ok) {
+                    demoMode = true;
+                }
+            } catch (e) {
+                demoMode = true;
+            }
+        }
+
+        checkHealth();
+
+        // File upload handling
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileUpload(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+
+        function handleFileUpload(file) {
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File size exceeds 10MB limit');
+                return;
+            }
+
+            if (!file.type.startsWith('image/')) {
+                alert('Please upload an image file');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                uploadedImage = e.target.result;
+                analyzeImage();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Webcam handling
+        // =====================================================
+        // WEBCAM & GUIDED CAPTURE
+        // =====================================================
+        const webcamBtn = document.getElementById('webcamBtn');
+        const webcamModal = document.getElementById('webcamModal');
+        const webcamVideo = document.getElementById('webcamVideo');
+        const closeWebcam = document.getElementById('closeWebcam');
+        const captureBtn = document.getElementById('captureBtn');
+        const cancelWebcamBtn = document.getElementById('cancelWebcamBtn');
+        let webcamStream = null;
+        let captureMode = 'quick';  // 'quick' or 'guided'
+        let guidedStep = 0;         // 0=front, 1=left, 2=right
+        let guidedPhotos = [null, null, null];
+        let lightingInterval = null;
+
+        const guidedConfig = [
+            { label: 'Front', instruction: 'Look straight at the camera. Chin level, relaxed expression', arrows: [] },
+            { label: 'Left Side', instruction: 'Turn your head slightly to the left. Show your right cheek', arrows: ['left'] },
+            { label: 'Right Side', instruction: 'Turn your head slightly to the right. Show your left cheek', arrows: ['right'] }
+        ];
+
+        function setCaptureMode(mode) {
+            captureMode = mode;
+            document.getElementById('modeQuick').classList.toggle('active', mode === 'quick');
+            document.getElementById('modeGuided').classList.toggle('active', mode === 'guided');
+            document.getElementById('guidedSteps').style.display = mode === 'guided' ? 'flex' : 'none';
+            document.getElementById('guidedThumbs').style.display = mode === 'guided' ? 'flex' : 'none';
+            document.getElementById('webcamTitle').textContent = mode === 'guided' ? 'Guided Skin Capture' : 'Capture Selfie';
+            document.getElementById('analyzeGuidedBtn').style.display = 'none';
+
+            if (mode === 'guided') {
+                resetGuidedCapture();
+            } else {
+                document.getElementById('webcamInstruction').textContent = 'Position your face in the oval';
+                document.getElementById('arrowLeft').style.display = 'none';
+                document.getElementById('arrowRight').style.display = 'none';
+                captureBtn.textContent = 'Capture';
+                captureBtn.style.display = '';
+            }
+        }
+
+        function resetGuidedCapture() {
+            guidedStep = 0;
+            guidedPhotos = [null, null, null];
+            for (let i = 0; i < 3; i++) {
+                document.getElementById('dot' + i).className = 'guided-step-dot' + (i === 0 ? ' active' : '');
+                document.getElementById('thumb' + i).innerHTML = '<span>' + guidedConfig[i].label + '</span>';
+                document.getElementById('thumb' + i).classList.remove('captured');
+                document.getElementById('thumb' + i).classList.remove('retaking');
+            }
+            document.getElementById('analyzeGuidedBtn').style.display = 'none';
+            captureBtn.style.display = '';
+            updateGuidedUI();
+        }
+
+        function updateGuidedUI() {
+            const step = guidedConfig[guidedStep];
+            document.getElementById('webcamInstruction').textContent = `Step ${guidedStep + 1}/3: ${step.instruction}`;
+            document.getElementById('arrowLeft').style.display = step.arrows.includes('left') ? 'block' : 'none';
+            document.getElementById('arrowRight').style.display = step.arrows.includes('right') ? 'block' : 'none';
+            captureBtn.textContent = `Capture ${step.label}`;
+        }
+
+        // Retake a specific photo. Tap a thumbnail to re-shoot that angle
+        function retakePhoto(stepIndex) {
+            if (!guidedPhotos[stepIndex]) return; // nothing to retake
+            guidedStep = stepIndex;
+            guidedPhotos[stepIndex] = null;
+
+            // Reset that thumbnail
+            const thumb = document.getElementById('thumb' + stepIndex);
+            thumb.innerHTML = '<span>' + guidedConfig[stepIndex].label + '</span>';
+            thumb.classList.remove('captured');
+            thumb.classList.add('retaking');
+
+            // Reset dot
+            document.getElementById('dot' + stepIndex).className = 'guided-step-dot active';
+
+            // Mark other dots as done/pending
+            for (let i = 0; i < 3; i++) {
+                if (i === stepIndex) continue;
+                document.getElementById('dot' + i).className = guidedPhotos[i] ? 'guided-step-dot done' : 'guided-step-dot';
+            }
+
+            // Hide analyze button, show capture button
+            document.getElementById('analyzeGuidedBtn').style.display = 'none';
+            captureBtn.style.display = '';
+            updateGuidedUI();
+
+            document.getElementById('webcamInstruction').textContent = `Retaking: ${guidedConfig[stepIndex].instruction}`;
+        }
+
+        // After all 3 photos are captured, show the review state
+        function showGuidedReview() {
+            captureBtn.style.display = 'none';
+            document.getElementById('analyzeGuidedBtn').style.display = '';
+            document.getElementById('webcamInstruction').textContent = 'All 3 angles captured! Tap any photo to retake, or analyze when ready.';
+            document.getElementById('arrowLeft').style.display = 'none';
+            document.getElementById('arrowRight').style.display = 'none';
+        }
+
+        // Submit all guided photos for analysis
+        function submitGuidedCapture() {
+            uploadedImage = guidedPhotos[0]; // front photo as primary
+            window.guidedPhotos = [...guidedPhotos];
+            stopWebcam();
+            analyzeImage();
+        }
+
+        // Lighting check. Runs on interval while camera is open
+        function checkLighting() {
+            if (!webcamVideo || webcamVideo.readyState < 2) return;
+            const c = document.createElement('canvas');
+            const size = 100;
+            c.width = size; c.height = size;
+            const ctx = c.getContext('2d');
+            ctx.drawImage(webcamVideo, 0, 0, size, size);
+            const data = ctx.getImageData(0, 0, size, size).data;
+            let totalBrightness = 0;
+            for (let i = 0; i < data.length; i += 4) {
+                totalBrightness += (data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114);
+            }
+            const avg = totalBrightness / (size * size);
+            const badge = document.getElementById('lightingBadge');
+            const oval = document.getElementById('guidedOval');
+            if (avg < 60) {
+                badge.textContent = '⚠ Too dark. Find better lighting';
+                badge.className = 'lighting-badge dim';
+                oval.className = 'guided-oval bad';
+            } else if (avg > 210) {
+                badge.textContent = '⚠ Too bright. Avoid direct light';
+                badge.className = 'lighting-badge bright';
+                oval.className = 'guided-oval bad';
+            } else {
+                badge.textContent = '✓ Lighting looks good';
+                badge.className = 'lighting-badge good';
+                oval.className = 'guided-oval good';
+            }
+        }
+
+        webcamBtn.addEventListener('click', async () => {
+            try {
+                webcamStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 960 } }
+                });
+                webcamVideo.srcObject = webcamStream;
+                webcamModal.classList.add('show');
+                setCaptureMode('guided');
+                lightingInterval = setInterval(checkLighting, 800);
+            } catch (err) {
+                alert('Unable to access camera. Please check permissions.');
+            }
+        });
+
+        closeWebcam.addEventListener('click', stopWebcam);
+        cancelWebcamBtn.addEventListener('click', stopWebcam);
+
+        function stopWebcam() {
+            if (webcamStream) {
+                webcamStream.getTracks().forEach(track => track.stop());
+                webcamStream = null;
+            }
+            if (lightingInterval) {
+                clearInterval(lightingInterval);
+                lightingInterval = null;
+            }
+            webcamModal.classList.remove('show');
+        }
+
+        function captureFrame() {
+            const canvas = document.createElement('canvas');
+            canvas.width = webcamVideo.videoWidth;
+            canvas.height = webcamVideo.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(webcamVideo, 0, 0);
+            return canvas.toDataURL('image/jpeg', 0.92);
+        }
+
+        captureBtn.addEventListener('click', () => {
+            if (captureMode === 'quick') {
+                // Quick snap. Single photo, analyze immediately
+                uploadedImage = captureFrame();
+                stopWebcam();
+                analyzeImage();
+            } else {
+                // Guided capture. Capture current step
+                const photo = captureFrame();
+                guidedPhotos[guidedStep] = photo;
+
+                // Update thumbnail
+                const thumb = document.getElementById('thumb' + guidedStep);
+                thumb.innerHTML = `<img src="${photo}" alt="${guidedConfig[guidedStep].label}">`;
+                thumb.classList.add('captured');
+                thumb.classList.remove('retaking');
+
+                // Update dots
+                document.getElementById('dot' + guidedStep).className = 'guided-step-dot done';
+
+                // Brief flash feedback
+                const wrap = document.getElementById('videoWrap');
+                wrap.style.opacity = '0.3';
+                setTimeout(() => { wrap.style.opacity = '1'; }, 200);
+
+                // Check if all 3 photos are captured
+                const allCaptured = guidedPhotos.every(p => p !== null);
+
+                if (allCaptured) {
+                    // All 3 done. Show review state (user can retake any or analyze)
+                    showGuidedReview();
+                } else {
+                    // Find the next empty slot to capture
+                    let nextStep = -1;
+                    for (let i = 0; i < 3; i++) {
+                        if (guidedPhotos[i] === null) { nextStep = i; break; }
+                    }
+                    if (nextStep >= 0) {
+                        guidedStep = nextStep;
+                        document.getElementById('dot' + guidedStep).className = 'guided-step-dot active';
+                        updateGuidedUI();
+                    }
+                }
+            }
+        });
+
+        // Staged progress controller
+        let analysisProgressInterval = null;
+        let analysisTimerInterval = null;
+
+        function startAnalysisProgress() {
+            const fill = document.getElementById('analysisProgressFill');
+            const elapsed = document.getElementById('analysisElapsed');
+            const steps = [0, 1, 2, 3, 4, 5];
+            const TOTAL_STEPS = steps.length;
+
+            // Reset all steps
+            steps.forEach(i => {
+                const el = document.getElementById('analysisStep' + i);
+                if (el) { el.className = 'step'; }
+            });
+            fill.style.width = '0%';
+
+            let currentStep = -1;
+            let seconds = 0;
+            let progressPercent = 0;
+
+            // Step timing: when each step activates (in seconds)
+            const stepTimings = [0, 5, 12, 22, 35, 48];
+            // Progress targets at each step activation
+            const stepProgress = [5, 15, 30, 50, 70, 85];
+
+            // Timer. Counts elapsed seconds
+            analysisTimerInterval = setInterval(() => {
+                seconds++;
+                elapsed.textContent = seconds + 's';
+
+                // Advance to next step if timing matches
+                for (let i = 0; i < TOTAL_STEPS; i++) {
+                    if (seconds >= stepTimings[i] && i > currentStep) {
+                        // Mark previous as done
+                        if (currentStep >= 0) {
+                            const prev = document.getElementById('analysisStep' + currentStep);
+                            if (prev) prev.className = 'step done';
+                        }
+                        currentStep = i;
+                        const cur = document.getElementById('analysisStep' + i);
+                        if (cur) cur.className = 'step active';
+                    }
+                }
+
+                // Smoothly advance progress bar
+                if (currentStep >= 0 && currentStep < TOTAL_STEPS) {
+                    const target = stepProgress[currentStep];
+                    const nextTarget = currentStep < TOTAL_STEPS - 1 ? stepProgress[currentStep + 1] : 92;
+                    const nextTime = currentStep < TOTAL_STEPS - 1 ? stepTimings[currentStep + 1] : 65;
+                    const elapsed_in_step = seconds - stepTimings[currentStep];
+                    const step_duration = nextTime - stepTimings[currentStep];
+                    const frac = Math.min(elapsed_in_step / step_duration, 1);
+                    progressPercent = target + (nextTarget - target) * frac;
+                }
+
+                fill.style.width = Math.min(progressPercent, 92) + '%';
+
+                // Safety: if over 90 seconds, show reassurance
+                if (seconds === 75) {
+                    elapsed.parentElement.innerHTML = '<span class="elapsed">' + seconds + 's</span> elapsed... almost there, finalizing your results...';
+                } else if (seconds > 75) {
+                    elapsed.textContent = seconds + 's';
+                }
+            }, 1000);
+        }
+
+        function stopAnalysisProgress(success) {
+            const fill = document.getElementById('analysisProgressFill');
+            if (analysisTimerInterval) { clearInterval(analysisTimerInterval); analysisTimerInterval = null; }
+
+            if (success) {
+                // Complete the bar
+                fill.style.width = '100%';
+                // Mark all steps done
+                for (let i = 0; i <= 5; i++) {
+                    const el = document.getElementById('analysisStep' + i);
+                    if (el) el.className = 'step done';
+                }
+            }
+        }
+
+        async function analyzeImage() {
+            // Client-side age gate: block minors before hitting the server
+            const enteredAge = document.getElementById('ageInput')?.value?.trim();
+            if (enteredAge && parseInt(enteredAge) < 18) {
+                showRejectionMessage("Our skin analysis and treatment recommendations are designed for adults (18+). Medical aesthetic treatments are not appropriate for minors. If you believe this is an error, please remove the age field and try again.");
+                return;
+            }
+
+            // Show analysis section and start progress immediately
+            document.getElementById('analysisSection').classList.add('show');
+            window.scrollTo({ top: document.getElementById('analysisSection').offsetTop - 50, behavior: 'smooth' });
+            startAnalysisProgress();
+
+            // Fire API call immediately (no artificial delay)
+            try {
+                const formData = new FormData();
+                const blob = await fetch(uploadedImage).then(r => r.blob());
+                formData.append('image', blob, 'photo.jpg');
+                const userAge = enteredAge;
+                if (userAge) formData.append('age', userAge);
+                const bodyArea = document.getElementById('bodyAreaSelect')?.value || 'face';
+                formData.append('body_area', bodyArea);
+
+                // Retry up to 3 times before falling back to demo
+                let lastErr = null;
+                let data = null;
+                let response = null;
+                for (let attempt = 1; attempt <= 3; attempt++) {
+                    try {
+                        console.log(`[Analyzer] API attempt ${attempt}/3...`);
+                        response = await fetch(`${API_BASE}/api/analyze`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const json = await response.json();
+                        if (response.ok && !json.error) {
+                            data = json;
+                            console.log(`[Analyzer] API success on attempt ${attempt}, score: ${json.overallScore}`);
+                            break;
+                        } else {
+                            lastErr = json.error || `HTTP ${response.status}`;
+                            console.warn(`[Analyzer] Attempt ${attempt} failed: ${lastErr}`);
+                        }
+                    } catch (fetchErr) {
+                        lastErr = fetchErr.message || 'Network error';
+                        console.warn(`[Analyzer] Attempt ${attempt} network error: ${lastErr}`);
+                    }
+                    // Wait 1.5s before retry
+                    if (attempt < 3) await new Promise(r => setTimeout(r, 1500));
+                }
+
+                stopAnalysisProgress(!!data);
+
+                // Brief pause to show 100% before transitioning
+                await new Promise(r => setTimeout(r, 600));
+
+                if (data) {
+                    // Check if image was rejected (non-skin photo)
+                    if (data.rejected) {
+                        document.getElementById('analysisSection').classList.remove('show');
+                        showRejectionMessage(data.reason || "That doesn't appear to be a photo of skin. Please upload a clear, well-lit photo of the area you'd like analyzed.");
+                        return;
+                    }
+                    // Mark as live results
+                    data._isLive = true;
+                    showLeadGate(data);
+                } else {
+                    // All 3 attempts failed: use demo fallback WITH visible banner
+                    console.error('API FAILED after 3 attempts, using demo fallback. Last error:', lastErr);
+                    const demoData = generateDemoResults();
+                    demoData._isDemo = true;
+                    console.log('Demo score:', demoData.overallScore, '(should NOT be 63-73)');
+                    showLeadGate(demoData);
+                }
+            } catch (err) {
+                stopAnalysisProgress(false);
+                console.error('API FAILED (unexpected), using demo fallback:', err);
+                const demoData = generateDemoResults();
+                demoData._isDemo = true;
+                showLeadGate(demoData);
+            }
+        }
+
+        function showRejectionMessage(reason, title, icon) {
+            // Hide analysis spinner and any results
+            const analysis = document.getElementById('analysisSection');
+            if (analysis) analysis.classList.remove('show');
+            const results = document.getElementById('results');
+            if (results) results.classList.remove('show');
+
+            // Pick a contextual title and icon
+            const isMinor = reason.toLowerCase().includes('18+') || reason.toLowerCase().includes('minor');
+            const displayTitle = title || (isMinor ? "Adults Only (18+)" : "Hmm, That Doesn't Look Right");
+            const displayIcon = icon || (isMinor ? "🔒" : "📸");
+
+            // Show rejection overlay
+            let overlay = document.getElementById('rejectionOverlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'rejectionOverlay';
+                overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:10000; display:flex; align-items:center; justify-content:center; padding:20px;';
+                overlay.innerHTML = `
+                    <div style="background:var(--von-white); border-radius:16px; max-width:420px; width:100%; padding:40px 30px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                        <div id="rejectionIcon" style="font-size:3rem; margin-bottom:12px;"></div>
+                        <div id="rejectionTitle" style="font-family:'Cormorant Garamond',serif; font-size:1.6rem; color:var(--evergreen); margin-bottom:14px;"></div>
+                        <p id="rejectionReason" style="color:#555; font-size:0.95rem; line-height:1.6; margin-bottom:24px;"></p>
+                        <button onclick="document.getElementById('rejectionOverlay').remove(); const preview = document.getElementById('imagePreview'); if(preview) preview.innerHTML=''; uploadedImage=null;"
+                            style="background:var(--evergreen); color:#fff; border:none; padding:14px 36px; border-radius:8px; font-size:1rem; font-weight:500; cursor:pointer; font-family:'Fira Sans',sans-serif;">
+                            Try Again
+                        </button>
+                    </div>`;
+                document.body.appendChild(overlay);
+            } else {
+                overlay.style.display = 'flex';
+            }
+            document.getElementById('rejectionIcon').textContent = displayIcon;
+            document.getElementById('rejectionTitle').textContent = displayTitle;
+            document.getElementById('rejectionReason').textContent = reason;
+        }
+
+        function showLeadGate(data) {
+            pendingAnalysisData = data;
+            document.getElementById('analysisSection').classList.remove('show');
+            document.getElementById('leadGateOverlay').classList.add('show');
+        }
+
+        function submitLeadForm() {
+            const name = document.getElementById('leadName').value.trim();
+            const email = document.getElementById('leadEmail').value.trim();
+            const phone = document.getElementById('leadPhone').value.trim();
+
+            if (!name || !email) {
+                document.getElementById('leadName').style.borderColor = name ? 'var(--dove)' : '#c58b7a';
+                document.getElementById('leadEmail').style.borderColor = email ? 'var(--dove)' : '#c58b7a';
+                return;
+            }
+
+            // Store lead data (can be sent to backend/CRM later)
+            console.log('Lead captured:', { name, email, phone });
+
+            // Send lead to backend
+            fetch(`${API_BASE}/api/lead`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, phone })
+            }).catch(() => {});  // fire and forget
+
+            closeLeadGateAndShowResults();
+        }
+
+        function skipLeadGate() {
+            closeLeadGateAndShowResults();
+        }
+
+        function closeLeadGateAndShowResults() {
+            document.getElementById('leadGateOverlay').classList.remove('show');
+            if (pendingAnalysisData) {
+                displayResults(pendingAnalysisData);
+                pendingAnalysisData = null;
+            }
+        }
+
+        function generateDemoResults() {
+            const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+            const skinAges = ['Late 20s', 'Early 30s', 'Mid-30s', 'Late 30s', 'Early 40s', 'Mid-40s'];
+            const bodyArea = document.getElementById('bodyAreaSelect')?.value || 'face';
+
+            // Area-specific concern templates
+            const areaConcerns = {
+                face: {
+                    wrinkles:  {score: rand(15,60), descriptions: ['Fine lines around the eyes and forehead are starting to appear','Minimal fine lines visible with certain expressions','No significant wrinkles detected']},
+                    redness:   {score: rand(10,50), descriptions: ['Some redness visible, possibly from sensitivity or rosacea','Mild redness in the cheek and nose area','Skin tone is generally even with minimal redness']},
+                    darkSpots: {score: rand(15,55), descriptions: ['Sun damage and age spots are becoming noticeable','A few dark spots visible, likely from sun exposure','Minimal hyperpigmentation detected']},
+                    texture:   {score: rand(15,50), descriptions: ['Texture is generally smooth with minor imperfections','Some roughness visible, likely from sun damage or dehydration','Skin texture is excellent']},
+                    pores:     {score: rand(20,55), descriptions: ['Pores are visible but normal size','Some enlarged pores visible in the T-zone','Pore size is within normal range']}
+                },
+                neck_chest: {
+                    sunDamage: {score: rand(25,65), descriptions: ['Freckling and sun spots visible across the décolletage','Moderate photoaging with brown spots on the chest','Mild sun damage visible on the neck and upper chest']},
+                    laxity:    {score: rand(20,55), descriptions: ['Skin appears crepey with loss of firmness','Mild laxity visible, especially on the neck','Skin still has good elasticity with minor laxity']},
+                    redness:   {score: rand(10,45), descriptions: ['Redness and flushing visible on the chest area','Mild diffuse redness across the décolletage','Minimal redness observed']},
+                    texture:   {score: rand(15,50), descriptions: ['Rough texture from chronic sun exposure','Mild textural irregularities on the chest','Texture is relatively smooth']},
+                    wrinkles:  {score: rand(15,50), descriptions: ['Horizontal neck lines (necklace lines) are visible','Fine lines developing on the chest','Minimal wrinkling in this area']}
+                },
+                hands: {
+                    sunDamage: {score: rand(25,65), descriptions: ['Age spots and freckling visible on the backs of the hands','Brown spots from cumulative sun exposure','Mild sun spots beginning to appear']},
+                    laxity:    {score: rand(20,60), descriptions: ['Thin, crepey skin with visible tendons and veins','Some loss of volume making veins more prominent','Skin still has reasonable thickness and elasticity']},
+                    texture:   {score: rand(15,50), descriptions: ['Rough, dry texture on the backs of the hands','Mild textural changes from sun and aging','Texture is relatively smooth and hydrated']},
+                    veins:     {score: rand(15,50), descriptions: ['Veins and tendons are prominently visible','Some visible veins due to volume loss','Veins are minimally visible']},
+                    dryness:   {score: rand(15,45), descriptions: ['Significant dryness and dehydration visible','Moderate dryness especially around the knuckles','Skin appears adequately moisturized']}
+                },
+                back: {
+                    acne:      {score: rand(20,60), descriptions: ['Active breakouts and congestion on the back','Mild back acne with occasional breakouts','Minimal congestion observed']},
+                    scarring:  {score: rand(15,50), descriptions: ['Post-inflammatory scarring from previous breakouts','Mild scarring and dark marks visible','Minimal scarring present']},
+                    texture:   {score: rand(15,50), descriptions: ['Rough, uneven texture across the upper back','Mild textural irregularities','Texture is generally smooth']},
+                    unevenTone:{score: rand(15,45), descriptions: ['Noticeable uneven pigmentation and dark marks','Mild discoloration from healed breakouts','Skin tone is relatively even']},
+                    hairRemoval:{score: rand(10,40), descriptions: ['Unwanted hair growth on the upper back','Moderate hair that could benefit from reduction','Minimal unwanted hair']}
+                },
+                legs: {
+                    veins:     {score: rand(20,55), descriptions: ['Spider veins visible on the thighs and calves','Mild spider veins beginning to appear','Minimal visible veins']},
+                    texture:   {score: rand(15,45), descriptions: ['Rough, bumpy texture possibly from keratosis pilaris','Mild textural irregularities','Texture is generally smooth']},
+                    sunDamage: {score: rand(15,45), descriptions: ['Sun damage and dark spots visible on the shins','Mild freckling from sun exposure','Minimal sun damage']},
+                    hairRemoval:{score: rand(15,50), descriptions: ['Unwanted hair growth suitable for laser reduction','Moderate hair that could benefit from treatment','Hair is minimal or well-managed']},
+                    dryness:   {score: rand(15,45), descriptions: ['Dry, flaky skin especially on the shins','Moderate dryness visible','Skin appears well-hydrated']}
+                }
+            };
+
+            const areaData = areaConcerns[bodyArea] || areaConcerns.face;
+            const concerns = {};
+            for (const [key, val] of Object.entries(areaData)) {
+                concerns[key] = {
+                    score: val.score,
+                    description: val.descriptions[rand(0, val.descriptions.length - 1)]
+                };
+            }
+
+            // Set severity from score
+            Object.values(concerns).forEach(c => {
+                c.severity = c.score <= 25 ? 'none' : c.score <= 45 ? 'mild' : c.score <= 65 ? 'moderate' : 'significant';
+            });
+
+            // Calculate from concerns, then enforce banned zone (no 63-73)
+            const cScores = Object.values(concerns).map(c => c.score);
+            const avgC = cScores.reduce((a,b)=>a+b,0) / cScores.length;
+            let overallScore = Math.round(100 - avgC + rand(-2,2));
+            overallScore = Math.max(38, Math.min(95, overallScore));
+            if (overallScore >= 63 && overallScore <= 73) {
+                overallScore = overallScore <= 68 ? 62 - rand(0,3) : 74 + rand(0,3);
+            }
+
+            // Area-specific treatment maps (clinically appropriate per body area)
+            const treatmentMaps = {
+                face: {
+                    redness:   [{treatment:'Sciton BBL', reason:'Gold standard for redness, rosacea, and broken capillaries', targets:['redness','darkSpots']},
+                                {treatment:'Sciton Moxi', reason:'Gentle laser to calm redness and even skin tone', targets:['redness','texture']}],
+                    darkSpots: [{treatment:'Sciton BBL', reason:'Targets melanin and pigment for clearer, more even skin', targets:['darkSpots','redness']},
+                                {treatment:'Sciton Halo', reason:'Hybrid fractional laser for deeper sun damage and pigmentation', targets:['darkSpots','texture']},
+                                {treatment:'VI Peel', reason:'Medical-grade peel that lifts surface pigment', targets:['darkSpots','texture']}],
+                    wrinkles:  [{treatment:'Botox', reason:'Relaxes dynamic lines in the forehead, between brows, and around eyes', targets:['wrinkles']},
+                                {treatment:'Sciton Halo', reason:'Full resurfacing laser that smooths fine lines', targets:['wrinkles','texture']},
+                                {treatment:'RF Microneedling', reason:'Stimulates deep collagen for firmer, tighter skin', targets:['wrinkles','texture']}],
+                    texture:   [{treatment:'Sciton Halo', reason:'Gold standard resurfacing laser for smoother skin', targets:['texture','darkSpots']},
+                                {treatment:'HydraFacial', reason:'Deep cleansing and hydration for an immediate glow', targets:['texture','pores']},
+                                {treatment:'Sciton Moxi', reason:'Gentle laser resurfacing for brighter skin', targets:['texture']}],
+                    pores:     [{treatment:'Microneedling', reason:'Collagen induction therapy that minimizes pore size', targets:['pores','texture']},
+                                {treatment:'RF Microneedling', reason:'Deeper collagen remodeling for refined pores', targets:['pores','texture']},
+                                {treatment:'SaltFacial', reason:'Sea salt exfoliation with LED to refine pores', targets:['pores','texture']}]
+                },
+                neck_chest: {
+                    sunDamage: [{treatment:'Sciton BBL', reason:'Clears sun spots and pigmentation on the décolletage', targets:['sunDamage','redness']},
+                                {treatment:'Sciton Halo', reason:'Deep resurfacing for stubborn chest sun damage', targets:['sunDamage','texture']}],
+                    laxity:    [{treatment:'RF Microneedling', reason:'Tightens and firms crepey skin on the neck and chest', targets:['laxity','texture']},
+                                {treatment:'Sculptra', reason:'Gradually rebuilds collagen for firmer skin', targets:['laxity']}],
+                    redness:   [{treatment:'Sciton BBL', reason:'Reduces redness and flushing on the chest', targets:['redness','sunDamage']},
+                                {treatment:'Sciton Moxi', reason:'Gentle laser to calm redness', targets:['redness','texture']}],
+                    texture:   [{treatment:'Sciton Moxi', reason:'Gentle resurfacing to smooth the décolletage', targets:['texture','sunDamage']},
+                                {treatment:'Microneedling', reason:'Stimulates collagen for smoother chest skin', targets:['texture','laxity']}],
+                    wrinkles:  [{treatment:'RF Microneedling', reason:'Smooths neck lines and chest wrinkles with collagen stimulation', targets:['wrinkles','laxity']},
+                                {treatment:'Sciton Moxi', reason:'Gentle laser resurfacing for fine lines', targets:['wrinkles','texture']}]
+                },
+                hands: {
+                    sunDamage: [{treatment:'Sciton BBL', reason:'Clears age spots and sun damage on the hands', targets:['sunDamage','unevenTone']},
+                                {treatment:'Sciton Moxi', reason:'Gentle laser to brighten and even skin tone', targets:['sunDamage','texture']}],
+                    laxity:    [{treatment:'Sculptra', reason:'Restores volume and collagen to thin, aging hands', targets:['laxity','veins']},
+                                {treatment:'RF Microneedling', reason:'Tightens and firms skin on the hands', targets:['laxity','texture']}],
+                    texture:   [{treatment:'Microneedling', reason:'Stimulates collagen for smoother skin on the hands', targets:['texture','laxity']},
+                                {treatment:'HydraFacial', reason:'Deep hydration to restore moisture and glow', targets:['texture','dryness']}],
+                    veins:     [{treatment:'Sculptra', reason:'Adds volume to conceal visible veins and tendons', targets:['veins','laxity']}],
+                    dryness:   [{treatment:'HydraFacial', reason:'Intensive hydration treatment for dry hands', targets:['dryness','texture']},
+                                {treatment:'SkinVive', reason:'Injectable hydration that plumps and moisturizes from within', targets:['dryness','texture']}]
+                },
+                back: {
+                    acne:      [{treatment:'SaltFacial', reason:'Deep exfoliation and LED therapy to clear back acne', targets:['acne','texture']},
+                                {treatment:'VI Peel', reason:'Medical-grade peel to clear breakouts and decongest', targets:['acne','unevenTone']}],
+                    scarring:  [{treatment:'Microneedling', reason:'Collagen induction to smooth acne scars', targets:['scarring','texture']},
+                                {treatment:'RF Microneedling', reason:'Deeper remodeling for stubborn scarring', targets:['scarring','texture']},
+                                {treatment:'Sciton Halo', reason:'Resurfacing laser to reduce scar visibility', targets:['scarring','texture']}],
+                    texture:   [{treatment:'Microneedling', reason:'Smooths rough, uneven texture on the back', targets:['texture','scarring']},
+                                {treatment:'SaltFacial', reason:'Exfoliation and LED for smoother skin', targets:['texture','acne']}],
+                    unevenTone:[{treatment:'Sciton BBL', reason:'Evens out dark marks and discoloration', targets:['unevenTone','scarring']},
+                                {treatment:'VI Peel', reason:'Brightens and evens post-inflammatory pigmentation', targets:['unevenTone','texture']}],
+                    hairRemoval:[{treatment:'Laser Hair Removal', reason:'Permanent hair reduction for the back area', targets:['hairRemoval']}]
+                },
+                legs: {
+                    veins:     [{treatment:'Sciton BBL', reason:'Targets and fades spider veins on the legs', targets:['veins']},
+                                {treatment:'Sciton Moxi', reason:'Gentle laser treatment for vascular concerns', targets:['veins','texture']}],
+                    texture:   [{treatment:'Microneedling', reason:'Smooths bumpy texture and keratosis pilaris', targets:['texture']},
+                                {treatment:'SaltFacial', reason:'Exfoliation to refine rough leg skin', targets:['texture','dryness']}],
+                    sunDamage: [{treatment:'Sciton BBL', reason:'Clears sun spots and freckling on the legs', targets:['sunDamage','unevenTone']},
+                                {treatment:'Sciton Moxi', reason:'Gentle laser for mild leg sun damage', targets:['sunDamage','texture']}],
+                    hairRemoval:[{treatment:'Laser Hair Removal', reason:'Long-term hair reduction for smooth legs', targets:['hairRemoval']}],
+                    dryness:   [{treatment:'HydraFacial', reason:'Intensive hydration for dry, dehydrated skin', targets:['dryness','texture']}]
+                }
+            };
+
+            const txMap = treatmentMaps[bodyArea] || treatmentMaps.face;
+
+            // Sort concerns by score and pick best treatment for each
+            const ranked = Object.entries(concerns).sort((a, b) => b[1].score - a[1].score);
+            const recs = [];
+            const used = new Set();
+
+            for (const [key, data] of ranked) {
+                if (recs.length >= 3 || data.score < 20) break;
+                const options = txMap[key] || [];
+                for (const opt of options) {
+                    if (!used.has(opt.treatment)) {
+                        recs.push({...opt, priority: recs.length + 1});
+                        used.add(opt.treatment);
+                        break;
+                    }
+                }
+            }
+
+            // Accessible entry point if none included
+            const accessible = new Set(['HydraFacial','SaltFacial','Signature Facial']);
+            if (!Array.from(used).some(t => accessible.has(t)) && bodyArea === 'face') {
+                recs.push({treatment:'HydraFacial', reason:'Hydrating and brightening facial. The perfect complement to any treatment plan', targets:['texture','pores'], priority: recs.length + 1});
+            }
+
+            const areaLabel = {face:'face', neck_chest:'neck and chest', hands:'hands', back:'back', legs:'legs'}[bodyArea] || 'skin';
+            const cNames = {wrinkles:'fine lines', redness:'redness', darkSpots:'pigmentation', texture:'skin texture', pores:'pore visibility', laxity:'skin laxity', sunDamage:'sun damage', veins:'visible veins', scarring:'scarring', hairRemoval:'unwanted hair', acne:'breakouts', dryness:'dryness', unevenTone:'uneven tone'};
+            const topTwo = ranked.slice(0, 2).filter(r => r[1].score > 20).map(r => cNames[r[0]] || r[0]);
+            const topTx = recs.slice(0, 2).map(r => r.treatment);
+            const summary = topTwo.length && topTx.length
+                ? `Your ${areaLabel} shows some signs of ${topTwo.join(' and ')}. A combination of ${topTx.join(' and ')} treatments would help restore a smoother, more youthful appearance. We'd love to see you in the studio for a personalized consultation.`
+                : `Your ${areaLabel} looks great overall! A targeted maintenance plan can help keep things looking their best.`;
+
+            return {
+                overallScore: overallScore,
+                skinAge: bodyArea === 'face' ? skinAges[rand(0, skinAges.length - 1)] : null,
+                concerns: concerns,
+                recommendations: recs,
+                summary: summary
+            };
+        }
+
+        function displayResults(data) {
+            document.getElementById('analysisSection').classList.remove('show');
+
+            // Show/hide demo mode banner
+            let demoBanner = document.getElementById('demoBanner');
+            if (!demoBanner) {
+                demoBanner = document.createElement('div');
+                demoBanner.id = 'demoBanner';
+                demoBanner.style.cssText = 'display:none; background:linear-gradient(135deg,#c58b7a,#b07060); color:#fff; text-align:center; padding:14px 20px; font-family:"Fira Sans",sans-serif; font-size:0.95rem; font-weight:600; position:fixed; top:0; left:0; right:0; z-index:99999; box-shadow:0 2px 12px rgba(0,0,0,0.2);';
+                demoBanner.innerHTML = 'Preview Mode: Our AI server is warming up. These are sample results, not a real analysis of your skin. <button onclick="this.parentElement.style.display=\'none\'" style="background:#fff; color:#b07060; border:none; padding:4px 14px; border-radius:4px; margin-left:12px; cursor:pointer; font-weight:600; font-size:0.85rem;">Dismiss</button>';
+                document.body.prepend(demoBanner);
+            }
+            if (data._isDemo) {
+                demoBanner.style.display = 'block';
+            } else {
+                demoBanner.style.display = 'none';
+            }
+
+            // HAUT.AI-INSPIRED: Animated score counter
+            const scoreEl = document.getElementById('overallScore');
+            const targetScore = data.overallScore;
+            let currentScore = 0;
+            const scoreInterval = setInterval(() => {
+                currentScore += Math.ceil((targetScore - currentScore) / 8);
+                if (currentScore >= targetScore) { currentScore = targetScore; clearInterval(scoreInterval); }
+                scoreEl.textContent = currentScore;
+            }, 40);
+
+            const circumference = 565.48;
+            const offset = circumference - (data.overallScore / 100) * circumference;
+
+            // HAUT.AI-INSPIRED: Dynamic ring color based on score
+            const scoreCircle = document.getElementById('scoreCircle');
+            const ringColor = data.overallScore >= 75 ? '#516b62' : data.overallScore >= 55 ? '#c68c2f' : '#c58b7a';
+            scoreCircle.setAttribute('stroke', ringColor);
+            scoreCircle.style.strokeDashoffset = offset;
+
+            // HAUT.AI-INSPIRED: Score interpretation badge
+            const interpEl = document.getElementById('scoreInterpretation');
+            let interpText, interpColor;
+            if (data.overallScore >= 85) { interpText = 'Excellent'; interpColor = '#4a6040'; }
+            else if (data.overallScore >= 75) { interpText = 'Very Good'; interpColor = '#516b62'; }
+            else if (data.overallScore >= 65) { interpText = 'Good'; interpColor = '#c68c2f'; }
+            else if (data.overallScore >= 55) { interpText = 'Fair'; interpColor = '#b08030'; }
+            else { interpText = 'Needs Attention'; interpColor = '#c58b7a'; }
+            interpEl.textContent = interpText;
+            interpEl.style.color = interpColor;
+
+            // Add subtext for score interpretation
+            let interpSubtext;
+            if (data.overallScore >= 85) interpSubtext = 'Your skin looks fantastic. A maintenance plan will keep it there.';
+            else if (data.overallScore >= 75) interpSubtext = 'Your skin is in great shape. A few targeted treatments could take it to the next level.';
+            else if (data.overallScore >= 65) interpSubtext = 'Good foundation. The right treatments can make a visible difference.';
+            else if (data.overallScore >= 55) interpSubtext = 'Several areas where professional treatments would make a real impact.';
+            else interpSubtext = 'Your skin has clear opportunities for improvement. A customized treatment plan can help significantly.';
+
+            let subtextEl = document.getElementById('scoreSubtext');
+            if (!subtextEl) {
+                subtextEl = document.createElement('div');
+                subtextEl.id = 'scoreSubtext';
+                subtextEl.style.cssText = 'text-align:center; font-size:0.88rem; color:#666; margin-top:6px; max-width:400px; margin-left:auto; margin-right:auto;';
+                interpEl.parentNode.insertBefore(subtextEl, interpEl.nextSibling);
+            }
+            subtextEl.textContent = interpSubtext;
+
+            // Skin Age (only show for face analysis)
+            if (data.skinAge) {
+                const userAge = document.getElementById('ageInput')?.value?.trim();
+                let skinAgeText = data.skinAge;
+                if (userAge) {
+                    skinAgeText += ` (actual age: ${userAge})`;
+                }
+                document.getElementById('skinAgeValue').textContent = skinAgeText;
+                document.getElementById('skinAgeBadge').classList.add('show');
+            } else {
+                document.getElementById('skinAgeBadge').classList.remove('show');
+                document.getElementById('skinAgeBadge').style.display = 'none';
+            }
+
+            // HAUT.AI-INSPIRED: Quick insights bar
+            const insightsBar = document.getElementById('insightsBar');
+            insightsBar.innerHTML = '';
+            const concernKeys = Object.keys(data.concerns);
+            const scores = concernKeys.map(k => data.concerns[k].score);
+            const topConcernKey = concernKeys[scores.indexOf(Math.max(...scores))];
+            const strongestKey = concernKeys[scores.indexOf(Math.min(...scores))];
+            const avgHealth = Math.round(100 - scores.reduce((a,b) => a+b, 0) / scores.length);
+
+            const insights = [
+                { icon: '🎂', label: 'Skin Age', value: data.skinAge || 'N/A' },
+                { icon: '⚡', label: 'Top Priority', value: concernNames[topConcernKey] || topConcernKey },
+                { icon: '✨', label: 'Best Score', value: concernNames[strongestKey] || strongestKey },
+                { icon: '📊', label: 'Avg Skin Health', value: avgHealth >= 75 ? 'Great' : avgHealth >= 55 ? 'Good' : avgHealth >= 40 ? 'Fair' : 'Needs Work' }
+            ];
+            insights.forEach(ins => {
+                const chip = document.createElement('div');
+                chip.className = 'insight-chip';
+                chip.innerHTML = `<span class="insight-icon">${ins.icon}</span><div><div class="insight-label">${ins.label}</div><div class="insight-value">${ins.value}</div></div>`;
+                insightsBar.appendChild(chip);
+            });
+
+            // HAUT.AI-INSPIRED: Radar chart
+            try {
+                const radarContainer = document.getElementById('radarContainer');
+                radarContainer.style.display = 'block';
+                const canvas = document.getElementById('radarChart');
+                const ctx = canvas.getContext('2d');
+                const W = canvas.width, H = canvas.height;
+                const cx = W / 2, cy = H / 2, R = Math.min(W, H) / 2 - 80;
+                ctx.clearRect(0, 0, W, H);
+
+                const radarLabels = {
+                    wrinkles: 'Lines', redness: 'Redness', darkSpots: 'Spots',
+                    texture: 'Texture', pores: 'Pores', laxity: 'Firmness',
+                    sunDamage: 'Sun', unevenTone: 'Tone',
+                    veins: 'Veins', scarring: 'Scars', hairRemoval: 'Hair',
+                    acne: 'Acne', dryness: 'Dryness'
+                };
+                const labels = concernKeys.map(k => radarLabels[k] || k);
+                const values = concernKeys.map(k => 100 - data.concerns[k].score);
+                const n = labels.length;
+
+                // Draw grid rings
+                [0.25, 0.5, 0.75, 1.0].forEach(ring => {
+                    ctx.beginPath();
+                    for (let i = 0; i <= n; i++) {
+                        const angle = (Math.PI * 2 * (i % n)) / n - Math.PI / 2;
+                        const x = cx + R * ring * Math.cos(angle);
+                        const y = cy + R * ring * Math.sin(angle);
+                        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+                    }
+                    ctx.closePath();
+                    ctx.strokeStyle = 'rgba(81,107,98,0.12)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                });
+
+                // Draw axis lines
+                for (let i = 0; i < n; i++) {
+                    const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
+                    ctx.beginPath();
+                    ctx.moveTo(cx, cy);
+                    ctx.lineTo(cx + R * Math.cos(angle), cy + R * Math.sin(angle));
+                    ctx.strokeStyle = 'rgba(81,107,98,0.1)';
+                    ctx.stroke();
+                }
+
+                // Draw filled data polygon
+                ctx.beginPath();
+                values.forEach((val, i) => {
+                    const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
+                    const r = (val / 100) * R;
+                    const x = cx + r * Math.cos(angle);
+                    const y = cy + r * Math.sin(angle);
+                    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+                });
+                ctx.closePath();
+                ctx.fillStyle = 'rgba(81,107,98,0.15)';
+                ctx.fill();
+                ctx.strokeStyle = '#516b62';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Draw data points & labels
+                values.forEach((val, i) => {
+                    const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
+                    const r = (val / 100) * R;
+                    const x = cx + r * Math.cos(angle);
+                    const y = cy + r * Math.sin(angle);
+
+                    // Dot
+                    ctx.beginPath();
+                    ctx.arc(x, y, 5, 0, Math.PI * 2);
+                    const dotColor = val >= 70 ? '#c0c8a9' : val >= 40 ? '#c68c2f' : '#c58b7a';
+                    ctx.fillStyle = dotColor;
+                    ctx.fill();
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    // Label
+                    const lx = cx + (R + 44) * Math.cos(angle);
+                    const ly = cy + (R + 44) * Math.sin(angle);
+                    ctx.fillStyle = '#1d1d1b';
+                    ctx.font = '700 14px Fira Sans, sans-serif';
+                    ctx.textAlign = Math.cos(angle) < -0.1 ? 'right' : Math.cos(angle) > 0.1 ? 'left' : 'center';
+                    ctx.textBaseline = Math.sin(angle) < -0.1 ? 'bottom' : Math.sin(angle) > 0.1 ? 'top' : 'middle';
+
+                    // Wrap long labels
+                    const words = labels[i].split(' ');
+                    if (words.length > 2) {
+                        const mid = Math.ceil(words.length / 2);
+                        ctx.fillText(words.slice(0, mid).join(' '), lx, ly - 6);
+                        ctx.fillText(words.slice(mid).join(' '), lx, ly + 8);
+                    } else {
+                        ctx.fillText(labels[i], lx, ly);
+                    }
+                });
+
+            } catch(e) { console.warn('Radar chart skipped:', e); }
+
+            // CLEAN UP any dynamically-added elements from a previous analysis
+            ['earlyBookingCTA','midBookingCTA','bottomBookingCTA','comboPlay','visiaUpsell'].forEach(id => {
+                const old = document.getElementById(id);
+                if (old) old.remove();
+            });
+
+            // BOOKING CTA after score/radar (high up on the page)
+            const earlyBookingCTA = document.createElement('div');
+            earlyBookingCTA.id = 'earlyBookingCTA';
+            earlyBookingCTA.style.cssText = 'text-align:center; margin:0 auto 40px; max-width:500px;';
+            earlyBookingCTA.innerHTML = `<a href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" style="display:inline-block; padding:16px 40px; background:var(--evergreen); color:#fff; border-radius:30px; font-size:1.05rem; font-weight:600; text-decoration:none; transition:all 0.3s; box-shadow:0 4px 14px rgba(81,107,98,0.3); letter-spacing:0.3px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(81,107,98,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 14px rgba(81,107,98,0.3)'">Book Your Free Consultation</a>
+            <div style="font-size:0.82rem; color:#888; margin-top:8px;">Complimentary VISIA scan + provider consult. No obligation.</div>`;
+            const concernsGridEl = document.getElementById('concernsGrid');
+            concernsGridEl.parentNode.insertBefore(earlyBookingCTA, concernsGridEl);
+
+            // Concerns. Sort by score descending (worst concerns first)
+            const concernsGrid = document.getElementById('concernsGrid');
+            concernsGrid.innerHTML = '';
+            const sortedConcerns = Object.keys(data.concerns).sort((a, b) => data.concerns[b].score - data.concerns[a].score);
+            sortedConcerns.forEach((key, idx) => {
+                const concern = data.concerns[key];
+                const card = document.createElement('div');
+                card.className = 'concern-card';
+                card.style.animationDelay = `${0.2 + idx * 0.15}s`;
+
+                // Invert: show health score (higher = better, matching overall score)
+                const healthScore = 100 - concern.score;
+                const scoreColor = healthScore >= 70 ? '#c0c8a9' : healthScore >= 40 ? '#c68c2f' : '#c58b7a';
+                const isTopPriority = idx === 0 && concern.score > 40;
+
+                // Contextual meaning for each score range
+                let healthLabel, contextLine;
+                if (healthScore >= 75) {
+                    healthLabel = 'GREAT';
+                    contextLine = 'Looking good here. Maintenance will keep it that way.';
+                } else if (healthScore >= 55) {
+                    healthLabel = 'GOOD';
+                    contextLine = 'Minor signs visible. Easy to address with the right treatment.';
+                } else if (healthScore >= 40) {
+                    healthLabel = 'FAIR';
+                    contextLine = 'Noticeable concern. Treatment would make a real difference.';
+                } else {
+                    healthLabel = 'NEEDS WORK';
+                    contextLine = 'This is a priority area. Professional treatment strongly recommended.';
+                }
+                const severityClass = healthScore >= 75 ? 'severity-none' : healthScore >= 55 ? 'severity-mild' : healthScore >= 40 ? 'severity-moderate' : 'severity-significant';
+
+                card.innerHTML = `
+                    ${isTopPriority ? '<div class="top-priority-badge">Top Priority</div>' : ''}
+                    <div class="concern-name">${concernNames[key]}</div>
+                    <div style="display:flex; align-items:baseline; gap:8px; margin:4px 0 2px;">
+                        <div class="concern-score-number" style="color:${scoreColor}; margin:0;">${healthScore}</div>
+                        <span class="concern-severity ${severityClass}" style="margin:0;">${healthLabel}</span>
+                    </div>
+                    <div class="concern-score-bar" style="margin:8px 0 4px;">
+                        <div class="concern-score-fill" style="--score: ${healthScore}%; background-color: ${scoreColor}; width: ${healthScore}%"></div>
+                    </div>
+                    <p class="concern-description" style="margin:8px 0 4px; font-size:0.92rem;">${concern.description}</p>
+                    <p style="font-size:0.85rem; color:var(--evergreen); font-weight:500; margin:4px 0 0; font-style:italic;">${contextLine}</p>
+                `;
+                concernsGrid.appendChild(card);
+            });
+
+            // BOOKING CTA between concerns and recommendations
+            const midBookingCTA = document.createElement('div');
+            midBookingCTA.id = 'midBookingCTA';
+            midBookingCTA.style.cssText = 'text-align:center; margin:10px auto 30px; padding:24px 20px; background:linear-gradient(135deg, rgba(81,107,98,0.06), rgba(81,107,98,0.02)); border-radius:12px; border:1.5px solid var(--evergreen); max-width:500px;';
+            midBookingCTA.innerHTML = `<div style="font-family:'Cormorant Garamond',serif; font-size:1.5rem; color:var(--evergreen); margin-bottom:8px;">Ready to Get Started?</div>
+            <a href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" style="display:inline-block; padding:14px 36px; background:var(--sand); color:#fff; border-radius:30px; font-size:1rem; font-weight:600; text-decoration:none; transition:all 0.3s; box-shadow:0 4px 12px rgba(193,168,144,0.3);" onmouseover="this.style.background='var(--gold)'" onmouseout="this.style.background='var(--sand)'">Book Your Free Consultation</a>`;
+            concernsGridEl.parentNode.appendChild(midBookingCTA);
+
+            // Recommendations
+            const recCards = document.getElementById('recommendationCards');
+            recCards.innerHTML = '';
+            data.recommendations.forEach((rec, idx) => {
+                const card = document.createElement('div');
+                card.className = 'recommendation-card';
+                card.style.animationDelay = `${0.2 + idx * 0.15}s`;
+
+                const tagColor = rec.targets[0] && data.concerns[rec.targets[0]].score <= 30 ? 'mint' : 
+                                rec.targets[0] && data.concerns[rec.targets[0]].score <= 60 ? 'gold' : 'peach';
+
+                card.innerHTML = `
+                    <div class="rec-header">
+                        <h3 class="rec-treatment">${rec.treatment}</h3>
+                        <div class="rec-priority">${idx === 0 ? 'Top Pick' : 'Priority ' + rec.priority}</div>
+                    </div>
+                    <p class="rec-reason">${rec.reason}</p>
+                    <div class="rec-targets">
+                        ${rec.targets.map(target => `<span class="rec-tag tag-${tagColor}">${concernNames[target]}</span>`).join('')}
+                    </div>
+                    <a href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" style="display:inline-block; margin-top:12px; padding:8px 20px; background:var(--sand); color:#fff; border-radius:20px; font-size:0.82rem; font-weight:600; text-decoration:none; transition:all 0.3s;" onmouseover="this.style.background='var(--evergreen)'" onmouseout="this.style.background='var(--sand)'">Book Consultation</a>
+                `;
+                recCards.appendChild(card);
+            });
+
+            // SKINCARE PRODUCT RECOMMENDATIONS
+            if (data.productRecommendations && data.productRecommendations.length > 0) {
+                data.productRecommendations.forEach((pr, idx) => {
+                    const pCard = document.createElement('div');
+                    pCard.className = 'recommendation-card';
+                    pCard.style.animationDelay = `${0.2 + (data.recommendations.length + idx) * 0.15}s`;
+                    pCard.innerHTML = `
+                        <div class="rec-header" style="background:linear-gradient(135deg, var(--sand) 0%, var(--gold) 100%);">
+                            <h3 class="rec-treatment">${pr.product}</h3>
+                            <div class="rec-priority" style="background:rgba(255,255,255,0.25); color:#fff;">Skincare</div>
+                        </div>
+                        <p class="rec-reason">${pr.reason}</p>
+                        <a href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" style="display:inline-block; margin-top:12px; padding:8px 20px; background:var(--sand); color:#fff; border-radius:20px; font-size:0.82rem; font-weight:600; text-decoration:none; transition:all 0.3s;" onmouseover="this.style.background='var(--evergreen)'" onmouseout="this.style.background='var(--sand)'">Book Consultation</a>
+                    `;
+                    recCards.appendChild(pCard);
+                });
+            }
+
+            // SUGGESTED COMBO PLAY
+            if (data.suggestedCombo) {
+                const comboDiv = document.createElement('div');
+                comboDiv.id = 'comboPlay';
+                comboDiv.style.cssText = 'background:linear-gradient(135deg, rgba(198,140,47,0.08), rgba(193,168,144,0.12)); border:1px solid var(--sand); border-radius:12px; padding:24px 28px; margin-top:24px; text-align:center;';
+                comboDiv.innerHTML = `<div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:1.5px; color:var(--sand); font-weight:700; margin-bottom:8px;">Recommended Treatment Stack</div>
+                <p style="font-size:0.95rem; color:var(--black); line-height:1.6;">${data.suggestedCombo}</p>`;
+                recCards.parentElement.appendChild(comboDiv);
+            }
+
+            // PROMINENT BOOKING CTA
+            const bookingCTA = document.createElement('div');
+            bookingCTA.id = 'bottomBookingCTA';
+            bookingCTA.style.cssText = 'text-align:center; margin-top:32px;';
+            bookingCTA.innerHTML = `<a href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" style="display:inline-block; padding:18px 48px; background:var(--evergreen); color:#fff; border-radius:30px; font-size:1.15rem; font-weight:700; text-decoration:none; transition:all 0.3s; box-shadow:0 6px 20px rgba(81,107,98,0.35); letter-spacing:0.5px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 28px rgba(81,107,98,0.45)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 20px rgba(81,107,98,0.35)'">Book Your Complimentary Consultation</a>`;
+            recCards.parentElement.appendChild(bookingCTA);
+
+            // VISIA upsell banner
+            const visiaDiv = document.createElement('div');
+            visiaDiv.id = 'visiaUpsell';
+            visiaDiv.style.cssText = 'background:var(--evergreen); border-radius:16px; padding:32px 28px; text-align:center; margin-top:28px; color:var(--von-white);';
+            visiaDiv.innerHTML = `
+                <h3 style="font-family:Georgia,serif; font-size:1.3rem; margin-bottom:10px; color:var(--von-white);">Want the Full Picture?</h3>
+                <p style="font-size:0.92rem; line-height:1.6; opacity:0.9; max-width:500px; margin:0 auto 18px;">Our in-studio VISIA system sees what selfies can't: UV damage, bacteria, and below-surface concerns. Free consultation included.</p>
+                <a href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" style="display:inline-block; padding:14px 34px; background:var(--sand); color:#fff; border-radius:30px; font-size:1rem; font-weight:600; text-decoration:none; transition:all 0.3s; box-shadow:0 4px 12px rgba(0,0,0,0.15);" onmouseover="this.style.background='var(--gold)'" onmouseout="this.style.background='var(--sand)'">Book Your Complimentary VISIA Consultation</a>
+                <div style="margin-top:14px; font-size:0.82rem; opacity:0.6;">100% Complimentary &middot; VISIA Assessment + Provider Consult &middot; ~50 Minutes</div>
+            `;
+            recCards.parentElement.appendChild(visiaDiv);
+
+            // Store analysis for report download
+            window.lastAnalysis = data;
+
+            // Show results
+            document.getElementById('resultsSection').classList.add('show');
+            document.getElementById('recommendationsSection').classList.add('show');
+            document.getElementById('ctaSection').classList.add('show');
+
+            window.scrollTo({ top: document.getElementById('resultsSection').offsetTop - 50, behavior: 'smooth' });
+        }
+
+        // Build treatment plan HTML entirely on the client (no server call needed)
+        function buildReportHTML(patientName, analysis) {
+            const overall = analysis.overallScore || '...';
+            const skinAge = analysis.skinAge || null;
+            const summary = analysis.summary || '';
+            const concerns = analysis.concerns || {};
+            const recs = analysis.recommendations || [];
+
+            const concernLabels = {
+                wrinkles: 'Wrinkles & Fine Lines',
+                redness: 'Redness & Rosacea',
+                darkSpots: 'Dark Spots & Hyperpigmentation',
+                texture: 'Skin Texture & Smoothness',
+                pores: 'Pore Size & Visibility',
+                laxity: 'Skin Laxity & Crepiness',
+                sunDamage: 'Sun Damage & Photoaging',
+                veins: 'Visible Veins & Vascularity',
+                scarring: 'Scarring & Marks',
+                hairRemoval: 'Unwanted Hair',
+                acne: 'Body Acne & Breakouts',
+                dryness: 'Dryness & Dehydration',
+                unevenTone: 'Uneven Skin Tone'
+            };
+
+            let concernRows = '';
+            for (const [key, val] of Object.entries(concerns)) {
+                const label = concernLabels[key] || key;
+                const c = val || {};
+                const score = c.score || 0;
+                const severity = (c.severity || 'none').toUpperCase();
+                const desc = c.description || '';
+                const color = score <= 30 ? '#c0c8a9' : score <= 60 ? '#c68c2f' : '#c58b7a';
+                concernRows += `
+                <tr>
+                    <td style="padding:10px 12px; border-bottom:1px solid #ebe9e4; font-weight:500; color:#1d1d1b;">${label}</td>
+                    <td style="padding:10px 12px; border-bottom:1px solid #ebe9e4; text-align:center;">
+                        <span style="display:inline-block; padding:3px 10px; border-radius:12px; background:${color}20; color:${color}; font-weight:600; font-size:0.85em;">${severity}</span>
+                    </td>
+                    <td style="padding:10px 12px; border-bottom:1px solid #ebe9e4; color:#555; font-size:0.9em;">${desc}</td>
+                </tr>`;
+            }
+
+            let recItems = '';
+            recs.forEach((rec, i) => {
+                const treatment = rec.treatment || '';
+                const reason = rec.reason || rec.description || '';
+                recItems += `
+                <div style="display:flex; gap:12px; margin-bottom:14px; align-items:flex-start;">
+                    <div style="min-width:28px; height:28px; background:#516b62; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:0.85em;">${i + 1}</div>
+                    <div>
+                        <div style="font-weight:600; color:#1d1d1b; margin-bottom:2px;">${treatment}</div>
+                        <div style="color:#555; font-size:0.9em;">${reason}</div>
+                    </div>
+                </div>`;
+            });
+
+            let productItems = '';
+            const prods = analysis.productRecommendations || [];
+            prods.forEach(pr => {
+                productItems += `
+                <div style="display:flex; gap:12px; margin-bottom:12px; align-items:flex-start; padding:10px 14px; background:#faf8f5; border-radius:8px; border-left:3px solid #c1a890;">
+                    <div>
+                        <div style="font-weight:600; color:#1d1d1b; margin-bottom:2px;">${pr.product}</div>
+                        <div style="color:#555; font-size:0.9em;">${pr.reason}</div>
+                    </div>
+                </div>`;
+            });
+
+            return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Von &amp; Co Aesthetics - Treatment Plan</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Fira+Sans:wght@300;400;500;600&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Fira Sans',sans-serif; color:#1d1d1b; background:#fff; }
+  .page { max-width:800px; margin:0 auto; padding:40px; }
+  @media print { .page { padding:20px; } }
+</style>
+</head><body>
+<div class="page">
+  <div style="background:#516b62; padding:30px 35px; border-radius:12px 12px 0 0; text-align:center;">
+    <div style="font-family:'Cormorant Garamond',serif; font-size:1.8em; color:#fff; font-weight:500;">Von & Co Aesthetics</div>
+    <div style="color:#ebe4d5; font-size:0.9em; margin-top:4px; letter-spacing:1px;">PERSONALIZED SKIN ANALYSIS REPORT</div>
+  </div>
+  <div style="background:#ebe9e4; padding:16px 35px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+    <div><span style="color:#888; font-size:0.85em;">Prepared for </span><strong>${patientName}</strong></div>
+    <div style="display:flex; gap:24px;">
+      <div><span style="color:#888; font-size:0.85em;">Overall Score: </span><strong style="color:#516b62; font-size:1.1em;">${overall}/100</strong></div>
+      ${skinAge ? `<div><span style="color:#888; font-size:0.85em;">Est. Skin Age: </span><strong style="color:#516b62;">${skinAge}</strong></div>` : ''}
+    </div>
+  </div>
+  <div style="padding:25px 35px; border-left:3px solid #c1a890; margin:25px 0; background:#faf8f5; border-radius:0 8px 8px 0;">
+    <div style="font-size:0.8em; text-transform:uppercase; letter-spacing:1.5px; color:#c1a890; margin-bottom:6px;">Summary</div>
+    <p style="color:#333; line-height:1.6; font-size:0.95em;">${summary}</p>
+  </div>
+  <div style="margin:0 0 30px;">
+    <div style="font-family:'Cormorant Garamond',serif; font-size:1.4em; color:#516b62; margin-bottom:14px; padding:0 0 8px; border-bottom:2px solid #ebe9e4;">Skin Analysis Results</div>
+    <table style="width:100%; border-collapse:collapse;">
+      <tr style="background:#f5f3f0;">
+        <th style="padding:10px 12px; text-align:left; font-size:0.85em; text-transform:uppercase; letter-spacing:0.5px; color:#888;">Concern</th>
+        <th style="padding:10px 12px; text-align:center; font-size:0.85em; text-transform:uppercase; letter-spacing:0.5px; color:#888;">Level</th>
+        <th style="padding:10px 12px; text-align:left; font-size:0.85em; text-transform:uppercase; letter-spacing:0.5px; color:#888;">Assessment</th>
+      </tr>
+      ${concernRows}
+    </table>
+  </div>
+  <div style="margin:0 0 30px;">
+    <div style="font-family:'Cormorant Garamond',serif; font-size:1.4em; color:#516b62; margin-bottom:14px; padding:0 0 8px; border-bottom:2px solid #ebe9e4;">Recommended Treatments</div>
+    ${recItems}
+  </div>
+  ${productItems ? `<div style="margin:0 0 30px;">
+    <div style="font-family:'Cormorant Garamond',serif; font-size:1.4em; color:#516b62; margin-bottom:14px; padding:0 0 8px; border-bottom:2px solid #ebe9e4;">Your Skincare Essentials</div>
+    ${productItems}
+  </div>` : ''}
+  <div style="display:flex; gap:16px; margin:0 0 25px; flex-wrap:wrap;">
+    <div style="flex:1; min-width:200px; background:linear-gradient(135deg,rgba(198,140,47,0.08),rgba(193,168,144,0.12)); border:1px solid #c68c2f; border-radius:10px; padding:18px 20px; text-align:center;">
+      <div style="font-weight:600; color:#516b62; margin-bottom:4px;">New Guest Offer</div>
+      <div style="font-size:0.88em; color:#555;">15% off your first visit, including treatments and same-day skincare.</div>
+    </div>
+    <div style="flex:1; min-width:200px; background:#516b62; border-radius:10px; padding:18px 20px; text-align:center; color:#fff;">
+      <div style="font-weight:600; margin-bottom:4px;">The Club. $149/month</div>
+      <div style="font-size:0.88em; color:#ebe4d5;">20% off lasers and microneedling. 15% off injectables, facials, and skincare. Funds bank, share, or gift.</div>
+    </div>
+  </div>
+  <div style="background:#516b62; padding:24px 35px; border-radius:0 0 12px 12px; text-align:center; color:#fff;">
+    <div style="font-family:'Cormorant Garamond',serif; font-size:1.3em; margin-bottom:6px;">Ready to Start Your Journey?</div>
+    <div style="font-size:0.9em; color:#ebe4d5; margin-bottom:8px;">Book a complimentary consultation with our expert providers.</div>
+    <div style="font-size:1em; font-weight:600; color:#c1a890;">239.799.4866</div>
+    <a href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" style="display:inline-block; margin-top:12px; padding:12px 28px; background:#c1a890; color:#fff; border-radius:25px; font-size:0.95em; font-weight:600; text-decoration:none;">Book Your Complimentary Consultation</a>
+    <div style="font-size:0.8em; color:rgba(255,255,255,0.5); margin-top:8px;">Naples, FL &nbsp;•&nbsp; Open 7 Days a Week</div>
+  </div>
+  <div style="text-align:center; margin-top:16px; font-size:0.75em; color:#aaa;">
+    This AI analysis is a preview of the personalized care at Von & Co Aesthetics and does not replace a professional consultation.
+  </div>
+</div>
+</body></html>`;
+        }
+
+        // View/download branded treatment plan one-pager (100% client-side)
+        function downloadReport() {
+            const btn = document.getElementById('downloadReportBtn');
+            if (!btn) return;
+
+            if (!window.lastAnalysis) {
+                alert('No analysis data available. Please complete a skin analysis first.');
+                return;
+            }
+
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = 'Generating...';
+            btn.disabled = true;
+
+            try {
+                const name = document.getElementById('leadName')?.value?.trim() || 'Guest';
+                const reportHtml = buildReportHTML(name, window.lastAnalysis);
+                const blob = new Blob([reportHtml], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+
+                // Try opening in new tab
+                const newTab = window.open(url, '_blank');
+
+                if (!newTab || newTab.closed) {
+                    // Popup blocked. Show inline preview
+                    const container = document.getElementById('reportPreviewContainer');
+                    const frame = document.getElementById('reportPreviewFrame');
+                    frame.src = url;
+                    container.style.display = 'block';
+                    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+
+                setTimeout(() => URL.revokeObjectURL(url), 30000);
+            } catch (err) {
+                console.error('Report generation failed:', err);
+                alert('Something went wrong. Please try again.');
+            }
+
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        }
+
+        // Smooth scroll for buttons
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
