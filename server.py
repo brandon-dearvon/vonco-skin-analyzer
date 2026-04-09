@@ -18,6 +18,7 @@ from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
 from anthropic import Anthropic
+import google.generativeai as genai
 
 # Load environment variables (override=True so env.txt takes precedence over system vars)
 load_dotenv(override=True)
@@ -51,6 +52,14 @@ MODE = "live" if LIVE_MODE else "demo"
 
 # Initialize Anthropic client (only if in live mode)
 client = Anthropic() if LIVE_MODE else None
+
+# Initialize Google Gemini client for fast vision processing
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+gemini_model = None
+if GOOGLE_API_KEY:
+    genai.configure(api_key=GOOGLE_API_KEY)
+    gemini_model = genai.GenerativeModel("gemini-2.0-flash")
+    print("[Gemini] Initialized gemini-2.0-flash for vision pipeline")
 
 # Rate limiting - protects against API cost abuse
 # Max 5 analyses per IP per hour
@@ -923,6 +932,104 @@ def build_user_prompt(user_age=None, body_area="face"):
     return base
 
 
+class _SkipToScoreCorrection(Exception):
+    """Internal: used to skip Step 2 when falling back to single-model Claude vision."""
+    def __init__(self, analysis):
+        self.analysis = analysis
+
+
+def _apply_score_correction(analysis):
+    """Server-side score correction: spread clustered concern scores and recalculate overallScore."""
+    try:
+        concerns = analysis.get("concerns", {})
+        if concerns and isinstance(concerns, dict):
+            concern_items = [(k, v) for k, v in concerns.items() if isinstance(v, dict) and "score" in v]
+            raw_scores = [v["score"] for k, v in concern_items]
+
+            if raw_scores:
+                avg_raw = sum(raw_scores) / len(raw_scores)
+                score_range = max(raw_scores) - min(raw_scores)
+
+                print(f"  [Score Debug] Raw concern scores: {dict((k, v['score']) for k, v in concern_items)}")
+                print(f"  [Score Debug] Avg={avg_raw:.1f}, Range={score_range}, Min={min(raw_scores)}, Max={max(raw_scores)}")
+
+                if score_range < 25 and len(raw_scores) >= 4:
+                    print(f"  [Score Fix] Scores too clustered (range={score_range}). Spreading...")
+                    sorted_items = sorted(concern_items, key=lambda x: x[1]["score"])
+                    n = len(sorted_items)
+                    spread_low = max(3, avg_raw - 25)
+                    spread_high = min(88, avg_raw + 25)
+                    for i, (key, val) in enumerate(sorted_items):
+                        if n > 1:
+                            t = i / (n - 1)
+                        else:
+                            t = 0.5
+                        new_score = int(spread_low + t * (spread_high - spread_low))
+                        new_score = max(2, min(92, new_score + random.randint(-3, 3)))
+                        concerns[key]["score"] = new_score
+                        if new_score <= 25:
+                            concerns[key]["severity"] = "none"
+                        elif new_score <= 45:
+                            concerns[key]["severity"] = "mild"
+                        elif new_score <= 65:
+                            concerns[key]["severity"] = "moderate"
+                        else:
+                            concerns[key]["severity"] = "significant"
+
+                    print(f"  [Score Fix] Spread scores: {dict((k, concerns[k]['score']) for k, v in concern_items)}")
+
+                final_scores = [concerns[k]["score"] for k, _ in concern_items]
+                avg_concern = sum(final_scores) / len(final_scores)
+                jitter = random.randint(-2, 2)
+                calculated_score = max(38, min(95, int(100 - avg_concern + jitter)))
+
+                if 63 <= calculated_score <= 73:
+                    if calculated_score <= 68:
+                        calculated_score = 62 - random.randint(0, 3)
+                    else:
+                        calculated_score = 74 + random.randint(0, 3)
+                    print(f"  [Score Fix] Score was in banned zone, pushed to {calculated_score}")
+
+                original = analysis.get("overallScore", "?")
+                print(f"  [Score Fix] Model said {original}, concerns avg {avg_concern:.0f}, final overallScore = {calculated_score}")
+                analysis["overallScore"] = calculated_score
+
+    except Exception as e:
+        print(f"  [Score Fix] Error in recalculation, keeping model score: {e}")
+
+
+def _sanitize_response(analysis):
+    """Sanitize em dashes and capitalize skinAge."""
+    import re
+
+    def strip_em_dashes(obj):
+        if isinstance(obj, str):
+            return obj.replace("\u2014", ", ").replace("\u2013", " to ")
+        elif isinstance(obj, dict):
+            return {k: strip_em_dashes(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [strip_em_dashes(item) for item in obj]
+        return obj
+
+    analysis = strip_em_dashes(analysis)
+
+    if "skinAge" in analysis and isinstance(analysis["skinAge"], str):
+        def smart_title(s):
+            words = s.split()
+            skip = {"to", "and", "or"}
+            result = []
+            for i, w in enumerate(words):
+                if re.match(r'^\d', w):
+                    result.append(w)
+                elif w.lower() in skip and i > 0:
+                    result.append(w.lower())
+                else:
+                    result.append(w.capitalize())
+            return " ".join(result)
+        analysis["skinAge"] = smart_title(analysis["skinAge"])
+
+    return analysis
+
 @app.route("/api/analyze", methods=["POST"])
 def analyze():
     """Analyze skin from uploaded image"""
@@ -984,12 +1091,102 @@ def analyze():
         analysis = generate_demo_analysis(body_area)
         return jsonify(analysis)
 
-    # Live mode - call Claude API
+    # Live mode - dual-model pipeline: Gemini vision → Claude analysis
     try:
+        t_start = time.time()
+
         # Encode image to base64
         image_base64 = base64.standard_b64encode(image_bytes).decode("utf-8")
 
-        # Call Claude API with vision
+        # ── STEP 1: Gemini Flash — fast image description ──
+        if gemini_model:
+            gemini_prompt = (
+                "You are an expert dermatologist examining a patient photo. "
+                "Describe what you see in exhaustive clinical detail. Include:\n"
+                "- Skin tone, texture, and overall complexion\n"
+                "- Any visible wrinkles, fine lines, and their location/depth\n"
+                "- Redness, inflammation, broken capillaries, or rosacea signs\n"
+                "- Dark spots, hyperpigmentation, melasma, sun damage\n"
+                "- Pore size and visibility, especially on nose/cheeks/forehead\n"
+                "- Skin laxity, sagging, jowling, loss of volume\n"
+                "- Acne, scarring, texture irregularities\n"
+                "- Under-eye concerns (dark circles, hollows, puffiness)\n"
+                "- Overall skin health impression and estimated skin age\n"
+                "- Any non-skin observations (this is not a skin photo, foreign object, etc.)\n\n"
+                "Be extremely thorough. Your description will be used by another AI "
+                "to generate a structured skin assessment, so include every relevant detail. "
+                "Do NOT provide treatment recommendations — just describe what you see."
+            )
+            import PIL.Image
+            image_pil = PIL.Image.open(BytesIO(image_bytes))
+            gemini_response = gemini_model.generate_content(
+                [gemini_prompt, image_pil],
+                generation_config=genai.types.GenerationConfig(
+                    max_output_tokens=1500,
+                    temperature=0.2,
+                )
+            )
+            skin_description = gemini_response.text.strip()
+            t_gemini = time.time()
+            print(f"  [Pipeline] Gemini vision completed in {t_gemini - t_start:.1f}s ({len(skin_description)} chars)")
+        else:
+            # Fallback: if no Gemini key, use Claude vision directly (slower)
+            print("  [Pipeline] No Gemini key — falling back to Claude vision")
+            fallback_response = client.messages.create(
+                model="claude-sonnet-4-5-20250929",
+                max_tokens=2500,
+                system=SYSTEM_PROMPT,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image",
+                                "source": {
+                                    "type": "base64",
+                                    "media_type": media_type,
+                                    "data": image_base64,
+                                },
+                            },
+                            {
+                                "type": "text",
+                                "text": build_user_prompt(request.form.get("age"), body_area)
+                            }
+                        ],
+                    }
+                ],
+            )
+            response_text = fallback_response.content[0].text.strip()
+            # Skip Step 2, jump straight to JSON parsing
+            if response_text.startswith("```json"):
+                response_text = response_text[7:]
+            if response_text.startswith("```"):
+                response_text = response_text[3:]
+            if response_text.endswith("```"):
+                response_text = response_text[:-3]
+            response_text = response_text.strip()
+            analysis = json.loads(response_text)
+            # Jump past Step 2 to score correction
+            raise _SkipToScoreCorrection(analysis)
+
+        # ── STEP 2: Claude Sonnet — structured JSON analysis (text-only, fast) ──
+        age_context = ""
+        user_age_val = request.form.get("age")
+        if user_age_val and body_area == "face":
+            age_context = f" The patient is {user_age_val} years old. Compare their estimated skin age to their actual age."
+        elif user_age_val:
+            age_context = f" The patient is {user_age_val} years old."
+
+        area_instruction = BODY_AREA_PROMPTS.get(body_area, BODY_AREA_PROMPTS["face"])
+        skin_age_note = " Set skinAge to null since this is not a facial analysis." if body_area != "face" else ""
+
+        claude_prompt = (
+            f"A dermatologist has examined a patient's skin photo and provided this detailed description:\n\n"
+            f"--- CLINICAL OBSERVATION ---\n{skin_description}\n--- END OBSERVATION ---\n\n"
+            f"Based on this clinical observation, provide a detailed skin assessment in the JSON format specified. "
+            f"{area_instruction}{age_context}{skin_age_note}"
+        )
+
         response = client.messages.create(
             model="claude-sonnet-4-5-20250929",
             max_tokens=2500,
@@ -997,24 +1194,14 @@ def analyze():
             messages=[
                 {
                     "role": "user",
-                    "content": [
-                        {
-                            "type": "image",
-                            "source": {
-                                "type": "base64",
-                                "media_type": media_type,
-                                "data": image_base64,
-                            },
-                        },
-                        {
-                            "type": "text",
-                            "text": build_user_prompt(request.form.get("age"), body_area)
-                        }
-                    ],
+                    "content": claude_prompt
                 }
             ],
         )
-        
+        t_claude = time.time()
+        print(f"  [Pipeline] Claude analysis completed in {t_claude - (t_gemini if gemini_model else t_start):.1f}s")
+        print(f"  [Pipeline] Total pipeline: {t_claude - t_start:.1f}s")
+
         # Extract response text
         response_text = response.content[0].text.strip()
         
@@ -1034,112 +1221,24 @@ def analyze():
         if analysis.get("rejected"):
             return jsonify(analysis), 422
 
-        # === SERVER-SIDE SCORE CORRECTION ===
-        # The model clusters ALL concern scores in a tight 25-35 band, which
-        # always averages to ~32, always giving overallScore ~68.
-        # Fix: detect clustering and spread scores to reflect actual variation,
-        # then recalculate overallScore from the (possibly corrected) concerns.
-        try:
-            concerns = analysis.get("concerns", {})
-            if concerns and isinstance(concerns, dict):
-                concern_items = [(k, v) for k, v in concerns.items() if isinstance(v, dict) and "score" in v]
-                raw_scores = [v["score"] for k, v in concern_items]
-
-                if raw_scores:
-                    avg_raw = sum(raw_scores) / len(raw_scores)
-                    score_range = max(raw_scores) - min(raw_scores)
-
-                    print(f"  [Score Debug] Raw concern scores: {dict((k, v['score']) for k, v in concern_items)}")
-                    print(f"  [Score Debug] Avg={avg_raw:.1f}, Range={score_range}, Min={min(raw_scores)}, Max={max(raw_scores)}")
-
-                    # SPREAD FIX: If all scores are within a 25-point band,
-                    # the model is being lazy. Stretch them to use more range
-                    # while preserving relative order.
-                    if score_range < 25 and len(raw_scores) >= 4:
-                        print(f"  [Score Fix] Scores too clustered (range={score_range}). Spreading...")
-                        sorted_items = sorted(concern_items, key=lambda x: x[1]["score"])
-                        n = len(sorted_items)
-                        # Map lowest concern to avg-25 and highest to avg+25
-                        # (50-point spread centered on the model's average)
-                        spread_low = max(3, avg_raw - 25)
-                        spread_high = min(88, avg_raw + 25)
-                        for i, (key, val) in enumerate(sorted_items):
-                            if n > 1:
-                                t = i / (n - 1)  # 0.0 to 1.0
-                            else:
-                                t = 0.5
-                            new_score = int(spread_low + t * (spread_high - spread_low))
-                            # Add tiny jitter
-                            new_score = max(2, min(92, new_score + random.randint(-3, 3)))
-                            concerns[key]["score"] = new_score
-                            # Update severity label
-                            if new_score <= 25:
-                                concerns[key]["severity"] = "none"
-                            elif new_score <= 45:
-                                concerns[key]["severity"] = "mild"
-                            elif new_score <= 65:
-                                concerns[key]["severity"] = "moderate"
-                            else:
-                                concerns[key]["severity"] = "significant"
-
-                        new_scores = [concerns[k]["score"] for k, v in concern_items]
-                        print(f"  [Score Fix] Spread scores: {dict((k, concerns[k]['score']) for k, v in concern_items)}")
-
-                    # Recalculate overallScore from (possibly corrected) concern scores
-                    final_scores = [concerns[k]["score"] for k, _ in concern_items]
-                    avg_concern = sum(final_scores) / len(final_scores)
-                    jitter = random.randint(-2, 2)
-                    calculated_score = max(38, min(95, int(100 - avg_concern + jitter)))
-
-                    # BANNED ZONE: Never return 63-73 (the "always 68" dead zone)
-                    # Push to whichever edge is closer
-                    if 63 <= calculated_score <= 73:
-                        if calculated_score <= 68:
-                            calculated_score = 62 - random.randint(0, 3)  # push down to 59-62
-                        else:
-                            calculated_score = 74 + random.randint(0, 3)  # push up to 74-77
-                        print(f"  [Score Fix] Score was in banned zone, pushed to {calculated_score}")
-
-                    original = analysis.get("overallScore", "?")
-                    print(f"  [Score Fix] Model said {original}, concerns avg {avg_concern:.0f}, final overallScore = {calculated_score}")
-                    analysis["overallScore"] = calculated_score
-
-        except Exception as e:
-            print(f"  [Score Fix] Error in recalculation, keeping model score: {e}")
-
-        # === SANITIZE EM DASHES from all string values in the response ===
-        # The AI model sometimes returns em dashes despite prompt instructions.
-        # Strip them all server-side so they never reach the frontend.
-        def strip_em_dashes(obj):
-            if isinstance(obj, str):
-                return obj.replace("\u2014", ", ").replace("\u2013", " to ")
-            elif isinstance(obj, dict):
-                return {k: strip_em_dashes(v) for k, v in obj.items()}
-            elif isinstance(obj, list):
-                return [strip_em_dashes(item) for item in obj]
-            return obj
-        analysis = strip_em_dashes(analysis)
-
-        # === CAPITALIZE skinAge to match other display fields ===
-        # Use custom capitalization to handle "late 20s" -> "Late 20s" (not "Late 20S")
-        if "skinAge" in analysis and isinstance(analysis["skinAge"], str):
-            import re
-            def smart_title(s):
-                words = s.split()
-                skip = {"to", "and", "or"}
-                result = []
-                for i, w in enumerate(words):
-                    if re.match(r'^\d', w):  # starts with digit like "20s"
-                        result.append(w)
-                    elif w.lower() in skip and i > 0:
-                        result.append(w.lower())
-                    else:
-                        result.append(w.capitalize())
-                return " ".join(result)
-            analysis["skinAge"] = smart_title(analysis["skinAge"])
+        # Apply score correction and sanitization
+        _apply_score_correction(analysis)
+        analysis = _sanitize_response(analysis)
 
         return jsonify(analysis)
     
+    except _SkipToScoreCorrection as skip:
+        # Fallback path: Claude vision was used directly (no Gemini key)
+        # analysis is already parsed JSON, jump to score correction + return
+        analysis = skip.analysis
+        if analysis.get("rejected"):
+            return jsonify(analysis), 422
+        # Score correction and sanitization are duplicated here for the fallback path
+        # (same logic as below the normal path — kept in sync)
+        _apply_score_correction(analysis)
+        analysis = _sanitize_response(analysis)
+        return jsonify(analysis)
+
     except json.JSONDecodeError as e:
         import traceback
         traceback.print_exc()
@@ -1184,7 +1283,9 @@ def print_startup_banner():
     ╚══════════════════════════════════════════════════════════════╝
     
     Mode: {MODE.upper()}
-    {f"API Key: {'*' * 10}{API_KEY[-10:] if API_KEY else 'Not configured'}" if LIVE_MODE else "Demo Mode - No API Key"}
+    {f"Anthropic Key: {'*' * 10}{API_KEY[-10:] if API_KEY else 'Not configured'}" if LIVE_MODE else "Demo Mode - No API Key"}
+    Gemini: {"Enabled (gemini-2.0-flash)" if gemini_model else "Not configured - using Claude vision fallback"}
+    Pipeline: {"Gemini vision -> Claude analysis (fast)" if gemini_model else "Claude vision + analysis (slower)"}
     Debug: {DEBUG}
     Port: {PORT}
     
