@@ -1228,6 +1228,13 @@ def analyze():
         area_instruction = BODY_AREA_PROMPTS.get(body_area, BODY_AREA_PROMPTS["face"])
         skin_age_note = " Set skinAge to null since this is not a facial analysis." if body_area != "face" else ""
 
+        # Free image data from memory before Claude call (no longer needed)
+        try:
+            del image_bytes, image_base64, image_part
+        except NameError:
+            pass
+        import gc; gc.collect()
+
         claude_prompt = (
             f"A dermatologist has examined a patient's skin photo and provided this detailed description:\n\n"
             f"--- CLINICAL OBSERVATION ---\n{skin_description}\n--- END OBSERVATION ---\n\n"
@@ -1237,7 +1244,7 @@ def analyze():
 
         response = client.messages.create(
             model="claude-sonnet-4-5-20250929",
-            max_tokens=2500,
+            max_tokens=2000,
             system=SYSTEM_PROMPT,
             messages=[
                 {
@@ -1245,6 +1252,7 @@ def analyze():
                     "content": claude_prompt
                 }
             ],
+            timeout=45.0,
         )
         t_claude = time.time()
         print(f"  [Pipeline] Claude analysis completed in {t_claude - t_gemini:.1f}s")
