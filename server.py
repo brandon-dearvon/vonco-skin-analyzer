@@ -59,7 +59,7 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 gemini_client = None
 if GOOGLE_API_KEY:
     gemini_client = genai.Client(api_key=GOOGLE_API_KEY)
-    print("[Gemini] Initialized google-genai client for gemini-2.0-flash vision pipeline")
+    print("[Gemini] Initialized google-genai client for gemini-2.5-flash vision pipeline")
 
 # Rate limiting - protects against API cost abuse
 # Max 5 analyses per IP per hour
@@ -1120,7 +1120,7 @@ def analyze():
             import PIL.Image
             image_pil = PIL.Image.open(BytesIO(image_bytes))
             gemini_response = gemini_client.models.generate_content(
-                model="gemini-2.0-flash",
+                model="gemini-2.5-flash",
                 contents=[gemini_prompt, image_pil],
                 config=genai_types.GenerateContentConfig(
                     max_output_tokens=1500,
@@ -1285,7 +1285,7 @@ def print_startup_banner():
     
     Mode: {MODE.upper()}
     {f"Anthropic Key: {'*' * 10}{API_KEY[-10:] if API_KEY else 'Not configured'}" if LIVE_MODE else "Demo Mode - No API Key"}
-    Gemini: {"Enabled (gemini-2.0-flash)" if gemini_client else "Not configured - using Claude vision fallback"}
+    Gemini: {"Enabled (gemini-2.5-flash)" if gemini_client else "Not configured - using Claude vision fallback"}
     Pipeline: {"Gemini vision -> Claude analysis (fast)" if gemini_client else "Claude vision + analysis (slower)"}
     Debug: {DEBUG}
     Port: {PORT}
