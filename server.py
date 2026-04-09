@@ -1099,6 +1099,10 @@ def analyze():
         image_base64 = base64.standard_b64encode(image_bytes).decode("utf-8")
 
         # ── STEP 1: Gemini Flash — fast image description ──
+        # Try Gemini first; if it fails (503, timeout, etc.), fall back to Claude vision
+        skin_description = None
+        use_claude_vision_fallback = False
+
         if gemini_client:
             gemini_prompt = (
                 "You are an expert dermatologist examining a patient photo. "
@@ -1119,20 +1123,36 @@ def analyze():
             )
             import PIL.Image
             image_pil = PIL.Image.open(BytesIO(image_bytes))
-            gemini_response = gemini_client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=[gemini_prompt, image_pil],
-                config=genai_types.GenerateContentConfig(
-                    max_output_tokens=1500,
-                    temperature=0.2,
-                )
-            )
-            skin_description = gemini_response.text.strip()
-            t_gemini = time.time()
-            print(f"  [Pipeline] Gemini vision completed in {t_gemini - t_start:.1f}s ({len(skin_description)} chars)")
+
+            # Try Gemini up to 2 times with a brief pause between
+            for gemini_attempt in range(1, 3):
+                try:
+                    gemini_response = gemini_client.models.generate_content(
+                        model="gemini-2.5-flash",
+                        contents=[gemini_prompt, image_pil],
+                        config=genai_types.GenerateContentConfig(
+                            max_output_tokens=1500,
+                            temperature=0.2,
+                        )
+                    )
+                    skin_description = gemini_response.text.strip()
+                    t_gemini = time.time()
+                    print(f"  [Pipeline] Gemini vision completed in {t_gemini - t_start:.1f}s ({len(skin_description)} chars) [attempt {gemini_attempt}]")
+                    break  # success
+                except Exception as gemini_err:
+                    print(f"  [Pipeline] Gemini attempt {gemini_attempt} failed: {type(gemini_err).__name__}: {gemini_err}")
+                    if gemini_attempt < 2:
+                        time.sleep(1)  # brief pause before retry
+
+            if not skin_description:
+                print("  [Pipeline] Gemini failed after 2 attempts — falling back to Claude vision")
+                use_claude_vision_fallback = True
         else:
-            # Fallback: if no Gemini key, use Claude vision directly (slower)
+            use_claude_vision_fallback = True
             print("  [Pipeline] No Gemini key — falling back to Claude vision")
+
+        # Claude vision fallback: single call that does both vision + analysis
+        if use_claude_vision_fallback:
             fallback_response = client.messages.create(
                 model="claude-sonnet-4-5-20250929",
                 max_tokens=2500,
@@ -1157,6 +1177,8 @@ def analyze():
                     }
                 ],
             )
+            t_fallback = time.time()
+            print(f"  [Pipeline] Claude vision fallback completed in {t_fallback - t_start:.1f}s")
             response_text = fallback_response.content[0].text.strip()
             # Skip Step 2, jump straight to JSON parsing
             if response_text.startswith("```json"):
@@ -1200,7 +1222,7 @@ def analyze():
             ],
         )
         t_claude = time.time()
-        print(f"  [Pipeline] Claude analysis completed in {t_claude - (t_gemini if gemini_client else t_start):.1f}s")
+        print(f"  [Pipeline] Claude analysis completed in {t_claude - t_gemini:.1f}s")
         print(f"  [Pipeline] Total pipeline: {t_claude - t_start:.1f}s")
 
         # Extract response text
