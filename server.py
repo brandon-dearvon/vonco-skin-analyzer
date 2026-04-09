@@ -1095,6 +1095,31 @@ def analyze():
     try:
         t_start = time.time()
 
+        # ── Normalize image bytes ──
+        # Some JPEGs have unusual encoding (CMYK, progressive issues, EXIF
+        # rotation) that cause both Claude and Gemini to reject them.
+        # Re-encode through Pillow to produce clean RGB JPEG bytes.
+        try:
+            from PIL import Image as PILImage
+            pil_img = PILImage.open(BytesIO(image_bytes))
+            # Convert CMYK, RGBA, palette, etc. to RGB
+            if pil_img.mode not in ("RGB",):
+                pil_img = pil_img.convert("RGB")
+            # Handle EXIF orientation
+            try:
+                from PIL import ImageOps
+                pil_img = ImageOps.exif_transpose(pil_img)
+            except Exception:
+                pass
+            # Re-encode as JPEG
+            clean_buf = BytesIO()
+            pil_img.save(clean_buf, format="JPEG", quality=92)
+            image_bytes = clean_buf.getvalue()
+            media_type = "image/jpeg"
+            print(f"  [Image] Re-encoded to clean JPEG: {len(image_bytes)} bytes, {pil_img.size[0]}x{pil_img.size[1]}")
+        except Exception as img_err:
+            print(f"  [Image] Could not re-encode ({img_err}), using original bytes")
+
         # Encode image to base64
         image_base64 = base64.standard_b64encode(image_bytes).decode("utf-8")
 
