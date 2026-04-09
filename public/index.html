@@ -27,6 +27,10 @@
             --black: #1d1d1b;
         }
 
+        html, body {
+            overflow-x: hidden;
+        }
+
         body {
             font-family: 'Fira Sans', sans-serif;
             color: var(--black);
@@ -250,7 +254,6 @@
             text-decoration: none;
             display: inline-block;
             text-align: center;
-            white-space: nowrap;
         }
 
         .btn-primary {
@@ -1415,6 +1418,15 @@
             .lead-gate-card h2 {
                 font-size: 1.6rem;
             }
+
+            .btn-cta {
+                padding: 15px 24px;
+                font-size: 1rem;
+            }
+
+            .btn {
+                max-width: 100%;
+            }
         }
     </style>
 </head>
@@ -1673,12 +1685,12 @@
                 <div style="font-size:0.95rem; color:rgba(255,255,255,0.7); margin-top:4px; margin-bottom:24px;">or $1,499/year (save $289)</div>
                 <div style="font-size:1.1rem; color:#fff; line-height:1.7; max-width:500px; margin:0 auto 28px; font-weight:400;">Every dollar you pay converts to <strong style="color:var(--sand);">Club Funds</strong> you spend on any treatment or product. Bank them, share them, or gift them. Your money never disappears.</div>
                 <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin-bottom:28px;">
-                    <div style="background:rgba(255,255,255,0.12); backdrop-filter:blur(4px); border-radius:12px; padding:20px 28px; min-width:180px; border:1px solid rgba(198,140,47,0.2);">
+                    <div style="background:rgba(255,255,255,0.12); backdrop-filter:blur(4px); border-radius:12px; padding:20px 28px; min-width:140px; flex:1; border:1px solid rgba(198,140,47,0.2);">
                         <div style="font-size:2.2rem; font-weight:700; color:var(--sand); line-height:1;">20%</div>
                         <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; color:var(--sand); font-weight:600; margin:4px 0 8px;">off every time</div>
                         <div style="font-size:0.95rem; color:rgba(255,255,255,0.85); line-height:1.5;">Lasers, Microneedling, Hair Removal</div>
                     </div>
-                    <div style="background:rgba(255,255,255,0.12); backdrop-filter:blur(4px); border-radius:12px; padding:20px 28px; min-width:180px; border:1px solid rgba(198,140,47,0.2);">
+                    <div style="background:rgba(255,255,255,0.12); backdrop-filter:blur(4px); border-radius:12px; padding:20px 28px; min-width:140px; flex:1; border:1px solid rgba(198,140,47,0.2);">
                         <div style="font-size:2.2rem; font-weight:700; color:var(--sand); line-height:1;">15%</div>
                         <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; color:var(--sand); font-weight:600; margin:4px 0 8px;">off every time</div>
                         <div style="font-size:0.95rem; color:rgba(255,255,255,0.85); line-height:1.5;">Injectables, Facials, Peels, Skincare</div>
