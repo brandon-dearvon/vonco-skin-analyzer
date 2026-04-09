@@ -1121,15 +1121,15 @@ def analyze():
                 "to generate a structured skin assessment, so include every relevant detail. "
                 "Do NOT provide treatment recommendations — just describe what you see."
             )
-            import PIL.Image
-            image_pil = PIL.Image.open(BytesIO(image_bytes))
+            # Build image part from raw bytes (no PIL needed — avoids libjpeg dependency)
+            image_part = genai_types.Part.from_bytes(data=image_bytes, mime_type=media_type)
 
             # Try Gemini up to 2 times with a brief pause between
             for gemini_attempt in range(1, 3):
                 try:
                     gemini_response = gemini_client.models.generate_content(
                         model="gemini-2.5-flash",
-                        contents=[gemini_prompt, image_pil],
+                        contents=[gemini_prompt, image_part],
                         config=genai_types.GenerateContentConfig(
                             max_output_tokens=1500,
                             temperature=0.2,
