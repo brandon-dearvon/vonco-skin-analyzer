@@ -2177,8 +2177,46 @@
             // Fire API call immediately (no artificial delay)
             try {
                 const formData = new FormData();
-                const blob = await fetch(uploadedImage).then(r => r.blob());
-                formData.append('image', blob, 'photo.jpg');
+
+                // === Frontend image normalization via canvas ===
+                // This produces a clean, standard JPEG that all APIs accept.
+                // Handles CMYK→RGB, EXIF rotation, and unusual encodings natively.
+                let imageBlob;
+                try {
+                    imageBlob = await new Promise((resolve, reject) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            try {
+                                // Cap at 1200px on longest side to reduce upload size & memory
+                                let w = img.naturalWidth, h = img.naturalHeight;
+                                const MAX = 1200;
+                                if (w > MAX || h > MAX) {
+                                    const scale = MAX / Math.max(w, h);
+                                    w = Math.round(w * scale);
+                                    h = Math.round(h * scale);
+                                }
+                                const canvas = document.createElement('canvas');
+                                canvas.width = w;
+                                canvas.height = h;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(img, 0, 0, w, h);
+                                canvas.toBlob(
+                                    blob => blob ? resolve(blob) : reject(new Error('canvas toBlob returned null')),
+                                    'image/jpeg',
+                                    0.90
+                                );
+                            } catch (e) { reject(e); }
+                        };
+                        img.onerror = () => reject(new Error('Image load failed'));
+                        img.src = uploadedImage;
+                    });
+                    console.log(`[Analyzer] Canvas-normalized JPEG: ${imageBlob.size} bytes`);
+                } catch (canvasErr) {
+                    console.warn('[Analyzer] Canvas normalization failed, using raw file:', canvasErr);
+                    imageBlob = await fetch(uploadedImage).then(r => r.blob());
+                }
+
+                formData.append('image', imageBlob, 'photo.jpg');
                 const userAge = enteredAge;
                 if (userAge) formData.append('age', userAge);
                 const bodyArea = document.getElementById('bodyAreaSelect')?.value || 'face';
@@ -2191,7 +2229,7 @@
                 let response = null;
                 for (let attempt = 1; attempt <= 2; attempt++) {
                     try {
-                        console.log(`[Analyzer] API attempt ${attempt}/3...`);
+                        console.log(`[Analyzer] API attempt ${attempt}/2...`);
                         response = await fetch(`${API_BASE}/api/analyze`, {
                             method: 'POST',
                             body: formData
@@ -2210,7 +2248,7 @@
                         console.warn(`[Analyzer] Attempt ${attempt} network error: ${lastErr}`);
                     }
                     // Wait 1.5s before retry
-                    if (attempt < 3) await new Promise(r => setTimeout(r, 1500));
+                    if (attempt < 2) await new Promise(r => setTimeout(r, 1500));
                 }
 
                 stopAnalysisProgress(!!data);
@@ -2229,8 +2267,8 @@
                     data._isLive = true;
                     showLeadGate(data);
                 } else {
-                    // All 3 attempts failed: use demo fallback WITH visible banner
-                    console.error('API FAILED after 3 attempts, using demo fallback. Last error:', lastErr);
+                    // All attempts failed: use demo fallback WITH visible banner
+                    console.error('API FAILED after 2 attempts, using demo fallback. Last error:', lastErr);
                     const demoData = generateDemoResults();
                     demoData._isDemo = true;
                     console.log('Demo score:', demoData.overallScore, '(should NOT be 63-73)');
