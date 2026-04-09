@@ -18,7 +18,8 @@ from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
 from anthropic import Anthropic
-import google.generativeai as genai
+from google import genai
+from google.genai import types as genai_types
 
 # Load environment variables (override=True so env.txt takes precedence over system vars)
 load_dotenv(override=True)
@@ -55,11 +56,10 @@ client = Anthropic() if LIVE_MODE else None
 
 # Initialize Google Gemini client for fast vision processing
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-gemini_model = None
+gemini_client = None
 if GOOGLE_API_KEY:
-    genai.configure(api_key=GOOGLE_API_KEY)
-    gemini_model = genai.GenerativeModel("gemini-2.0-flash")
-    print("[Gemini] Initialized gemini-2.0-flash for vision pipeline")
+    gemini_client = genai.Client(api_key=GOOGLE_API_KEY)
+    print("[Gemini] Initialized google-genai client for gemini-2.0-flash vision pipeline")
 
 # Rate limiting - protects against API cost abuse
 # Max 5 analyses per IP per hour
@@ -1099,7 +1099,7 @@ def analyze():
         image_base64 = base64.standard_b64encode(image_bytes).decode("utf-8")
 
         # ── STEP 1: Gemini Flash — fast image description ──
-        if gemini_model:
+        if gemini_client:
             gemini_prompt = (
                 "You are an expert dermatologist examining a patient photo. "
                 "Describe what you see in exhaustive clinical detail. Include:\n"
@@ -1119,9 +1119,10 @@ def analyze():
             )
             import PIL.Image
             image_pil = PIL.Image.open(BytesIO(image_bytes))
-            gemini_response = gemini_model.generate_content(
-                [gemini_prompt, image_pil],
-                generation_config=genai.types.GenerationConfig(
+            gemini_response = gemini_client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=[gemini_prompt, image_pil],
+                config=genai_types.GenerateContentConfig(
                     max_output_tokens=1500,
                     temperature=0.2,
                 )
@@ -1199,7 +1200,7 @@ def analyze():
             ],
         )
         t_claude = time.time()
-        print(f"  [Pipeline] Claude analysis completed in {t_claude - (t_gemini if gemini_model else t_start):.1f}s")
+        print(f"  [Pipeline] Claude analysis completed in {t_claude - (t_gemini if gemini_client else t_start):.1f}s")
         print(f"  [Pipeline] Total pipeline: {t_claude - t_start:.1f}s")
 
         # Extract response text
@@ -1284,8 +1285,8 @@ def print_startup_banner():
     
     Mode: {MODE.upper()}
     {f"Anthropic Key: {'*' * 10}{API_KEY[-10:] if API_KEY else 'Not configured'}" if LIVE_MODE else "Demo Mode - No API Key"}
-    Gemini: {"Enabled (gemini-2.0-flash)" if gemini_model else "Not configured - using Claude vision fallback"}
-    Pipeline: {"Gemini vision -> Claude analysis (fast)" if gemini_model else "Claude vision + analysis (slower)"}
+    Gemini: {"Enabled (gemini-2.0-flash)" if gemini_client else "Not configured - using Claude vision fallback"}
+    Pipeline: {"Gemini vision -> Claude analysis (fast)" if gemini_client else "Claude vision + analysis (slower)"}
     Debug: {DEBUG}
     Port: {PORT}
     
