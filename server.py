@@ -1126,41 +1126,50 @@ def analyze():
 
         analysis = None
 
+        # Try Gemini models in priority order: 2.5-flash (best quality) → 2.0-flash-lite (fastest, most available)
+        GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash-lite"]
+
         if gemini_client:
-            for gemini_attempt in range(1, 3):
-                try:
-                    gemini_response = gemini_client.models.generate_content(
-                        model="gemini-2.5-flash",
-                        contents=[image_part, user_prompt],
-                        config=genai_types.GenerateContentConfig(
-                            system_instruction=SYSTEM_PROMPT,
-                            max_output_tokens=2500,
-                            temperature=0.3,
+            for model_name in GEMINI_MODELS:
+                if analysis is not None:
+                    break
+                for attempt in range(1, 3):
+                    try:
+                        gemini_response = gemini_client.models.generate_content(
+                            model=model_name,
+                            contents=[image_part, user_prompt],
+                            config=genai_types.GenerateContentConfig(
+                                system_instruction=SYSTEM_PROMPT,
+                                max_output_tokens=2500,
+                                temperature=0.3,
+                            )
                         )
-                    )
-                    response_text = gemini_response.text.strip()
-                    t_done = time.time()
-                    print(f"  [Pipeline] Gemini vision+analysis completed in {t_done - t_start:.1f}s ({len(response_text)} chars) [attempt {gemini_attempt}]")
+                        response_text = gemini_response.text.strip()
+                        t_done = time.time()
+                        print(f"  [Pipeline] {model_name} vision+analysis completed in {t_done - t_start:.1f}s ({len(response_text)} chars) [attempt {attempt}]")
 
-                    # Strip markdown fences if present
-                    if response_text.startswith("```json"):
-                        response_text = response_text[7:]
-                    if response_text.startswith("```"):
-                        response_text = response_text[3:]
-                    if response_text.endswith("```"):
-                        response_text = response_text[:-3]
-                    response_text = response_text.strip()
+                        # Strip markdown fences if present
+                        if response_text.startswith("```json"):
+                            response_text = response_text[7:]
+                        if response_text.startswith("```"):
+                            response_text = response_text[3:]
+                        if response_text.endswith("```"):
+                            response_text = response_text[:-3]
+                        response_text = response_text.strip()
 
-                    analysis = json.loads(response_text)
-                    break  # success
-                except json.JSONDecodeError as je:
-                    print(f"  [Pipeline] Gemini attempt {gemini_attempt} returned invalid JSON: {je}")
-                    if gemini_attempt < 2:
-                        time.sleep(0.5)
-                except Exception as gemini_err:
-                    print(f"  [Pipeline] Gemini attempt {gemini_attempt} failed: {type(gemini_err).__name__}: {gemini_err}")
-                    if gemini_attempt < 2:
-                        time.sleep(1)
+                        analysis = json.loads(response_text)
+                        break  # success — exit attempt loop
+                    except json.JSONDecodeError as je:
+                        print(f"  [Pipeline] {model_name} attempt {attempt} returned invalid JSON: {je}")
+                        if attempt < 2:
+                            time.sleep(0.5)
+                    except Exception as gemini_err:
+                        print(f"  [Pipeline] {model_name} attempt {attempt} failed: {type(gemini_err).__name__}: {gemini_err}")
+                        if attempt < 2:
+                            time.sleep(0.5)
+                        else:
+                            print(f"  [Pipeline] {model_name} exhausted — trying next model")
+                            break  # exit attempt loop, try next model
 
         # ── FALLBACK: Claude Sonnet vision (if Gemini unavailable or failed) ──
         if analysis is None and client:
