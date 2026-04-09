@@ -1126,8 +1126,8 @@ def analyze():
 
         analysis = None
 
-        # Try Gemini models in priority order: 2.5-flash (best quality) → 2.0-flash-lite (fastest, most available)
-        GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash-lite"]
+        # Try Gemini models in priority order: 2.5-flash (best, thinking model) → 2.0-flash (stable fallback)
+        GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash"]
 
         if gemini_client:
             for model_name in GEMINI_MODELS:
@@ -1135,12 +1135,15 @@ def analyze():
                     break
                 for attempt in range(1, 3):
                     try:
+                        # Gemini 2.5 Flash is a "thinking" model — internal reasoning tokens
+                        # consume the max_output_tokens budget. Set 8192 to leave plenty of
+                        # room for both thinking and the ~3-5KB JSON response.
                         gemini_response = gemini_client.models.generate_content(
                             model=model_name,
                             contents=[image_part, user_prompt],
                             config=genai_types.GenerateContentConfig(
                                 system_instruction=SYSTEM_PROMPT,
-                                max_output_tokens=2500,
+                                max_output_tokens=8192,
                                 temperature=0.3,
                             )
                         )
