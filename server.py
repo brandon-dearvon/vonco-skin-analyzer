@@ -932,12 +932,6 @@ def build_user_prompt(user_age=None, body_area="face"):
     return base
 
 
-class _SkipToScoreCorrection(Exception):
-    """Internal: used to skip Step 2 when falling back to single-model Claude vision."""
-    def __init__(self, analysis):
-        self.analysis = analysis
-
-
 def _apply_score_correction(analysis):
     """Server-side score correction: spread clustered concern scores and recalculate overallScore."""
     try:
@@ -1123,61 +1117,54 @@ def analyze():
         # Encode image to base64
         image_base64 = base64.standard_b64encode(image_bytes).decode("utf-8")
 
-        # ── STEP 1: Gemini Flash — fast image description ──
-        # Try Gemini first; if it fails (503, timeout, etc.), fall back to Claude vision
-        skin_description = None
-        use_claude_vision_fallback = False
+        # ── SINGLE-MODEL PIPELINE: Gemini 2.5 Flash (vision + JSON analysis) ──
+        # One fast call does everything: see the image + produce structured JSON.
+        # Claude Sonnet is kept as fallback only if Gemini is unavailable/fails.
+
+        image_part = genai_types.Part.from_bytes(data=image_bytes, mime_type=media_type)
+        user_prompt = build_user_prompt(request.form.get("age"), body_area)
+
+        analysis = None
 
         if gemini_client:
-            gemini_prompt = (
-                "You are an expert dermatologist examining a patient photo. "
-                "Describe what you see in exhaustive clinical detail. Include:\n"
-                "- Skin tone, texture, and overall complexion\n"
-                "- Any visible wrinkles, fine lines, and their location/depth\n"
-                "- Redness, inflammation, broken capillaries, or rosacea signs\n"
-                "- Dark spots, hyperpigmentation, melasma, sun damage\n"
-                "- Pore size and visibility, especially on nose/cheeks/forehead\n"
-                "- Skin laxity, sagging, jowling, loss of volume\n"
-                "- Acne, scarring, texture irregularities\n"
-                "- Under-eye concerns (dark circles, hollows, puffiness)\n"
-                "- Overall skin health impression and estimated skin age\n"
-                "- Any non-skin observations (this is not a skin photo, foreign object, etc.)\n\n"
-                "Be extremely thorough. Your description will be used by another AI "
-                "to generate a structured skin assessment, so include every relevant detail. "
-                "Do NOT provide treatment recommendations — just describe what you see."
-            )
-            # Build image part from raw bytes (no PIL needed — avoids libjpeg dependency)
-            image_part = genai_types.Part.from_bytes(data=image_bytes, mime_type=media_type)
-
-            # Try Gemini up to 2 times with a brief pause between
             for gemini_attempt in range(1, 3):
                 try:
                     gemini_response = gemini_client.models.generate_content(
                         model="gemini-2.5-flash",
-                        contents=[gemini_prompt, image_part],
+                        contents=[image_part, user_prompt],
                         config=genai_types.GenerateContentConfig(
-                            max_output_tokens=1500,
-                            temperature=0.2,
+                            system_instruction=SYSTEM_PROMPT,
+                            max_output_tokens=2500,
+                            temperature=0.3,
                         )
                     )
-                    skin_description = gemini_response.text.strip()
-                    t_gemini = time.time()
-                    print(f"  [Pipeline] Gemini vision completed in {t_gemini - t_start:.1f}s ({len(skin_description)} chars) [attempt {gemini_attempt}]")
+                    response_text = gemini_response.text.strip()
+                    t_done = time.time()
+                    print(f"  [Pipeline] Gemini vision+analysis completed in {t_done - t_start:.1f}s ({len(response_text)} chars) [attempt {gemini_attempt}]")
+
+                    # Strip markdown fences if present
+                    if response_text.startswith("```json"):
+                        response_text = response_text[7:]
+                    if response_text.startswith("```"):
+                        response_text = response_text[3:]
+                    if response_text.endswith("```"):
+                        response_text = response_text[:-3]
+                    response_text = response_text.strip()
+
+                    analysis = json.loads(response_text)
                     break  # success
+                except json.JSONDecodeError as je:
+                    print(f"  [Pipeline] Gemini attempt {gemini_attempt} returned invalid JSON: {je}")
+                    if gemini_attempt < 2:
+                        time.sleep(0.5)
                 except Exception as gemini_err:
                     print(f"  [Pipeline] Gemini attempt {gemini_attempt} failed: {type(gemini_err).__name__}: {gemini_err}")
                     if gemini_attempt < 2:
-                        time.sleep(1)  # brief pause before retry
+                        time.sleep(1)
 
-            if not skin_description:
-                print("  [Pipeline] Gemini failed after 2 attempts — falling back to Claude vision")
-                use_claude_vision_fallback = True
-        else:
-            use_claude_vision_fallback = True
-            print("  [Pipeline] No Gemini key — falling back to Claude vision")
-
-        # Claude vision fallback: single call that does both vision + analysis
-        if use_claude_vision_fallback:
+        # ── FALLBACK: Claude Sonnet vision (if Gemini unavailable or failed) ──
+        if analysis is None and client:
+            print("  [Pipeline] Gemini unavailable or failed — falling back to Claude Sonnet vision")
             fallback_response = client.messages.create(
                 model="claude-sonnet-4-5-20250929",
                 max_tokens=2500,
@@ -1196,16 +1183,16 @@ def analyze():
                             },
                             {
                                 "type": "text",
-                                "text": build_user_prompt(request.form.get("age"), body_area)
+                                "text": user_prompt,
                             }
                         ],
                     }
                 ],
+                timeout=60.0,
             )
-            t_fallback = time.time()
-            print(f"  [Pipeline] Claude vision fallback completed in {t_fallback - t_start:.1f}s")
+            t_done = time.time()
+            print(f"  [Pipeline] Claude vision fallback completed in {t_done - t_start:.1f}s")
             response_text = fallback_response.content[0].text.strip()
-            # Skip Step 2, jump straight to JSON parsing
             if response_text.startswith("```json"):
                 response_text = response_text[7:]
             if response_text.startswith("```"):
@@ -1214,64 +1201,18 @@ def analyze():
                 response_text = response_text[:-3]
             response_text = response_text.strip()
             analysis = json.loads(response_text)
-            # Jump past Step 2 to score correction
-            raise _SkipToScoreCorrection(analysis)
 
-        # ── STEP 2: Claude Sonnet — structured JSON analysis (text-only, fast) ──
-        age_context = ""
-        user_age_val = request.form.get("age")
-        if user_age_val and body_area == "face":
-            age_context = f" The patient is {user_age_val} years old. Compare their estimated skin age to their actual age."
-        elif user_age_val:
-            age_context = f" The patient is {user_age_val} years old."
+        if analysis is None:
+            raise Exception("Both Gemini and Claude failed to produce a valid analysis")
 
-        area_instruction = BODY_AREA_PROMPTS.get(body_area, BODY_AREA_PROMPTS["face"])
-        skin_age_note = " Set skinAge to null since this is not a facial analysis." if body_area != "face" else ""
-
-        # Free image data from memory before Claude call (no longer needed)
+        # Free image data from memory
         try:
             del image_bytes, image_base64, image_part
         except NameError:
             pass
         import gc; gc.collect()
 
-        claude_prompt = (
-            f"A dermatologist has examined a patient's skin photo and provided this detailed description:\n\n"
-            f"--- CLINICAL OBSERVATION ---\n{skin_description}\n--- END OBSERVATION ---\n\n"
-            f"Based on this clinical observation, provide a detailed skin assessment in the JSON format specified. "
-            f"{area_instruction}{age_context}{skin_age_note}"
-        )
-
-        response = client.messages.create(
-            model="claude-sonnet-4-5-20250929",
-            max_tokens=2000,
-            system=SYSTEM_PROMPT,
-            messages=[
-                {
-                    "role": "user",
-                    "content": claude_prompt
-                }
-            ],
-            timeout=45.0,
-        )
-        t_claude = time.time()
-        print(f"  [Pipeline] Claude analysis completed in {t_claude - t_gemini:.1f}s")
-        print(f"  [Pipeline] Total pipeline: {t_claude - t_start:.1f}s")
-
-        # Extract response text
-        response_text = response.content[0].text.strip()
-        
-        # Remove markdown code blocks if present
-        if response_text.startswith("```json"):
-            response_text = response_text[7:]
-        if response_text.startswith("```"):
-            response_text = response_text[3:]
-        if response_text.endswith("```"):
-            response_text = response_text[:-3]
-        response_text = response_text.strip()
-        
-        # Parse JSON response
-        analysis = json.loads(response_text)
+        print(f"  [Pipeline] Total pipeline: {time.time() - t_start:.1f}s")
 
         # Check if image was rejected (non-skin photo)
         if analysis.get("rejected"):
@@ -1281,18 +1222,6 @@ def analyze():
         _apply_score_correction(analysis)
         analysis = _sanitize_response(analysis)
 
-        return jsonify(analysis)
-    
-    except _SkipToScoreCorrection as skip:
-        # Fallback path: Claude vision was used directly (no Gemini key)
-        # analysis is already parsed JSON, jump to score correction + return
-        analysis = skip.analysis
-        if analysis.get("rejected"):
-            return jsonify(analysis), 422
-        # Score correction and sanitization are duplicated here for the fallback path
-        # (same logic as below the normal path — kept in sync)
-        _apply_score_correction(analysis)
-        analysis = _sanitize_response(analysis)
         return jsonify(analysis)
 
     except json.JSONDecodeError as e:
@@ -1340,8 +1269,9 @@ def print_startup_banner():
     
     Mode: {MODE.upper()}
     {f"Anthropic Key: {'*' * 10}{API_KEY[-10:] if API_KEY else 'Not configured'}" if LIVE_MODE else "Demo Mode - No API Key"}
-    Gemini: {"Enabled (gemini-2.5-flash)" if gemini_client else "Not configured - using Claude vision fallback"}
-    Pipeline: {"Gemini vision -> Claude analysis (fast)" if gemini_client else "Claude vision + analysis (slower)"}
+    Gemini: {"Enabled (gemini-2.5-flash)" if gemini_client else "Not configured"}
+    Pipeline: {"Gemini Flash single-call (vision+analysis)" if gemini_client else "Claude Sonnet vision fallback"}
+    Claude Fallback: {"Available" if client else "Not configured"}
     Debug: {DEBUG}
     Port: {PORT}
     
