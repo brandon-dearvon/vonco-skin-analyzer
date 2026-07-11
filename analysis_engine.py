@@ -1,0 +1,1293 @@
+"""Versioned, schema-validated, fail-closed visible-surface image analysis.
+
+The model may describe only visible surface features. Treatment discussion topics,
+version metadata, and safety language are added and validated by this module.
+Images are normalized in memory and are never written to disk.
+"""
+
+from __future__ import annotations
+
+import base64
+import copy
+import hashlib
+import json
+import logging
+import os
+import warnings
+from dataclasses import dataclass
+from io import BytesIO
+from typing import Any, Callable, Iterable, Mapping, Sequence
+
+from PIL import Image, ImageCms, ImageOps, ImageStat, UnidentifiedImageError
+
+
+LOGGER = logging.getLogger(__name__)
+
+ANALYSIS_VERSION = "visible-surface-v1.0.0"
+PROMPT_VERSION = "visible-surface-prompt-v1.0.0"
+SCHEMA_VERSION = "visible-surface-response-schema-v1.0.0"
+TOPIC_MAPPING_VERSION = "naples-service-map-v1.0.0"
+
+DEFAULT_PROVIDER_ORDER = ("openai", "gemini", "anthropic")
+DEFAULT_MODELS = {
+    "openai": "gpt-5.6-terra",
+    "gemini": "gemini-2.5-flash",
+    "anthropic": "claude-sonnet-4-5-20250929",
+}
+
+DISCLAIMER = (
+    "This AI preview is limited to visible surface features in the submitted "
+    "images. It cannot diagnose or rule out disease, assess treatment safety or "
+    "eligibility, or replace an in-person evaluation by a qualified provider."
+)
+
+OBSERVATION_LABELS: dict[str, str] = {
+    "visible_lines": "Visible lines",
+    "visible_redness": "Visible redness",
+    "pigment_variation": "Visible pigment variation",
+    "surface_texture": "Visible surface texture",
+    "pore_visibility": "Visible pore appearance",
+    "laxity_appearance": "Visible laxity appearance",
+    "blemish_like_spots": "Blemish-like spots",
+    "scar_like_texture": "Scar-like texture",
+    "superficial_vessels": "Visible superficial vessels",
+    "visible_flaking": "Visible flaking",
+}
+
+OBSERVATION_LEVELS = (
+    "not_observed",
+    "subtle",
+    "visible",
+    "prominent",
+    "unable_to_assess",
+)
+IMAGE_ANGLES = ("single", "front", "left", "right")
+QUALITY_LEVELS = ("suitable", "limited", "retake")
+QUALITY_ISSUES = (
+    "not_skin",
+    "blur",
+    "low_light",
+    "overexposure",
+    "heavy_filter",
+    "obstruction",
+    "framing",
+    "angle_mismatch",
+    "low_resolution",
+    "low_contrast",
+    "uneven_lighting",
+    "unsupported_image",
+)
+QUALITY_GUIDANCE = (
+    "use_natural_even_light",
+    "hold_camera_steady",
+    "remove_filters",
+    "remove_makeup_if_possible",
+    "move_camera_farther_away",
+    "center_area_in_frame",
+    "remove_obstructions",
+    "retake_required_angles",
+    "upload_a_clear_skin_photo",
+    "use_a_supported_image_format",
+    "use_a_higher_resolution_image",
+)
+MEDICAL_REASON_CODES = (
+    "none",
+    "visible_concern_outside_cosmetic_scope",
+    "open_or_broken_skin",
+    "unable_to_assess_safely",
+)
+
+BODY_AREA_OBSERVATIONS: dict[str, tuple[str, ...]] = {
+    "face": tuple(OBSERVATION_LABELS),
+    "neck_chest": (
+        "visible_lines",
+        "visible_redness",
+        "pigment_variation",
+        "surface_texture",
+        "pore_visibility",
+        "laxity_appearance",
+        "blemish_like_spots",
+        "scar_like_texture",
+        "superficial_vessels",
+        "visible_flaking",
+    ),
+    "hands": (
+        "visible_lines",
+        "visible_redness",
+        "pigment_variation",
+        "surface_texture",
+        "laxity_appearance",
+        "blemish_like_spots",
+        "scar_like_texture",
+        "superficial_vessels",
+        "visible_flaking",
+    ),
+    "back": (
+        "visible_redness",
+        "pigment_variation",
+        "surface_texture",
+        "pore_visibility",
+        "blemish_like_spots",
+        "scar_like_texture",
+        "superficial_vessels",
+        "visible_flaking",
+    ),
+    "legs": (
+        "visible_redness",
+        "pigment_variation",
+        "surface_texture",
+        "laxity_appearance",
+        "blemish_like_spots",
+        "scar_like_texture",
+        "superficial_vessels",
+        "visible_flaking",
+    ),
+}
+
+BODY_AREA_ANGLE_CONTEXT: dict[str, dict[str, str]] = {
+    "face": {
+        "single": "single user-selected facial view",
+        "front": "front facial view",
+        "left": "left facial profile",
+        "right": "right facial profile",
+    },
+    "neck_chest": {
+        "single": "single user-selected neck and chest view",
+        "front": "center neck and chest view",
+        "left": "left oblique neck and chest view",
+        "right": "right oblique neck and chest view",
+    },
+    "hands": {
+        "single": "single user-selected hand view",
+        "front": "left hand capture slot",
+        "left": "right hand capture slot",
+        "right": "both hands capture slot",
+    },
+    "back": {
+        "single": "single user-selected back view",
+        "front": "center back capture slot",
+        "left": "left-side back capture slot",
+        "right": "right-side back capture slot",
+    },
+    "legs": {
+        "single": "single user-selected leg view",
+        "front": "left leg capture slot",
+        "left": "right leg capture slot",
+        "right": "both legs capture slot",
+    },
+}
+
+# Each entry is a current service listed by Von & Co in Naples. The model never
+# sees or selects this mapping. Only ordered, validated priority IDs reach it.
+DISCUSSION_TOPICS: dict[str, dict[str, str]] = {
+    "visible_lines": {
+        "id": "microneedling",
+        "name": "Microneedling",
+    },
+    "visible_redness": {
+        "id": "sciton_bbl_photofacial",
+        "name": "Sciton BBL Photofacial",
+    },
+    "pigment_variation": {
+        "id": "sciton_moxi_laser",
+        "name": "Sciton Moxi Laser",
+    },
+    "surface_texture": {
+        "id": "microneedling",
+        "name": "Microneedling",
+    },
+    "pore_visibility": {
+        "id": "microneedling",
+        "name": "Microneedling",
+    },
+    "laxity_appearance": {
+        "id": "rf_microneedling",
+        "name": "RF Microneedling",
+    },
+    "blemish_like_spots": {
+        "id": "hydrafacial",
+        "name": "Hydrafacial",
+    },
+    "scar_like_texture": {
+        "id": "microneedling",
+        "name": "Microneedling",
+    },
+    "superficial_vessels": {
+        "id": "sciton_bbl_photofacial",
+        "name": "Sciton BBL Photofacial",
+    },
+}
+
+# Deliberately conservative service-area pairings for the current menu. If a
+# selected area is absent, the preview omits the topic instead of extrapolating.
+DISCUSSION_TOPIC_AREAS: dict[str, frozenset[str]] = {
+    "sciton_bbl_photofacial": frozenset(
+        {"face", "neck_chest", "hands", "back", "legs"}
+    ),
+    "sciton_moxi_laser": frozenset({"face", "neck_chest"}),
+    "microneedling": frozenset({"face", "neck_chest"}),
+    "rf_microneedling": frozenset({"face", "neck_chest"}),
+    "hydrafacial": frozenset({"face"}),
+}
+
+FINAL_RESULT_KEYS = {
+    "status",
+    "bodyArea",
+    "analysisVersion",
+    "schemaVersion",
+    "topicMappingVersion",
+    "promptHash",
+    "model",
+    "imageCount",
+    "quality",
+    "observations",
+    "strengths",
+    "priorities",
+    "discussionTopics",
+    "medicalReview",
+    "disclaimer",
+}
+
+MAX_UPLOAD_BYTES = 12 * 1024 * 1024
+MAX_IMAGE_DIMENSION = 1600
+MAX_IMAGE_PIXELS = 40_000_000
+MIN_IMAGE_DIMENSION = 480
+
+
+def _enum_schema(values: Iterable[str]) -> dict[str, Any]:
+    return {"type": "string", "enum": list(values)}
+
+
+MODEL_OUTPUT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": [
+        "status",
+        "quality",
+        "observations",
+        "strengths",
+        "priorities",
+        "medicalReview",
+    ],
+    "properties": {
+        "status": _enum_schema(("complete", "retake", "medical_review")),
+        "quality": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["overall", "issues", "guidance"],
+            "properties": {
+                "overall": _enum_schema(QUALITY_LEVELS),
+                "issues": {
+                    "type": "array",
+                    "items": _enum_schema(QUALITY_ISSUES),
+                },
+                "guidance": {
+                    "type": "array",
+                    "items": _enum_schema(QUALITY_GUIDANCE),
+                },
+            },
+        },
+        "observations": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": len(OBSERVATION_LABELS),
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["id", "label", "level", "description", "angles"],
+                "properties": {
+                    "id": _enum_schema(OBSERVATION_LABELS),
+                    "label": _enum_schema(OBSERVATION_LABELS.values()),
+                    "level": _enum_schema(OBSERVATION_LEVELS),
+                    "description": {"type": "string"},
+                    "angles": {
+                        "type": "array",
+                        "items": _enum_schema(IMAGE_ANGLES),
+                    },
+                },
+            },
+        },
+        "strengths": {
+            "type": "array",
+            "maxItems": 2,
+            "items": _enum_schema(OBSERVATION_LABELS),
+        },
+        "priorities": {
+            "type": "array",
+            "maxItems": 2,
+            "items": _enum_schema(OBSERVATION_LABELS),
+        },
+        "medicalReview": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["suggested", "reason"],
+            "properties": {
+                "suggested": {"type": "boolean"},
+                "reason": _enum_schema(MEDICAL_REASON_CODES),
+            },
+        },
+    },
+}
+
+
+SYSTEM_PROMPT = """You review one or three user-submitted images for a limited, non-diagnostic visible-surface cosmetic preview.
+
+Safety and scope:
+- Describe only features directly visible in the submitted pixels.
+- Never diagnose or rule out a disease or condition.
+- Never infer UV damage, hydration, bacteria, ethnicity, sex, biological age, subsurface features, causes, treatment eligibility, or treatment safety.
+- Do not mention treatments, products, providers, scores, percentages, grades, skin age, or an overall score.
+- Do not compare the person with population norms or claim clinical-device equivalence.
+- Do not identify the person or infer age. Adult access is confirmed separately by the application.
+- If the pixels directly show an open, broken, bleeding-like, or clearly out-of-scope area, use medical_review without naming a diagnosis. Do not infer symptoms, timing, or change from a still image.
+- If the upload is not skin, is too unclear, appears heavily filtered, omits a required angle, or cannot support an honest review, use retake and return no observations, strengths, or priorities.
+
+Output discipline:
+- Return only JSON conforming exactly to the supplied schema.
+- Use only the supplied IDs, labels, levels, quality codes, guidance codes, angles, and medical reason codes.
+- A label must exactly match its observation ID's canonical label.
+- Include an observation only when supported by the images. Do not force findings.
+- strengths and priorities are ordered observation IDs, zero to two each. Do not force either list.
+- strengths may reference only not_observed or subtle observations.
+- priorities may reference only visible or prominent observations.
+- If an item cannot be judged, use unable_to_assess and do not make it a strength or priority.
+- For three views, use all relevant angle evidence and do not treat the views as separate people.
+- Description text must remain neutral, concise, and limited to what is visibly supported.
+"""
+
+
+def model_output_schema(body_area: str) -> dict[str, Any]:
+    """Return a strict provider schema limited to the selected body area."""
+
+    allowed_ids = BODY_AREA_OBSERVATIONS.get(body_area)
+    if not allowed_ids:
+        raise SchemaValidationError("body area is unsupported")
+    schema = copy.deepcopy(MODEL_OUTPUT_SCHEMA)
+    observation_properties = schema["properties"]["observations"]["items"]["properties"]
+    observation_properties["id"]["enum"] = list(allowed_ids)
+    observation_properties["label"]["enum"] = [OBSERVATION_LABELS[item] for item in allowed_ids]
+    schema["properties"]["strengths"]["items"]["enum"] = list(allowed_ids)
+    schema["properties"]["priorities"]["items"]["enum"] = list(allowed_ids)
+    return schema
+
+
+class AnalyzerError(RuntimeError):
+    """Base class for controlled analyzer failures."""
+
+
+class ProviderUnavailable(AnalyzerError):
+    """No configured provider produced a valid response."""
+
+
+class SchemaValidationError(AnalyzerError):
+    """Provider output violated the analyzer contract."""
+
+
+class ImageIntakeError(AnalyzerError):
+    """An uploaded file cannot safely be sent for analysis."""
+
+    def __init__(self, issue: str, guidance: str, message: str) -> None:
+        super().__init__(message)
+        self.issue = issue
+        self.guidance = guidance
+        self.public_message = message
+
+
+@dataclass(frozen=True)
+class NormalizedImage:
+    angle: str
+    data: bytes
+    media_type: str
+    width: int
+    height: int
+
+
+def _is_plain_dict(value: Any) -> bool:
+    return isinstance(value, dict)
+
+
+def _require_exact_keys(value: Any, keys: set[str], path: str) -> dict[str, Any]:
+    if not _is_plain_dict(value):
+        raise SchemaValidationError(f"{path} must be an object")
+    if set(value) != keys:
+        raise SchemaValidationError(f"{path} has unexpected or missing fields")
+    return value
+
+
+def _require_string(value: Any, path: str, *, max_length: int = 240) -> str:
+    if not isinstance(value, str) or not value.strip() or len(value) > max_length:
+        raise SchemaValidationError(f"{path} must be a non-empty bounded string")
+    return value.strip()
+
+
+def _require_string_list(
+    value: Any,
+    path: str,
+    *,
+    allowed: Iterable[str],
+    max_items: int | None = None,
+) -> list[str]:
+    allowed_set = set(allowed)
+    if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
+        raise SchemaValidationError(f"{path} must be an array of strings")
+    if max_items is not None and len(value) > max_items:
+        raise SchemaValidationError(f"{path} has too many items")
+    if len(value) != len(set(value)):
+        raise SchemaValidationError(f"{path} must not contain duplicates")
+    if any(item not in allowed_set for item in value):
+        raise SchemaValidationError(f"{path} contains an unsupported value")
+    return list(value)
+
+
+_UNSAFE_TEXT_FRAGMENTS = (
+    "acne",
+    "rosacea",
+    "melasma",
+    "infection",
+    "cancer",
+    "malignant",
+    "benign",
+    "diagnos",
+    "rule out",
+    "uv damage",
+    "sun damage",
+    "bacteria",
+    "bacterial",
+    "hydration",
+    "dehydrat",
+    "ethnicity",
+    "skin age",
+    "biological age",
+    "you have",
+    "dermatitis",
+    "eczema",
+    "psoriasis",
+    "melanoma",
+    "carcinoma",
+    "tumor",
+    "lesion",
+    "mole",
+    "rash",
+    "appears to be",
+    "consistent with",
+    "suggestive of",
+    "indicative of",
+    "likely caused",
+)
+
+
+def _validate_visible_text(text: str, path: str) -> None:
+    normalized = " ".join(text.lower().split())
+    if any(fragment in normalized for fragment in _UNSAFE_TEXT_FRAGMENTS):
+        raise SchemaValidationError(f"{path} exceeds visible-surface scope")
+
+
+def _deterministic_description(
+    observation_id: str, level: str, angles: Sequence[str]
+) -> str:
+    view_word = "view" if len(angles) == 1 else "views"
+    if level == "not_observed":
+        return f"This feature was not observed in the submitted {view_word}."
+    if level == "subtle":
+        return f"This feature appears subtle in the submitted {view_word}."
+    if level == "visible":
+        return f"This feature can be seen in the submitted {view_word}."
+    if level == "prominent":
+        return f"This feature appears prominent in the submitted {view_word}."
+    return f"This feature could not be assessed reliably in the submitted {view_word}."
+
+
+def validate_model_output(
+    payload: Any, image_angles: Sequence[str], body_area: str = "face"
+) -> dict[str, Any]:
+    """Validate model JSON with exact keys, allowlists, and cross-field rules."""
+
+    result = _require_exact_keys(
+        payload,
+        {"status", "quality", "observations", "strengths", "priorities", "medicalReview"},
+        "result",
+    )
+    status = result["status"]
+    if status not in {"complete", "retake", "medical_review"}:
+        raise SchemaValidationError("status is unsupported")
+
+    quality = _require_exact_keys(result["quality"], {"overall", "issues", "guidance"}, "quality")
+    if quality["overall"] not in QUALITY_LEVELS:
+        raise SchemaValidationError("quality.overall is unsupported")
+    issues = _require_string_list(quality["issues"], "quality.issues", allowed=QUALITY_ISSUES)
+    guidance = _require_string_list(
+        quality["guidance"], "quality.guidance", allowed=QUALITY_GUIDANCE
+    )
+    if quality["overall"] == "suitable" and (issues or guidance):
+        raise SchemaValidationError("suitable quality cannot include limitations")
+    if quality["overall"] in {"limited", "retake"} and (not issues or not guidance):
+        raise SchemaValidationError("limited quality requires an issue and guidance")
+
+    allowed_observation_ids = BODY_AREA_OBSERVATIONS.get(body_area)
+    if not allowed_observation_ids:
+        raise SchemaValidationError("body area is unsupported")
+    allowed_observation_set = set(allowed_observation_ids)
+    observations_value = result["observations"]
+    if not isinstance(observations_value, list) or len(observations_value) > len(allowed_observation_ids):
+        raise SchemaValidationError("observations must be a bounded array")
+    allowed_angles = set(image_angles)
+    seen_ids: set[str] = set()
+    observations: list[dict[str, Any]] = []
+    levels_by_id: dict[str, str] = {}
+    for index, raw_observation in enumerate(observations_value):
+        observation = _require_exact_keys(
+            raw_observation,
+            {"id", "label", "level", "description", "angles"},
+            f"observations[{index}]",
+        )
+        observation_id = observation["id"]
+        if observation_id not in allowed_observation_set or observation_id in seen_ids:
+            raise SchemaValidationError("observation IDs must be unique allowlisted values")
+        if observation["label"] != OBSERVATION_LABELS[observation_id]:
+            raise SchemaValidationError("observation label does not match its ID")
+        level = observation["level"]
+        if level not in OBSERVATION_LEVELS:
+            raise SchemaValidationError("observation level is unsupported")
+        model_description = _require_string(
+            observation["description"], f"observations[{index}].description"
+        )
+        _validate_visible_text(model_description, f"observations[{index}].description")
+        angles = _require_string_list(
+            observation["angles"], f"observations[{index}].angles", allowed=IMAGE_ANGLES
+        )
+        if not angles or not set(angles).issubset(allowed_angles):
+            raise SchemaValidationError("observation angles do not match submitted images")
+        seen_ids.add(observation_id)
+        levels_by_id[observation_id] = level
+        observations.append(
+            {
+                "id": observation_id,
+                "label": observation["label"],
+                "level": level,
+                "description": _deterministic_description(observation_id, level, angles),
+                "angles": angles,
+            }
+        )
+
+    strengths = _require_string_list(
+        result["strengths"], "strengths", allowed=allowed_observation_ids, max_items=2
+    )
+    priorities = _require_string_list(
+        result["priorities"], "priorities", allowed=allowed_observation_ids, max_items=2
+    )
+    if set(strengths) & set(priorities):
+        raise SchemaValidationError("strengths and priorities must not overlap")
+    if any(levels_by_id.get(item) not in {"not_observed", "subtle"} for item in strengths):
+        raise SchemaValidationError("strength must reference a supported low-level observation")
+    if any(levels_by_id.get(item) not in {"visible", "prominent"} for item in priorities):
+        raise SchemaValidationError("priority must reference a supported visible observation")
+
+    medical = _require_exact_keys(
+        result["medicalReview"], {"suggested", "reason"}, "medicalReview"
+    )
+    if not isinstance(medical["suggested"], bool) or medical["reason"] not in MEDICAL_REASON_CODES:
+        raise SchemaValidationError("medicalReview is invalid")
+    if medical["suggested"] != (medical["reason"] != "none"):
+        raise SchemaValidationError("medicalReview fields are inconsistent")
+
+    if status == "retake":
+        if quality["overall"] != "retake" or observations or strengths or priorities:
+            raise SchemaValidationError("retake must contain no personalized findings")
+        if medical["suggested"]:
+            raise SchemaValidationError("retake and medical review cannot be combined")
+    elif status == "medical_review":
+        if not medical["suggested"] or quality["overall"] == "retake":
+            raise SchemaValidationError("medical_review fields are inconsistent")
+    else:
+        if medical["suggested"] or quality["overall"] == "retake":
+            raise SchemaValidationError("complete fields are inconsistent")
+
+    return {
+        "status": status,
+        "quality": {
+            "overall": quality["overall"],
+            "issues": issues,
+            "guidance": guidance,
+        },
+        "observations": observations,
+        "strengths": strengths,
+        "priorities": priorities,
+        "medicalReview": {
+            "suggested": medical["suggested"],
+            "reason": medical["reason"],
+        },
+    }
+
+
+def validate_final_result(payload: Any) -> dict[str, Any]:
+    """Defensively validate the public response assembled by the server."""
+
+    result = _require_exact_keys(payload, FINAL_RESULT_KEYS, "public result")
+    if result["status"] not in {"complete", "retake", "medical_review"}:
+        raise SchemaValidationError("public status is unsupported")
+    if result["bodyArea"] not in BODY_AREA_OBSERVATIONS:
+        raise SchemaValidationError("public bodyArea is unsupported")
+    if result["analysisVersion"] != ANALYSIS_VERSION:
+        raise SchemaValidationError("analysisVersion is invalid")
+    if result["schemaVersion"] != SCHEMA_VERSION:
+        raise SchemaValidationError("schemaVersion is invalid")
+    if result["topicMappingVersion"] != TOPIC_MAPPING_VERSION:
+        raise SchemaValidationError("topicMappingVersion is invalid")
+    if result["promptHash"] != prompt_hash():
+        raise SchemaValidationError("promptHash is invalid")
+    model = _require_exact_keys(result["model"], {"provider", "name", "promptVersion"}, "model")
+    if model["provider"] not in {"local", *DEFAULT_PROVIDER_ORDER}:
+        raise SchemaValidationError("model.provider is invalid")
+    _require_string(model["name"], "model.name", max_length=120)
+    if model["promptVersion"] != PROMPT_VERSION:
+        raise SchemaValidationError("promptVersion is invalid")
+    if type(result["imageCount"]) is not int or result["imageCount"] not in {1, 3}:
+        raise SchemaValidationError("imageCount must be 1 or 3")
+    quality = _require_exact_keys(result["quality"], {"overall", "issues", "guidance"}, "quality")
+    if quality["overall"] not in QUALITY_LEVELS:
+        raise SchemaValidationError("public quality is invalid")
+    public_issues = _require_string_list(
+        quality["issues"], "quality.issues", allowed=QUALITY_ISSUES
+    )
+    public_guidance = _require_string_list(
+        quality["guidance"], "quality.guidance", allowed=QUALITY_GUIDANCE
+    )
+    if quality["overall"] == "suitable" and (public_issues or public_guidance):
+        raise SchemaValidationError("public suitable quality has limitations")
+    if quality["overall"] in {"limited", "retake"} and (
+        not public_issues or not public_guidance
+    ):
+        raise SchemaValidationError("public limited quality lacks actionable detail")
+    observations_value = result["observations"]
+    if not isinstance(observations_value, list) or len(observations_value) > len(OBSERVATION_LABELS):
+        raise SchemaValidationError("observations must be a bounded array")
+    permitted_angles = {"single"} if result["imageCount"] == 1 else {"front", "left", "right"}
+    seen_ids: set[str] = set()
+    levels_by_id: dict[str, str] = {}
+    for index, raw_observation in enumerate(observations_value):
+        observation = _require_exact_keys(
+            raw_observation,
+            {"id", "label", "level", "description", "angles"},
+            f"observations[{index}]",
+        )
+        observation_id = observation["id"]
+        if (
+            observation_id not in BODY_AREA_OBSERVATIONS[result["bodyArea"]]
+            or observation_id in seen_ids
+        ):
+            raise SchemaValidationError("public observation ID is invalid")
+        if observation["label"] != OBSERVATION_LABELS[observation_id]:
+            raise SchemaValidationError("public observation label is invalid")
+        if observation["level"] not in OBSERVATION_LEVELS:
+            raise SchemaValidationError("public observation level is invalid")
+        description = _require_string(
+            observation["description"], f"observations[{index}].description"
+        )
+        _validate_visible_text(description, f"observations[{index}].description")
+        angles = _require_string_list(
+            observation["angles"], f"observations[{index}].angles", allowed=IMAGE_ANGLES
+        )
+        if not angles or not set(angles).issubset(permitted_angles):
+            raise SchemaValidationError("public observation angles are invalid")
+        if description != _deterministic_description(
+            observation_id, observation["level"], angles
+        ):
+            raise SchemaValidationError("public observation description is not deterministic")
+        seen_ids.add(observation_id)
+        levels_by_id[observation_id] = observation["level"]
+    strengths = _require_string_list(
+        result["strengths"], "strengths", allowed=OBSERVATION_LABELS, max_items=2
+    )
+    priorities = _require_string_list(
+        result["priorities"], "priorities", allowed=OBSERVATION_LABELS, max_items=2
+    )
+    if set(strengths) & set(priorities):
+        raise SchemaValidationError("public strengths and priorities overlap")
+    if any(levels_by_id.get(item) not in {"not_observed", "subtle"} for item in strengths):
+        raise SchemaValidationError("public strength is unsupported")
+    if any(levels_by_id.get(item) not in {"visible", "prominent"} for item in priorities):
+        raise SchemaValidationError("public priority is unsupported")
+    if not isinstance(result["discussionTopics"], list) or len(result["discussionTopics"]) > 2:
+        raise SchemaValidationError("discussionTopics is invalid")
+    for index, topic in enumerate(result["discussionTopics"]):
+        _require_exact_keys(topic, {"id", "name", "why"}, f"discussionTopics[{index}]")
+        _require_string(topic["id"], f"discussionTopics[{index}].id", max_length=80)
+        _require_string(topic["name"], f"discussionTopics[{index}].name", max_length=120)
+        _require_string(topic["why"], f"discussionTopics[{index}].why", max_length=240)
+    medical = _require_exact_keys(result["medicalReview"], {"suggested", "message"}, "medicalReview")
+    if not isinstance(medical["suggested"], bool):
+        raise SchemaValidationError("medicalReview.suggested must be boolean")
+    _require_string(medical["message"], "medicalReview.message", max_length=320)
+    if medical["suggested"] != (result["status"] == "medical_review"):
+        raise SchemaValidationError("public medical review fields are inconsistent")
+    if result["status"] == "retake":
+        if quality["overall"] != "retake" or observations_value or strengths or priorities:
+            raise SchemaValidationError("public retake includes unsupported findings")
+        if result["discussionTopics"]:
+            raise SchemaValidationError("retake must suppress cosmetic topics")
+    elif quality["overall"] == "retake":
+        raise SchemaValidationError("public quality and status are inconsistent")
+    if result["status"] == "medical_review" and (
+        result["discussionTopics"] or observations_value or strengths or priorities
+    ):
+        raise SchemaValidationError("medical review must suppress cosmetic findings and topics")
+    if result["status"] == "complete" and result["discussionTopics"] != _discussion_topics(
+        priorities, result["bodyArea"]
+    ):
+        raise SchemaValidationError("discussion topics are not deterministic")
+    if result["disclaimer"] != DISCLAIMER:
+        raise SchemaValidationError("disclaimer is invalid")
+    return result
+
+
+def _convert_embedded_profile_to_srgb(image: Image.Image, profile_bytes: Any) -> Image.Image:
+    """Color-manage an embedded ICC profile in memory, falling back safely."""
+
+    if not isinstance(profile_bytes, bytes) or not profile_bytes:
+        return image
+    try:
+        source_profile = ImageCms.ImageCmsProfile(BytesIO(profile_bytes))
+        srgb_profile = ImageCms.createProfile("sRGB")
+        return ImageCms.profileToProfile(
+            image,
+            source_profile,
+            srgb_profile,
+            outputMode="RGB",
+        )
+    except Exception:
+        # An invalid or unsupported profile must not prevent a safe ordinary-RGB
+        # normalization; no profile data or exception detail is logged.
+        return image
+
+
+def normalize_image(file_object: Any, angle: str) -> NormalizedImage:
+    """Decode and normalize one upload in memory, stripping metadata."""
+
+    if angle not in IMAGE_ANGLES:
+        raise ImageIntakeError("angle_mismatch", "retake_required_angles", "Image angle is invalid.")
+    try:
+        raw = file_object.read(MAX_UPLOAD_BYTES + 1)
+    except Exception as exc:
+        raise ImageIntakeError(
+            "unsupported_image",
+            "use_a_supported_image_format",
+            "The image could not be read. Please upload a JPEG, PNG, or WebP image.",
+        ) from exc
+    if not raw:
+        raise ImageIntakeError(
+            "unsupported_image",
+            "use_a_supported_image_format",
+            "The image was empty. Please upload a JPEG, PNG, or WebP image.",
+        )
+    if len(raw) > MAX_UPLOAD_BYTES:
+        raise ImageIntakeError(
+            "unsupported_image",
+            "use_a_supported_image_format",
+            "The image is too large. Please upload an image smaller than 12 MB.",
+        )
+
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", Image.DecompressionBombWarning)
+            with Image.open(BytesIO(raw)) as opened:
+                embedded_icc = opened.info.get("icc_profile")
+                if opened.format not in {"JPEG", "PNG", "WEBP"}:
+                    raise ImageIntakeError(
+                        "unsupported_image",
+                        "use_a_supported_image_format",
+                        "Please upload a JPEG, PNG, or WebP image.",
+                    )
+                if opened.width * opened.height > MAX_IMAGE_PIXELS:
+                    raise ImageIntakeError(
+                        "unsupported_image",
+                        "use_a_supported_image_format",
+                        "The image dimensions are too large. Please use a smaller image.",
+                    )
+                image = ImageOps.exif_transpose(opened)
+                image.load()
+                if min(image.size) < MIN_IMAGE_DIMENSION:
+                    raise ImageIntakeError(
+                        "low_resolution",
+                        "use_a_higher_resolution_image",
+                        "The image resolution is too low for an honest review. Please use a higher-resolution capture.",
+                    )
+                if image.mode in {"RGBA", "LA"} or "transparency" in image.info:
+                    rgba = image.convert("RGBA")
+                    alpha = rgba.getchannel("A")
+                    color = _convert_embedded_profile_to_srgb(
+                        rgba.convert("RGB"), embedded_icc
+                    ).convert("RGBA")
+                    color.putalpha(alpha)
+                    background = Image.new("RGBA", rgba.size, "white")
+                    background.alpha_composite(color)
+                    image = background.convert("RGB")
+                else:
+                    # ICC conversion must see the source mode (especially CMYK)
+                    # before any ordinary RGB conversion changes its meaning.
+                    image = _convert_embedded_profile_to_srgb(image, embedded_icc)
+                    if image.mode != "RGB":
+                        image = image.convert("RGB")
+                # These deliberately conservative checks are technical capture
+                # heuristics only. They are not clinical confidence measures.
+                quality_sample = image.copy()
+                quality_sample.thumbnail((256, 256), Image.Resampling.BILINEAR)
+                grayscale = quality_sample.convert("L")
+                histogram = grayscale.histogram()
+                pixel_count = max(1, quality_sample.width * quality_sample.height)
+                dark_fraction = sum(histogram[:8]) / pixel_count
+                light_fraction = sum(histogram[248:]) / pixel_count
+                contrast = float(ImageStat.Stat(grayscale).stddev[0])
+                if dark_fraction >= 0.85:
+                    raise ImageIntakeError(
+                        "low_light",
+                        "use_natural_even_light",
+                        "A basic capture-quality check found the image too dark to review. Please retake it in even light.",
+                    )
+                if light_fraction >= 0.85:
+                    raise ImageIntakeError(
+                        "overexposure",
+                        "use_natural_even_light",
+                        "A basic capture-quality check found the image overexposed. Please retake it in even light.",
+                    )
+                if contrast < 3.0:
+                    raise ImageIntakeError(
+                        "low_contrast",
+                        "use_natural_even_light",
+                        "A basic capture-quality check found too little visible contrast for an honest review. Please retake the image.",
+                    )
+                image.thumbnail((MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION), Image.Resampling.LANCZOS)
+                output = BytesIO()
+                image.save(output, format="JPEG", quality=92, optimize=True)
+                normalized = output.getvalue()
+                width, height = image.size
+    except ImageIntakeError:
+        raise
+    except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError) as exc:
+        raise ImageIntakeError(
+            "unsupported_image",
+            "use_a_supported_image_format",
+            "The file is not a supported image. Please upload a JPEG, PNG, or WebP image.",
+        ) from exc
+
+    return NormalizedImage(
+        angle=angle,
+        data=normalized,
+        media_type="image/jpeg",
+        width=width,
+        height=height,
+    )
+
+
+def _provider_order() -> tuple[str, ...]:
+    configured = os.getenv("AI_PROVIDER_ORDER") or os.getenv("ANALYZER_PROVIDER_ORDER")
+    if not configured:
+        return DEFAULT_PROVIDER_ORDER
+    parsed: list[str] = []
+    for item in configured.split(","):
+        provider = item.strip().lower()
+        if provider in DEFAULT_PROVIDER_ORDER and provider not in parsed:
+            parsed.append(provider)
+    return tuple(parsed) if parsed else DEFAULT_PROVIDER_ORDER
+
+
+def _provider_key(provider: str) -> str | None:
+    if provider == "openai":
+        return os.getenv("OPENAI_API_KEY")
+    if provider == "gemini":
+        return os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+    if provider == "anthropic":
+        return os.getenv("ANTHROPIC_API_KEY")
+    return None
+
+
+def model_name(provider: str) -> str:
+    env_name = {
+        "openai": "OPENAI_MODEL",
+        "gemini": "GEMINI_MODEL",
+        "anthropic": "ANTHROPIC_MODEL",
+    }[provider]
+    return os.getenv(env_name, DEFAULT_MODELS[provider]).strip() or DEFAULT_MODELS[provider]
+
+
+def provider_status() -> list[dict[str, Any]]:
+    return [
+        {
+            "provider": provider,
+            "available": bool(_provider_key(provider)),
+            "model": model_name(provider),
+        }
+        for provider in _provider_order()
+    ]
+
+
+def prompt_hash() -> str:
+    return hashlib.sha256(SYSTEM_PROMPT.encode("utf-8")).hexdigest()[:16]
+
+
+def provider_timeout_seconds() -> float:
+    try:
+        configured = float(os.getenv("PROVIDER_TIMEOUT_SECONDS", "35"))
+    except ValueError:
+        configured = 35.0
+    # Three sequential providers must remain inside Gunicorn's 120-second limit.
+    return min(38.0, max(5.0, configured))
+
+
+def _data_url(image: NormalizedImage) -> str:
+    encoded = base64.b64encode(image.data).decode("ascii")
+    return f"data:{image.media_type};base64,{encoded}"
+
+
+def _angle_context(body_area: str, angle: str) -> str:
+    contexts = BODY_AREA_ANGLE_CONTEXT.get(body_area)
+    if not contexts or angle not in contexts:
+        raise SchemaValidationError("body area or angle is unsupported")
+    return contexts[angle]
+
+
+def _image_context(images: Sequence[NormalizedImage], body_area: str) -> str:
+    labels = ", ".join(
+        f"{image.angle} ({_angle_context(body_area, image.angle)})" for image in images
+    )
+    allowed_ids = BODY_AREA_OBSERVATIONS.get(body_area)
+    if not allowed_ids:
+        raise SchemaValidationError("body area is unsupported")
+    return (
+        f"Review {len(images)} normalized image(s) of the selected area '{body_area}'. "
+        f"Image angle labels, in upload order: {labels}. Use only those angle labels. "
+        f"For this area, the only permitted observation IDs are: {', '.join(allowed_ids)}."
+    )
+
+
+def _parse_json_text(value: str) -> Any:
+    text = value.strip()
+    if text.startswith("```json"):
+        text = text[7:]
+    elif text.startswith("```"):
+        text = text[3:]
+    if text.endswith("```"):
+        text = text[:-3]
+    return json.loads(text.strip())
+
+
+def _call_openai(
+    images: Sequence[NormalizedImage], body_area: str, api_key: str, model: str
+) -> Any:
+    from openai import OpenAI
+
+    content: list[dict[str, Any]] = [
+        {"type": "input_text", "text": _image_context(images, body_area)}
+    ]
+    for image in images:
+        content.append(
+            {
+                "type": "input_text",
+                "text": (
+                    f"Angle slot: {image.angle}. Capture meaning: "
+                    f"{_angle_context(body_area, image.angle)}."
+                ),
+            }
+        )
+        content.append(
+            {
+                "type": "input_image",
+                "image_url": _data_url(image),
+                "detail": "original",
+            }
+        )
+    client = OpenAI(
+        api_key=api_key,
+        timeout=provider_timeout_seconds(),
+        max_retries=0,
+    )
+    response = client.responses.create(
+        model=model,
+        instructions=SYSTEM_PROMPT,
+        input=[{"role": "user", "content": content}],
+        store=False,
+        max_output_tokens=2400,
+        text={
+            "format": {
+                "type": "json_schema",
+                "name": "visible_surface_analysis",
+                "schema": model_output_schema(body_area),
+                "strict": True,
+            }
+        },
+    )
+    output_text = getattr(response, "output_text", None)
+    if not isinstance(output_text, str) or not output_text.strip():
+        raise ProviderUnavailable("OpenAI returned no structured output")
+    return _parse_json_text(output_text)
+
+
+def _call_gemini(
+    images: Sequence[NormalizedImage], body_area: str, api_key: str, model: str
+) -> Any:
+    from google import genai
+    from google.genai import types
+
+    parts: list[Any] = [types.Part.from_text(text=_image_context(images, body_area))]
+    for image in images:
+        parts.append(
+            types.Part.from_text(
+                text=(
+                    f"Angle slot: {image.angle}. Capture meaning: "
+                    f"{_angle_context(body_area, image.angle)}."
+                )
+            )
+        )
+        parts.append(types.Part.from_bytes(data=image.data, mime_type=image.media_type))
+    timeout_ms = int(provider_timeout_seconds() * 1000)
+    client = genai.Client(
+        api_key=api_key,
+        http_options=types.HttpOptions(
+            timeout=timeout_ms,
+            retry_options=types.HttpRetryOptions(attempts=1),
+        ),
+    )
+    response = client.models.generate_content(
+        model=model,
+        contents=[types.Content(role="user", parts=parts)],
+        config=types.GenerateContentConfig(
+            system_instruction=SYSTEM_PROMPT,
+            temperature=0,
+            max_output_tokens=2400,
+            response_mime_type="application/json",
+            response_json_schema=model_output_schema(body_area),
+        ),
+    )
+    output_text = getattr(response, "text", None)
+    if not isinstance(output_text, str) or not output_text.strip():
+        raise ProviderUnavailable("Gemini returned no structured output")
+    return _parse_json_text(output_text)
+
+
+def _call_anthropic(
+    images: Sequence[NormalizedImage], body_area: str, api_key: str, model: str
+) -> Any:
+    from anthropic import Anthropic
+
+    content: list[dict[str, Any]] = [
+        {"type": "text", "text": _image_context(images, body_area)}
+    ]
+    for image in images:
+        content.append(
+            {
+                "type": "text",
+                "text": (
+                    f"Angle slot: {image.angle}. Capture meaning: "
+                    f"{_angle_context(body_area, image.angle)}."
+                ),
+            }
+        )
+        content.append(
+            {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": image.media_type,
+                    "data": base64.b64encode(image.data).decode("ascii"),
+                },
+            }
+        )
+    response = Anthropic(
+        api_key=api_key,
+        timeout=provider_timeout_seconds(),
+        max_retries=0,
+    ).messages.create(
+        model=model,
+        max_tokens=2400,
+        output_config={
+            "format": {
+                "type": "json_schema",
+                "schema": model_output_schema(body_area),
+            }
+        },
+        system=SYSTEM_PROMPT,
+        messages=[{"role": "user", "content": content}],
+    )
+    blocks = getattr(response, "content", None)
+    if not blocks:
+        raise ProviderUnavailable("Anthropic returned no structured output")
+    output_text = getattr(blocks[0], "text", None)
+    if not isinstance(output_text, str) or not output_text.strip():
+        raise ProviderUnavailable("Anthropic returned no structured output")
+    return _parse_json_text(output_text)
+
+
+PROVIDER_CALLS: Mapping[
+    str, Callable[[Sequence[NormalizedImage], str, str, str], Any]
+] = {
+    "openai": _call_openai,
+    "gemini": _call_gemini,
+    "anthropic": _call_anthropic,
+}
+
+
+def analyze_with_providers(
+    images: Sequence[NormalizedImage], body_area: str
+) -> tuple[dict[str, Any], str, str]:
+    """Try configured providers in order and accept only strictly valid output."""
+
+    configured_count = 0
+    for provider in _provider_order():
+        api_key = _provider_key(provider)
+        if not api_key:
+            continue
+        configured_count += 1
+        selected_model = model_name(provider)
+        try:
+            raw = PROVIDER_CALLS[provider](images, body_area, api_key, selected_model)
+            validated = validate_model_output(
+                raw, [image.angle for image in images], body_area=body_area
+            )
+            return validated, provider, selected_model
+        except Exception as exc:
+            # Never log request content, images, filenames, model text, keys, or PII.
+            LOGGER.warning("Analyzer provider %s failed (%s)", provider, type(exc).__name__)
+    if configured_count == 0:
+        LOGGER.warning("Analyzer has no configured providers")
+    raise ProviderUnavailable("No configured provider produced a valid response")
+
+
+def _discussion_topics(
+    priorities: Sequence[str], body_area: str
+) -> list[dict[str, str]]:
+    topics: list[dict[str, str]] = []
+    seen_topic_ids: set[str] = set()
+    for observation_id in priorities:
+        mapping = DISCUSSION_TOPICS.get(observation_id)
+        approved_areas = DISCUSSION_TOPIC_AREAS.get(mapping["id"]) if mapping else None
+        if (
+            not mapping
+            or not approved_areas
+            or body_area not in approved_areas
+            or mapping["id"] in seen_topic_ids
+        ):
+            continue
+        seen_topic_ids.add(mapping["id"])
+        topics.append(
+            {
+                "id": mapping["id"],
+                "name": mapping["name"],
+                "why": (
+                    f"A provider can discuss whether this service is appropriate for "
+                    f"{OBSERVATION_LABELS[observation_id].lower()}."
+                ),
+            }
+        )
+        if len(topics) == 2:
+            break
+    return topics
+
+
+def _medical_message(status: str) -> str:
+    if status == "medical_review":
+        return (
+            "A licensed medical professional should review this area in person before "
+            "any cosmetic discussion. This preview cannot diagnose or rule out disease."
+        )
+    if status == "retake":
+        return (
+            "Image quality was not sufficient for this limited cosmetic preview. "
+            "Retake the requested image or images before continuing."
+        )
+    return (
+        "This preview does not assess medical conditions. Seek medical care for any "
+        "new, changing, painful, bleeding, or otherwise concerning area."
+    )
+
+
+def build_final_result(
+    model_result: Mapping[str, Any],
+    *,
+    provider: str,
+    selected_model: str,
+    image_count: int,
+    body_area: str,
+) -> dict[str, Any]:
+    status = str(model_result["status"])
+    medical_suggested = bool(model_result["medicalReview"]["suggested"])
+    if medical_suggested:
+        status = "medical_review"
+    topics = [] if status in {"medical_review", "retake"} else _discussion_topics(
+        model_result["priorities"], body_area
+    )
+    suppress_cosmetic_findings = status in {"medical_review", "retake"}
+    result: dict[str, Any] = {
+        "status": status,
+        "bodyArea": body_area,
+        "analysisVersion": ANALYSIS_VERSION,
+        "schemaVersion": SCHEMA_VERSION,
+        "topicMappingVersion": TOPIC_MAPPING_VERSION,
+        "promptHash": prompt_hash(),
+        "model": {
+            "provider": provider,
+            "name": selected_model,
+            "promptVersion": PROMPT_VERSION,
+        },
+        "imageCount": image_count,
+        "quality": dict(model_result["quality"]),
+        "observations": [] if suppress_cosmetic_findings else [dict(item) for item in model_result["observations"]],
+        "strengths": [] if suppress_cosmetic_findings else list(model_result["strengths"]),
+        "priorities": [] if suppress_cosmetic_findings else list(model_result["priorities"]),
+        "discussionTopics": topics,
+        "medicalReview": {
+            "suggested": status == "medical_review",
+            "message": _medical_message(status),
+        },
+        "disclaimer": DISCLAIMER,
+    }
+    return validate_final_result(result)
+
+
+def build_local_retake(
+    *, image_count: int, issue: str, guidance: str, message: str, body_area: str
+) -> dict[str, Any]:
+    """Return the same canonical schema for an intake-level retake."""
+
+    if issue not in QUALITY_ISSUES or guidance not in QUALITY_GUIDANCE:
+        raise SchemaValidationError("local retake codes are unsupported")
+    result: dict[str, Any] = {
+        "status": "retake",
+        "bodyArea": body_area,
+        "analysisVersion": ANALYSIS_VERSION,
+        "schemaVersion": SCHEMA_VERSION,
+        "topicMappingVersion": TOPIC_MAPPING_VERSION,
+        "promptHash": prompt_hash(),
+        "model": {
+            "provider": "local",
+            "name": "image-intake-validator",
+            "promptVersion": PROMPT_VERSION,
+        },
+        "imageCount": image_count,
+        "quality": {
+            "overall": "retake",
+            "issues": [issue],
+            "guidance": [guidance],
+        },
+        "observations": [],
+        "strengths": [],
+        "priorities": [],
+        "discussionTopics": [],
+        "medicalReview": {
+            "suggested": False,
+            "message": message,
+        },
+        "disclaimer": DISCLAIMER,
+    }
+    return validate_final_result(result)
+
+
+def analyze(images: Sequence[NormalizedImage], body_area: str) -> dict[str, Any]:
+    if len(images) not in {1, 3}:
+        raise SchemaValidationError("analyzer image count must be 1 or 3")
+    model_result, provider, selected_model = analyze_with_providers(images, body_area)
+    return build_final_result(
+        model_result,
+        provider=provider,
+        selected_model=selected_model,
+        image_count=len(images),
+        body_area=body_area,
+    )

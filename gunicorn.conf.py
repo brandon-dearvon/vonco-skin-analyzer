@@ -4,22 +4,22 @@ import os
 # Bind to Render's PORT
 bind = f"0.0.0.0:{os.environ.get('PORT', '10000')}"
 
-# Use gthread workers so heartbeat thread stays alive during long API calls
+# Use gthread workers so health checks can respond during provider calls.
 worker_class = "gthread"
 threads = 4
 workers = 1
 
-# 120s timeout — critical for Gemini (10s) + Claude (15s) pipeline
+# Three provider attempts are capped at 38 seconds each.
 timeout = 120
 
 # Recycle workers every 50 requests to prevent memory leaks
 max_requests = 50
 max_requests_jitter = 5
 
-# Use shared memory for heartbeat file (faster on containers)
-worker_tmp_dir = "/dev/shm"
+# Use shared memory for heartbeat files when the host provides it.
+worker_tmp_dir = "/dev/shm" if os.path.isdir("/dev/shm") else None
 
-# Logging
-accesslog = "-"
+# Logging: disable the default access log because it includes remote IP addresses.
+accesslog = None
 errorlog = "-"
 loglevel = "info"
