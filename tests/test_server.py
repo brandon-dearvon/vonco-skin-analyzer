@@ -534,6 +534,59 @@ class ServerContractTests(unittest.TestCase):
             {"services": [], "products": []},
         )
 
+    def test_subtle_observations_outside_strength_shortlist_drive_matches(self) -> None:
+        raw = complete_model_result()
+        raw["observations"] = [
+            {
+                "id": "visible_lines",
+                "label": "Visible lines",
+                "level": "subtle",
+                "description": "Visible lines appear subtle in this photo.",
+                "angles": ["single"],
+            },
+            {
+                "id": "surface_texture",
+                "label": "Visible surface texture",
+                "level": "subtle",
+                "description": "Surface texture appears subtle in this photo.",
+                "angles": ["single"],
+            },
+            {
+                "id": "pigment_variation",
+                "label": "Visible pigment variation",
+                "level": "not_observed",
+                "description": "Pigment variation is not apparent in this photo.",
+                "angles": ["single"],
+            },
+            {
+                "id": "laxity_appearance",
+                "label": "Visible laxity appearance",
+                "level": "not_observed",
+                "description": "Laxity is not apparent in this photo.",
+                "angles": ["single"],
+            },
+        ]
+        raw["strengths"] = ["pigment_variation", "laxity_appearance"]
+        raw["priorities"] = []
+        validated = analysis_engine.validate_model_output(raw, ["single"], "face")
+        result = analysis_engine.build_final_result(
+            validated,
+            provider="gemini",
+            selected_model="gemini-3.5-flash",
+            image_count=1,
+            body_area="face",
+        )
+
+        self.assertEqual(result["priorities"], [])
+        self.assertEqual(
+            [item["id"] for item in result["appearanceRecommendations"]["services"]],
+            ["microneedling", "sciton_moxi_laser", "rf_microneedling"],
+        )
+        self.assertEqual(
+            [item["id"] for item in result["appearanceRecommendations"]["products"]],
+            ["skinbetter_alpharet", "zo_complexion_renewal_pads", "colorscience_face_shield"],
+        )
+
     def test_medical_review_reason_is_limited_to_open_or_broken_skin(self) -> None:
         self.assertEqual(
             analysis_engine.MEDICAL_REASON_CODES,
@@ -900,13 +953,18 @@ class ServerContractTests(unittest.TestCase):
         try:
             self.assertEqual(response.status_code, 200)
             html = response.get_data(as_text=True)
+            helper = (Path(__file__).parents[1] / "public" / "result-summary.js").read_text(
+                encoding="utf-8"
+            )
             self.assertIn('id="resultSummary"', html)
             self.assertIn("Your quick read", html)
-            self.assertIn("function renderResultSummary(data, map)", html)
+            self.assertIn('src="/result-summary.js"', html)
+            self.assertIn("function renderResultSummary(data)", html)
+            self.assertIn("window.VonResultSummary.build(data)", html)
             self.assertIn("Top visible focus", html)
-            self.assertIn("Subtle finding", html)
-            self.assertIn("Not apparent", html)
-            self.assertNotIn("strength worth maintaining", html)
+            self.assertIn("Subtle finding", helper)
+            self.assertIn("Not apparent", helper)
+            self.assertNotIn("strength worth maintaining", html + helper)
             self.assertIn("Profile coverage", html)
             self.assertIn("Book your complimentary consultation", html)
 
@@ -948,6 +1006,9 @@ class ServerContractTests(unittest.TestCase):
         try:
             self.assertEqual(response.status_code, 200)
             html = response.get_data(as_text=True)
+            helper = (Path(__file__).parents[1] / "public" / "result-summary.js").read_text(
+                encoding="utf-8"
+            )
             self.assertIn('id="servicesSection"', html)
             self.assertIn('id="productsSection"', html)
             self.assertIn('id="recommendationsEmpty"', html)
@@ -959,16 +1020,27 @@ class ServerContractTests(unittest.TestCase):
             self.assertIn("Best match", html)
             self.assertIn("Maintenance match", html)
             self.assertIn("Maintenance pick", html)
-            self.assertIn("appeared subtle in these photos", html)
-            self.assertIn("did not stand out in these photos", html)
-            self.assertIn("priorityLabels.length", html)
-            self.assertIn("Maintenance options mapped from subtle findings", html)
+            self.assertIn("appeared subtle in these photos", helper)
+            self.assertIn("did not stand out in these photos", helper)
+            self.assertIn("priorityLabels.length", helper)
+            self.assertIn("recommendationItems.forEach", helper)
+            self.assertIn("subtleIds.push(id)", helper)
+            self.assertIn("Maintenance options mapped from subtle findings", helper)
             self.assertIn("Daily essential", html)
             self.assertIn("Why this matches:", html)
             self.assertIn("Book your complimentary consultation", html)
             self.assertNotIn("Topics to discuss with a provider", html)
             self.assertNotIn("Book your complimentary VISIA consultation", html)
             self.assertNotIn("innerHTML", html)
+        finally:
+            response.close()
+
+    def test_result_summary_helper_is_served_as_javascript(self) -> None:
+        response = self.client.get("/result-summary.js")
+        try:
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("javascript", response.content_type)
+            self.assertIn("VonResultSummary", response.get_data(as_text=True))
         finally:
             response.close()
 

@@ -2192,6 +2192,7 @@
 
   <div class="visually-hidden" id="liveRegion" role="status" aria-live="polite" aria-atomic="true"></div>
 
+  <script src="/result-summary.js"></script>
   <script>
     (function () {
       "use strict";
@@ -3068,23 +3069,6 @@
         section.hidden = container.childElementCount === 0;
       }
 
-      function sentenceList(values) {
-        if (!values.length) {
-          return "";
-        }
-        if (values.length === 1) {
-          return values[0];
-        }
-        return values.slice(0, -1).join(", ") + " and " + values[values.length - 1];
-      }
-
-      function observationLabels(ids, map) {
-        return (Array.isArray(ids) ? ids : []).map(function (id) {
-          var observation = map.get(id);
-          return cleanText(observation && observation.label);
-        }).filter(Boolean).slice(0, 2);
-      }
-
       function appendResultInsight(label, value) {
         var insight = document.createElement("div");
         insight.className = "result-insight";
@@ -3101,58 +3085,20 @@
         resultInsights.appendChild(insight);
       }
 
-      function renderResultSummary(data, map) {
+      function renderResultSummary(data) {
         clearNode(resultInsights);
-        var priorityLabels = observationLabels(data.priorities, map);
-        var strengthIds = Array.isArray(data.strengths) ? data.strengths : [];
-        var subtleLabels = observationLabels(strengthIds.filter(function (id) {
-          var observation = map.get(id);
-          return observation && observation.level === "subtle";
-        }), map);
-        var notApparentLabels = observationLabels(strengthIds.filter(function (id) {
-          var observation = map.get(id);
-          return observation && observation.level === "not_observed";
-        }), map);
-        var recommendations = data && data.appearanceRecommendations;
-        var hasRecommendations = Boolean(recommendations && (
-          (Array.isArray(recommendations.services) && recommendations.services.length) ||
-          (Array.isArray(recommendations.products) && recommendations.products.length)
-        ));
         var observations = Array.isArray(data.observations) ? data.observations : [];
         var reviewedCount = observations.filter(function (observation) {
           return observation && observation.level !== "unable_to_assess";
         }).length;
+        var summary = window.VonResultSummary.build(data);
 
-        if (priorityLabels.length) {
-          resultSummaryHeading.textContent = sentenceList(priorityLabels) + (priorityLabels.length === 1 ? " stands out most." : " stand out most.");
-        } else {
-          resultSummaryHeading.textContent = "No strong visible priority stands out.";
-        }
-
-        if (subtleLabels.length) {
-          resultSummaryCopy.textContent = sentenceList(subtleLabels) + " appeared subtle in these photos. " + (hasRecommendations
-            ? (priorityLabels.length
-              ? "Your full photo-based profile and closest Von & Co matches are below."
-              : "Your full photo-based profile and closest maintenance matches are below.")
-            : "Your full photo-based profile is below.");
-          strengthsHeading.textContent = notApparentLabels.length
-            ? "What appears subtle or not apparent"
-            : "What appears subtle";
-        } else if (notApparentLabels.length) {
-          resultSummaryCopy.textContent = sentenceList(notApparentLabels) + " did not stand out in these photos. Your full photo-based profile is below.";
-          strengthsHeading.textContent = "What was not apparent";
-        } else {
-          resultSummaryCopy.textContent = "Your full photo-based profile shows what was visible, what appeared subtle, and what could not be assessed clearly. " + (hasRecommendations
-            ? "Your closest Von & Co matches are below."
-            : "No automatic catalog match was added for this profile.");
-          strengthsHeading.textContent = "What appears subtle or not apparent";
-        }
-
-        appendResultInsight("Top visible focus", priorityLabels[0] || "No single focus");
-        appendResultInsight(
-          subtleLabels.length ? "Subtle finding" : "Not apparent",
-          subtleLabels[0] || notApparentLabels[0] || "No single standout"
-        );
+        resultSummaryHeading.textContent = summary.heading;
+        resultSummaryCopy.textContent = summary.copy;
+        strengthsHeading.textContent = summary.strengthsHeading;
+        planIntro.textContent = summary.planIntro;
+        appendResultInsight("Top visible focus", summary.primaryInsightValue);
+        appendResultInsight(summary.secondaryInsightLabel, summary.secondaryInsightValue);
         appendResultInsight(
           "Profile coverage",
           observations.length ? reviewedCount + " of " + observations.length + " categories reviewed" : "No categories reviewed"
@@ -3435,14 +3381,6 @@
 
         var services = recommendations && Array.isArray(recommendations.services) ? recommendations.services.slice(0, 3) : [];
         var products = recommendations && Array.isArray(recommendations.products) ? recommendations.products.slice(0, 3) : [];
-        var recommendationItems = services.concat(products);
-        var hasVisiblePriorityMatch = recommendationItems.some(function (item) {
-          return recommendationUsesVisiblePriority(item, map);
-        });
-
-        planIntro.textContent = recommendationItems.length && !hasVisiblePriorityMatch
-          ? "Maintenance options mapped from subtle findings in your visible appearance profile and Von & Co's current guides."
-          : "Ranked from your visible appearance profile and mapped to Von & Co's current guides.";
 
         services.forEach(function (service, index) {
           var card = createServiceCard(service, index, map);
@@ -3477,7 +3415,7 @@
 
         var resultArea = areaPlans[data.bodyArea] ? data.bodyArea : (state.requestBodyArea || bodyArea.value);
         var map = observationsById(data);
-        renderResultSummary(data, map);
+        renderResultSummary(data);
         renderObservationGroup(data.strengths, map, strengthsList, strengthsSection, resultArea);
         renderObservationGroup(data.priorities, map, prioritiesList, prioritiesSection, resultArea);
         renderProfile(data, resultArea);
