@@ -30,7 +30,7 @@ from recommendation_catalog import (
 
 LOGGER = logging.getLogger(__name__)
 
-ANALYSIS_VERSION = "visible-surface-v1.4.0"
+ANALYSIS_VERSION = "visible-surface-v1.4.1"
 PROMPT_VERSION = "visible-surface-prompt-v1.1.0"
 SCHEMA_VERSION = "visible-surface-response-schema-v1.2.0"
 TOPIC_MAPPING_VERSION = CATALOG_VERSION
@@ -41,6 +41,7 @@ DEFAULT_MODELS = {
 }
 GEMINI_THINKING_LEVEL = "high"
 GEMINI_MAX_OUTPUT_TOKENS = 8192
+GEMINI_SEED = 20260712
 GEMINI_PROVIDER_ATTEMPTS = 2
 
 DISCLAIMER = (
@@ -175,10 +176,10 @@ BODY_AREA_ANGLE_CONTEXT: dict[str, dict[str, str]] = {
         "right": "right oblique upper-chest view",
     },
     "hands": {
-        "single": "single user-selected hand view",
-        "front": "left hand capture slot",
-        "left": "right hand capture slot",
-        "right": "both hands capture slot",
+        "single": "single user-selected back-of-hand view",
+        "front": "back of the left hand capture slot",
+        "left": "back of the right hand capture slot",
+        "right": "backs of both hands capture slot",
     },
     "back": {
         "single": "single user-selected back view",
@@ -209,8 +210,11 @@ BODY_AREA_QUALITY_CONTEXT: dict[str, str] = {
         "review; a full torso view is not required."
     ),
     "hands": (
-        "Accept the photo when the intended hand skin is clear enough to review; "
-        "the arm and both hands do not need to be fully visible in a single upload."
+        "Accept the photo only when the back of the intended hand or hands is clear "
+        "enough to review. A palm-only image does not show the intended treatment "
+        "area and must return retake with the framing issue and "
+        "center_area_in_frame guidance. The arm and both hands do not need to be "
+        "fully visible in a single upload."
     ),
     "back": (
         "Accept the photo when the intended back or shoulder skin is clear enough "
@@ -1166,6 +1170,7 @@ def _call_gemini(
                 thinking_level=GEMINI_THINKING_LEVEL
             ),
             max_output_tokens=GEMINI_MAX_OUTPUT_TOKENS,
+            seed=GEMINI_SEED,
             response_mime_type="application/json",
             response_json_schema=gemini_output_schema(body_area),
         ),

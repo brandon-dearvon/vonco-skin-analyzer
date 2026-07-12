@@ -78,6 +78,27 @@ def complete_model_result(angles: list[str] | None = None) -> dict:
     }
 
 
+def complete_model_result_for(observation_id: str) -> dict:
+    """Return one source-neutral visible finding for API recommendation tests."""
+
+    return {
+        "status": "complete",
+        "quality": {"overall": "suitable", "issues": [], "guidance": []},
+        "observations": [
+            {
+                "id": observation_id,
+                "label": analysis_engine.OBSERVATION_LABELS[observation_id],
+                "level": "visible",
+                "description": "This feature is visible in the submitted view.",
+                "angles": ["single"],
+            }
+        ],
+        "strengths": [],
+        "priorities": [observation_id],
+        "medicalReview": {"suggested": False, "reason": "none"},
+    }
+
+
 def medical_model_result() -> dict:
     return {
         "status": "medical_review",
@@ -153,6 +174,94 @@ class ServerContractTests(unittest.TestCase):
         }
         data.update(form_fields)
         return self.client.post("/api/analyze", data=data, content_type="multipart/form-data")
+
+    def test_api_returns_exact_source_locked_recommendations_for_multiple_cases(
+        self,
+    ) -> None:
+        cases = (
+            {
+                "body_area": "face",
+                "observation_id": "pigment_variation",
+                "services": [
+                    "sciton_bbl_photofacial",
+                    "sciton_moxi_laser",
+                    "sciton_halo_laser",
+                    "microneedling",
+                    "microneedling_prf",
+                    "rf_microneedling",
+                    "chemical_peels",
+                    "hydrafacial_customized",
+                    "hydrafacial_elite",
+                    "saltfacial",
+                ],
+                "products": [
+                    "skinbetter_even_tone",
+                    "isdin_melaclear_advanced",
+                    "zo_vitamin_c_10",
+                    "hydrinity_vivid_serum",
+                    "colorscience_face_shield",
+                ],
+            },
+            {
+                "body_area": "chest",
+                "observation_id": "visible_lines",
+                "services": ["sciton_moxi_laser", "sculptra"],
+                "products": [
+                    "alastin_restorative_skin_complex",
+                    "skinbetter_alpharet_body",
+                ],
+            },
+            {
+                "body_area": "neck",
+                "observation_id": "pore_visibility",
+                "services": [
+                    "hydrafacial_clarifying",
+                    "hydrafacial_customized",
+                    "hydrafacial_elite",
+                    "sciton_moxi_laser",
+                    "rf_microneedling",
+                ],
+                "products": [],
+            },
+        )
+
+        for case in cases:
+            with self.subTest(
+                body_area=case["body_area"],
+                observation_id=case["observation_id"],
+            ):
+                with mock.patch.dict(
+                    analysis_engine.PROVIDER_CALLS,
+                    {
+                        "gemini": lambda *_, observation_id=case[
+                            "observation_id"
+                        ]: complete_model_result_for(observation_id)
+                    },
+                    clear=False,
+                ):
+                    response = self._post_single(body_area=case["body_area"])
+
+                self.assertEqual(response.status_code, 200)
+                result = response.get_json()
+                recommendations = result["appearanceRecommendations"]
+                services = recommendations["services"]
+                products = recommendations["products"]
+
+                self.assertEqual(result["bodyArea"], case["body_area"])
+                self.assertEqual(
+                    [item["id"] for item in services], case["services"]
+                )
+                self.assertEqual(
+                    [item["id"] for item in products], case["products"]
+                )
+                for item in services + products:
+                    self.assertEqual(
+                        item["matchedObservationIds"], [case["observation_id"]]
+                    )
+                self.assertEqual(
+                    [item["id"] for item in result["discussionTopics"]],
+                    case["services"][:2],
+                )
 
     def test_three_image_intake_uses_all_images_and_canonical_metadata(self) -> None:
         observed = {}
@@ -414,6 +523,7 @@ class ServerContractTests(unittest.TestCase):
         self.assertEqual(captured["config"]["system_instruction"], analysis_engine.SYSTEM_PROMPT)
         self.assertNotIn("temperature", captured["config"])
         self.assertEqual(captured["config"]["max_output_tokens"], 8192)
+        self.assertEqual(captured["config"]["seed"], analysis_engine.GEMINI_SEED)
         self.assertEqual(captured["thinking_config"], {"thinking_level": "high"})
         self.assertEqual(captured["config"]["response_mime_type"], "application/json")
         self.assertEqual(captured["request"]["model"], "gemini-3.5-flash")
@@ -1219,9 +1329,11 @@ class ServerContractTests(unittest.TestCase):
             for angle in ("front", "left", "right")
         ]
         context = analysis_engine._image_context(images, "hands")
-        self.assertIn("front (left hand capture slot)", context)
-        self.assertIn("left (right hand capture slot)", context)
-        self.assertIn("right (both hands capture slot)", context)
+        self.assertIn("front (back of the left hand capture slot)", context)
+        self.assertIn("left (back of the right hand capture slot)", context)
+        self.assertIn("right (backs of both hands capture slot)", context)
+        self.assertIn("A palm-only image", context)
+        self.assertIn("must return retake", context)
 
     def test_quality_context_accepts_clear_consumer_closeups(self) -> None:
         image = analysis_engine.NormalizedImage(
@@ -1231,6 +1343,13 @@ class ServerContractTests(unittest.TestCase):
         self.assertIn("normal close-up", face_context)
         self.assertIn("Cropped hair, ears, shoulders, or neck", face_context)
         self.assertIn("Do not require studio lighting", face_context)
+
+        response = self.client.get("/")
+        try:
+            html = response.get_data(as_text=True)
+            self.assertIn("Show the backs of both hands side by side.", html)
+        finally:
+            response.close()
 
     def test_rate_limit_returns_retry_after(self) -> None:
         with mock.patch.dict(

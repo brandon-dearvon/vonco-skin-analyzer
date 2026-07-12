@@ -111,7 +111,9 @@ Report confidence intervals for all performance estimates. Define acceptance thr
 For every supported appearance ID and body area, a qualified Von & Co provider
 must approve a locked expected set or an explicit abstention. Automated contract
 tests must verify exact IDs, stable ordering, deduplication, caps, source version,
-area gates, and suppression for retake and medical-review states. A model response
+area gates, and suppression for retake and medical-review states. Here, caps mean
+the full catalog-cardinality safety bounds, not an arbitrary three-item display
+limit. A model response
 must never be able to inject a service, product, URL, relationship label, or stock
 claim.
 
@@ -132,7 +134,9 @@ only after an accepted API response arrives.
 For a complete response, tests must verify that the interface shows the quick-read
 summary, visible strengths and priorities, every returned ordinal observation,
 the evidence views supplied for each observation, ranked server-owned matches, and
-the consultation action. The product display cap is three. A missing permitted
+the consultation action. Every returned service and product must remain available;
+mobile may initially preview four cards with an explicit total and a Show all
+control, but it must not discard or cap the response. A missing permitted
 category may be represented only as `unable_to_assess`; the application must not
 invent a positive or negative finding, score, mask, recommendation, or supporting
 view for that placeholder, and it must preserve the compact in-person-evaluation

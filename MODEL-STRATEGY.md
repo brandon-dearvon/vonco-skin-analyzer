@@ -13,6 +13,8 @@ No other AI provider or model is used as a fallback. If Gemini is unavailable, t
 - Model: `gemini-3.5-flash`
 - Thinking level: `high`
 - Temperature: provider default; Gemini 3.x documentation advises against lowering it
+- Seed: fixed at `20260712`; Google describes a fixed seed as a best-effort way to
+  reduce variation across repeated requests, not a guarantee of identical output
 - Maximum output tokens: `8192`
 - Image input: one or three normalized JPEG images in a single request
 - Output: `application/json` constrained by the Gemini-compatible schema
@@ -20,7 +22,7 @@ No other AI provider or model is used as a fallback. If Gemini is unavailable, t
   second request occurs only after an exception or schema-invalid response;
   there is no cross-provider fallback
 - Post-response handling: strict application validation before any result is shown
-- Analysis version: `visible-surface-v1.4.0`
+- Analysis version: `visible-surface-v1.4.1`
 - Prompt version: `visible-surface-prompt-v1.1.0`
 - Response schema: `visible-surface-response-schema-v1.2.0`
 - Recommendation catalog: `naples-appearance-recommendations-v3.0.0`
@@ -112,4 +114,5 @@ PROVIDER_TIMEOUT_SECONDS=35
 - [Gemini thinking controls](https://ai.google.dev/gemini-api/docs/generate-content/thinking)
 - [Gemini image understanding](https://ai.google.dev/gemini-api/docs/generate-content/image-understanding)
 - [Gemini structured outputs](https://ai.google.dev/gemini-api/docs/generate-content/structured-output)
+- [Gemini generation configuration](https://ai.google.dev/api/generate-content#generationconfig)
 - [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing)
