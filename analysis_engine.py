@@ -375,25 +375,18 @@ def model_output_schema(body_area: str) -> dict[str, Any]:
 def gemini_output_schema(body_area: str) -> dict[str, Any]:
     """Return the strictest schema Gemini can compile for this response.
 
-    Gemini 2.5 accepts the enums and object constraints but rejects this
-    schema when array bounds are included because the resulting grammar has
-    too many states. The application still validates every bound against the
-    original schema after the provider responds.
+    Gemini 2.5 accepts the enums, object constraints, and short two-item
+    strength/priority bounds. It rejects the nested observations array bound
+    because that produces too many grammar states. The application still
+    validates the observation count against the original schema after the
+    provider responds.
     """
 
     schema = model_output_schema(body_area)
 
-    def remove_array_bounds(node: Any) -> None:
-        if isinstance(node, dict):
-            node.pop("minItems", None)
-            node.pop("maxItems", None)
-            for value in node.values():
-                remove_array_bounds(value)
-        elif isinstance(node, list):
-            for value in node:
-                remove_array_bounds(value)
-
-    remove_array_bounds(schema)
+    observations_schema = schema["properties"]["observations"]
+    observations_schema.pop("minItems", None)
+    observations_schema.pop("maxItems", None)
     return schema
 
 

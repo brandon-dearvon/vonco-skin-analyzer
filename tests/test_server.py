@@ -308,22 +308,7 @@ class ServerContractTests(unittest.TestCase):
 
     def test_relaxed_provider_schema_still_fails_closed_and_falls_back(self) -> None:
         invalid = complete_model_result()
-        invalid["observations"][1]["level"] = "visible"
-        invalid["observations"].append(
-            {
-                "id": "visible_lines",
-                "label": "Visible lines",
-                "level": "visible",
-                "description": "Visible lines can be seen in the submitted area.",
-                "angles": ["single"],
-            }
-        )
-        invalid["strengths"] = []
-        invalid["priorities"] = [
-            "visible_redness",
-            "surface_texture",
-            "visible_lines",
-        ]
+        invalid["observations"] = invalid["observations"] * 6
         calls = []
 
         def invalid_gemini(*_):
@@ -420,9 +405,15 @@ class ServerContractTests(unittest.TestCase):
             analysis_engine.gemini_output_schema("face"),
         )
         projected_schema = captured["config"]["response_json_schema"]
-        self.assertNotIn("maxItems", json.dumps(projected_schema))
-        self.assertNotIn("minItems", json.dumps(projected_schema))
-        self.assertIn("maxItems", json.dumps(analysis_engine.model_output_schema("face")))
+        observations_schema = projected_schema["properties"]["observations"]
+        self.assertNotIn("maxItems", observations_schema)
+        self.assertNotIn("minItems", observations_schema)
+        self.assertEqual(projected_schema["properties"]["strengths"]["maxItems"], 2)
+        self.assertEqual(projected_schema["properties"]["priorities"]["maxItems"], 2)
+        self.assertIn(
+            "maxItems",
+            analysis_engine.model_output_schema("face")["properties"]["observations"],
+        )
         user_parts = captured["request"]["contents"][0]["parts"]
         self.assertNotIn(
             analysis_engine.SYSTEM_PROMPT,
