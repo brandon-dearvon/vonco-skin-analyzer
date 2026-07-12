@@ -51,6 +51,14 @@ def mpo_image_bytes(size: tuple[int, int] = (640, 480)) -> bytes:
     return output.getvalue()
 
 
+def schema_contains_key(value, key: str) -> bool:
+    if isinstance(value, dict):
+        return key in value or any(schema_contains_key(item, key) for item in value.values())
+    if isinstance(value, list):
+        return any(schema_contains_key(item, key) for item in value)
+    return False
+
+
 def complete_model_result(angles: list[str] | None = None) -> dict:
     angles = angles or ["single"]
     return {
@@ -241,7 +249,14 @@ class ServerContractTests(unittest.TestCase):
         self.assertEqual(result["status"], "complete")
 
     def test_anthropic_request_omits_sampling_parameters(self) -> None:
+        from anthropic import transform_schema
+
         captured = {}
+
+        def fake_transform_schema(schema):
+            captured["schema_before_transform"] = schema
+            captured["schema_after_transform"] = transform_schema(schema)
+            return captured["schema_after_transform"]
 
         class FakeMessages:
             def create(self, **kwargs):
@@ -259,7 +274,13 @@ class ServerContractTests(unittest.TestCase):
             analysis_engine.NormalizedImage("single", b"jpeg", "image/jpeg", 640, 640)
         ]
         with mock.patch.dict(
-            sys.modules, {"anthropic": SimpleNamespace(Anthropic=FakeAnthropic)}
+            sys.modules,
+            {
+                "anthropic": SimpleNamespace(
+                    Anthropic=FakeAnthropic,
+                    transform_schema=fake_transform_schema,
+                )
+            },
         ):
             result = analysis_engine._call_anthropic(
                 normalized, "face", "test-key", "claude-sonnet-5"
@@ -271,13 +292,70 @@ class ServerContractTests(unittest.TestCase):
             {
                 "format": {
                     "type": "json_schema",
-                    "schema": analysis_engine.model_output_schema("face"),
+                    "schema": captured["schema_after_transform"],
                 }
             },
         )
+        self.assertEqual(
+            captured["schema_before_transform"],
+            analysis_engine.model_output_schema("face"),
+        )
+        self.assertTrue(schema_contains_key(captured["schema_before_transform"], "maxItems"))
+        self.assertFalse(schema_contains_key(captured["schema_after_transform"], "maxItems"))
         self.assertEqual(captured["client_kwargs"]["max_retries"], 0)
         self.assertLessEqual(captured["client_kwargs"]["timeout"], 38)
         self.assertEqual(result["status"], "complete")
+
+    def test_relaxed_provider_schema_still_fails_closed_and_falls_back(self) -> None:
+        invalid = complete_model_result()
+        invalid["observations"][1]["level"] = "visible"
+        invalid["observations"].append(
+            {
+                "id": "visible_lines",
+                "label": "Visible lines",
+                "level": "visible",
+                "description": "Visible lines can be seen in the submitted area.",
+                "angles": ["single"],
+            }
+        )
+        invalid["strengths"] = []
+        invalid["priorities"] = [
+            "visible_redness",
+            "surface_texture",
+            "visible_lines",
+        ]
+        calls = []
+
+        def invalid_gemini(*_):
+            calls.append("gemini")
+            return invalid
+
+        def valid_anthropic(*_):
+            calls.append("anthropic")
+            return complete_model_result()
+
+        normalized = [
+            analysis_engine.NormalizedImage("single", b"jpeg", "image/jpeg", 640, 640)
+        ]
+        with mock.patch.dict(
+            os.environ,
+            {
+                "OPENAI_API_KEY": "",
+                "GOOGLE_API_KEY": "test-google-key",
+                "ANTHROPIC_API_KEY": "test-anthropic-key",
+                "AI_PROVIDER_ORDER": "gemini,anthropic",
+            },
+            clear=False,
+        ), mock.patch.dict(
+            analysis_engine.PROVIDER_CALLS,
+            {"gemini": invalid_gemini, "anthropic": valid_anthropic},
+            clear=False,
+        ):
+            result = analysis_engine.analyze(normalized, "face")
+
+        self.assertEqual(calls, ["gemini", "anthropic"])
+        self.assertEqual(result["model"]["provider"], "anthropic")
+        self.assertLessEqual(len(result["priorities"]), 2)
 
     def test_gemini_uses_system_instruction_and_strict_response_schema(self) -> None:
         captured = {}
@@ -339,8 +417,12 @@ class ServerContractTests(unittest.TestCase):
         self.assertEqual(captured["config"]["system_instruction"], analysis_engine.SYSTEM_PROMPT)
         self.assertEqual(
             captured["config"]["response_json_schema"],
-            analysis_engine.model_output_schema("face"),
+            analysis_engine.gemini_output_schema("face"),
         )
+        projected_schema = captured["config"]["response_json_schema"]
+        self.assertNotIn("maxItems", json.dumps(projected_schema))
+        self.assertNotIn("minItems", json.dumps(projected_schema))
+        self.assertIn("maxItems", json.dumps(analysis_engine.model_output_schema("face")))
         user_parts = captured["request"]["contents"][0]["parts"]
         self.assertNotIn(
             analysis_engine.SYSTEM_PROMPT,

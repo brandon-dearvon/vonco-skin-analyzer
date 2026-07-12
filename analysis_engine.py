@@ -372,6 +372,31 @@ def model_output_schema(body_area: str) -> dict[str, Any]:
     return schema
 
 
+def gemini_output_schema(body_area: str) -> dict[str, Any]:
+    """Return the strictest schema Gemini can compile for this response.
+
+    Gemini 2.5 accepts the enums and object constraints but rejects this
+    schema when array bounds are included because the resulting grammar has
+    too many states. The application still validates every bound against the
+    original schema after the provider responds.
+    """
+
+    schema = model_output_schema(body_area)
+
+    def remove_array_bounds(node: Any) -> None:
+        if isinstance(node, dict):
+            node.pop("minItems", None)
+            node.pop("maxItems", None)
+            for value in node.values():
+                remove_array_bounds(value)
+        elif isinstance(node, list):
+            for value in node:
+                remove_array_bounds(value)
+
+    remove_array_bounds(schema)
+    return schema
+
+
 class AnalyzerError(RuntimeError):
     """Base class for controlled analyzer failures."""
 
@@ -1063,7 +1088,7 @@ def _call_gemini(
             temperature=0,
             max_output_tokens=2400,
             response_mime_type="application/json",
-            response_json_schema=model_output_schema(body_area),
+            response_json_schema=gemini_output_schema(body_area),
         ),
     )
     output_text = getattr(response, "text", None)
@@ -1075,7 +1100,7 @@ def _call_gemini(
 def _call_anthropic(
     images: Sequence[NormalizedImage], body_area: str, api_key: str, model: str
 ) -> Any:
-    from anthropic import Anthropic
+    from anthropic import Anthropic, transform_schema
 
     content: list[dict[str, Any]] = [
         {"type": "text", "text": _image_context(images, body_area)}
@@ -1110,7 +1135,10 @@ def _call_anthropic(
         output_config={
             "format": {
                 "type": "json_schema",
-                "schema": model_output_schema(body_area),
+                # Anthropic's SDK removes unsupported grammar constraints and
+                # retains them as descriptions. The original schema is still
+                # enforced by validate_model_output after the response.
+                "schema": transform_schema(model_output_schema(body_area)),
             }
         },
         system=SYSTEM_PROMPT,
