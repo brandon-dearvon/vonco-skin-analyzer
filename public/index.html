@@ -1120,8 +1120,32 @@
       font-size: 0.96rem;
     }
 
+    .recommendation-jump {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .recommendation-jump a {
+      padding: 7px 11px;
+      color: var(--evergreen-dark);
+      background: rgba(192, 200, 169, 0.28);
+      border: 1px solid rgba(81, 104, 98, 0.2);
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      line-height: 1.3;
+      text-decoration: none;
+    }
+
+    .recommendation-jump a:hover {
+      background: rgba(192, 200, 169, 0.48);
+    }
+
     .recommendation-group {
       margin-top: 25px;
+      scroll-margin-top: 112px;
     }
 
     .recommendation-group h4 {
@@ -1254,6 +1278,10 @@
       color: var(--peach-dark);
     }
 
+    .recommendation-more {
+      display: none;
+    }
+
     .recommendation-empty {
       margin: 16px 0 0;
       padding: 17px 18px;
@@ -1356,12 +1384,6 @@
       justify-content: flex-end;
       gap: 10px 20px;
       font-size: 0.88rem;
-    }
-
-    .mobile-swipe-hint {
-      display: none;
-      color: var(--evergreen-dark);
-      font-weight: 600;
     }
 
     .footer-links a {
@@ -1553,12 +1575,9 @@
         min-width: 0;
       }
 
-      .service-list {
+      .service-list,
+      .product-list {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .service-list .recommendation-card:last-child:nth-child(odd) {
-        grid-column: 1 / -1;
       }
     }
 
@@ -1713,23 +1732,43 @@
 
       .service-list,
       .product-list {
-        grid-template-columns: none;
-        grid-auto-flow: column;
-        grid-auto-columns: calc(100% - 34px);
-        overflow-x: auto;
-        overscroll-behavior-inline: contain;
-        padding: 2px 2px 12px;
-        scroll-snap-type: x mandatory;
-        scrollbar-width: thin;
+        grid-template-columns: minmax(0, 1fr);
+        grid-auto-flow: row;
+        grid-auto-columns: auto;
+        overflow-x: visible;
+        padding: 0;
+        scroll-snap-type: none;
       }
 
       .service-list .recommendation-card,
       .product-list .recommendation-card {
-        scroll-snap-align: start;
+        scroll-snap-align: none;
       }
 
-      .mobile-swipe-hint {
-        display: inline;
+      .recommendation-list.mobile-collapsed .recommendation-card:nth-child(n + 5) {
+        display: none;
+      }
+
+      .recommendation-more {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 12px;
+        padding: 10px 15px;
+        color: var(--evergreen-dark);
+        background: var(--white);
+        border: 1px solid rgba(81, 104, 98, 0.48);
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.045em;
+        line-height: 1.3;
+        text-transform: uppercase;
+      }
+
+      .recommendation-more:hover {
+        background: rgba(192, 200, 169, 0.24);
       }
 
       .plan-section {
@@ -1848,6 +1887,15 @@
         break-inside: avoid;
       }
 
+      .recommendation-list.mobile-collapsed .recommendation-card {
+        display: flex !important;
+      }
+
+      .recommendation-jump,
+      .recommendation-more {
+        display: none !important;
+      }
+
       .server-disclaimer:not([hidden]) {
         display: block;
       }
@@ -1872,12 +1920,12 @@
     <section class="intro" aria-labelledby="pageTitle">
       <p class="eyebrow">Complimentary photo-based skin analysis</p>
       <h1 id="pageTitle">Your skin is personal. <span class="hero-mobile-line">Your next step should be too.</span></h1>
-      <p class="intro-copy">Upload one or three clear photos for a full visible-skin profile, then see ranked Von &amp; Co services and skincare matched to what stands out.</p>
+      <p class="intro-copy">Upload one or three clear photos for a full visible-skin profile, then see Von &amp; Co services and skincare matched to what stands out.</p>
       <ul class="intro-benefits" aria-label="Your skin analysis may include">
         <li>Full visible profile</li>
         <li>What looks strong</li>
         <li>What stands out</li>
-        <li>Ranked service + skincare matches</li>
+        <li>Matched service + skincare options</li>
       </ul>
     </section>
 
@@ -1888,7 +1936,8 @@
           <div class="select-wrap">
             <select id="bodyArea" name="body_area">
               <option value="face">Face</option>
-              <option value="neck_chest">Neck and chest</option>
+              <option value="neck">Neck</option>
+              <option value="chest">Chest</option>
               <option value="hands">Hands</option>
               <option value="back">Back</option>
               <option value="legs">Legs</option>
@@ -2012,7 +2061,7 @@
         </li>
         <li class="loading-step" data-loading-step="5" data-state="pending">
           <span class="loading-step-marker" aria-hidden="true">6</span>
-          <span class="loading-step-copy"><span class="loading-step-title">Preview assembly</span><span class="loading-step-detail">Your profile and next-step shortlist are assembled.</span></span>
+          <span class="loading-step-copy"><span class="loading-step-title">Preview assembly</span><span class="loading-step-detail">Your profile and complete match set are assembled.</span></span>
         </li>
       </ol>
     </section>
@@ -2048,19 +2097,25 @@
 
         <section class="plan-section" id="planSection" aria-labelledby="planHeading">
           <p class="plan-kicker">Matched to your photos</p>
-          <h3 class="plan-heading" id="planHeading">Your closest Von &amp; Co matches</h3>
-          <p class="plan-intro" id="planIntro">Ranked from your visible appearance profile and mapped to Von &amp; Co's current guides.</p>
+          <h3 class="plan-heading" id="planHeading">Your Von &amp; Co matches</h3>
+          <p class="plan-intro" id="planIntro">Every source-supported match from your visible appearance profile, with visible priorities first.</p>
+          <nav class="recommendation-jump" id="recommendationJump" aria-label="Jump to recommendation group" hidden>
+            <a id="servicesJump" href="#servicesSection" hidden>In-studio matches</a>
+            <a id="productsJump" href="#productsSection" hidden>Skincare matches</a>
+          </nav>
 
           <section class="recommendation-group" id="servicesSection" aria-labelledby="servicesHeading" hidden>
-            <h4 id="servicesHeading">Where to start in studio</h4>
-            <p class="recommendation-group-copy">The strongest service matches to explore first with a Von &amp; Co provider. <span class="mobile-swipe-hint">Swipe to see all.</span></p>
+            <h4 id="servicesHeading">In-studio matches</h4>
+            <p class="recommendation-group-copy">All supported service options, with visible priorities first and Von &amp; Co's provider guide deciding the order.</p>
             <div class="recommendation-list service-list" id="servicesList"></div>
+            <button class="recommendation-more" id="servicesMoreButton" type="button" aria-controls="servicesList" aria-expanded="false" hidden></button>
           </section>
 
           <section class="recommendation-group" id="productsSection" aria-labelledby="productsHeading" hidden>
-            <h4 id="productsHeading">Your at-home shortlist</h4>
-            <p class="recommendation-group-copy">Targeted options and daily protection from Von &amp; Co's current product guide. <span class="mobile-swipe-hint">Swipe to see all.</span></p>
+            <h4 id="productsHeading">Skincare matches</h4>
+            <p class="recommendation-group-copy">All supported skincare options from Von &amp; Co's current product guide, including daily protection.</p>
             <div class="recommendation-list product-list" id="productsList"></div>
+            <button class="recommendation-more" id="productsMoreButton" type="button" aria-controls="productsList" aria-expanded="false" hidden></button>
           </section>
 
           <p class="recommendation-empty" id="recommendationsEmpty" hidden>No service or skincare match was added automatically for this photo area. Bring your preview to a complimentary consultation to explore options with a Von &amp; Co provider.</p>
@@ -2164,10 +2219,15 @@
           { label: "Left view", tip: "Turn slightly so the left side is clear." },
           { label: "Right view", tip: "Turn slightly so the right side is clear." }
         ],
-        neck_chest: [
-          { label: "Front view", tip: "Center the neck and upper chest in the frame." },
-          { label: "Left angle", tip: "Turn slightly left while keeping the area visible." },
-          { label: "Right angle", tip: "Turn slightly right while keeping the area visible." }
+        neck: [
+          { label: "Front view", tip: "Center the neck in the frame." },
+          { label: "Left angle", tip: "Turn slightly left while keeping the neck visible." },
+          { label: "Right angle", tip: "Turn slightly right while keeping the neck visible." }
+        ],
+        chest: [
+          { label: "Front view", tip: "Center the upper chest in the frame." },
+          { label: "Left angle", tip: "Capture the upper chest from a slight left angle." },
+          { label: "Right angle", tip: "Capture the upper chest from a slight right angle." }
         ],
         hands: [
           { label: "Left hand", tip: "Show the back of the left hand in even light." },
@@ -2188,7 +2248,8 @@
 
       var areaNames = {
         face: "Face",
-        neck_chest: "Neck and chest",
+        neck: "Neck",
+        chest: "Chest",
         hands: "Hands",
         back: "Back",
         legs: "Legs"
@@ -2214,6 +2275,8 @@
         prominent: { label: "Prominent", filled: 4 },
         unable_to_assess: { label: "Not assessed", filled: 0 }
       };
+
+      var MOBILE_MATCH_PREVIEW_COUNT = 4;
 
       var qualityIssueCopy = {
         not_skin: "The selected file does not show enough visible skin for this preview.",
@@ -2296,14 +2359,21 @@
       var limitationsSection = document.getElementById("limitationsSection");
       var planSection = document.getElementById("planSection");
       var planIntro = document.getElementById("planIntro");
+      var recommendationJump = document.getElementById("recommendationJump");
+      var servicesJump = document.getElementById("servicesJump");
+      var productsJump = document.getElementById("productsJump");
       var servicesSection = document.getElementById("servicesSection");
+      var servicesHeading = document.getElementById("servicesHeading");
       var productsSection = document.getElementById("productsSection");
+      var productsHeading = document.getElementById("productsHeading");
       var strengthsList = document.getElementById("strengthsList");
       var prioritiesList = document.getElementById("prioritiesList");
       var limitationsList = document.getElementById("limitationsList");
       var qualityLimitationsList = document.getElementById("qualityLimitationsList");
       var servicesList = document.getElementById("servicesList");
       var productsList = document.getElementById("productsList");
+      var servicesMoreButton = document.getElementById("servicesMoreButton");
+      var productsMoreButton = document.getElementById("productsMoreButton");
       var recommendationsEmpty = document.getElementById("recommendationsEmpty");
       var serverDisclaimer = document.getElementById("serverDisclaimer");
       var medicalPanel = document.getElementById("medicalPanel");
@@ -2627,7 +2697,10 @@
         updateCameraCopy();
         showCameraError("");
         capturePhotoButton.disabled = true;
-        cameraVideo.classList.toggle("mirror", bodyArea.value === "face" || bodyArea.value === "neck_chest");
+        cameraVideo.classList.toggle(
+          "mirror",
+          ["face", "neck", "chest"].indexOf(bodyArea.value) !== -1
+        );
 
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
           showCameraError("Camera access is not available in this browser. Close this window and use photo upload instead.");
@@ -2838,6 +2911,15 @@
         planSection.hidden = false;
         servicesSection.hidden = true;
         productsSection.hidden = true;
+        recommendationJump.hidden = true;
+        servicesJump.hidden = true;
+        productsJump.hidden = true;
+        servicesMoreButton.hidden = true;
+        productsMoreButton.hidden = true;
+        servicesMoreButton.setAttribute("aria-expanded", "false");
+        productsMoreButton.setAttribute("aria-expanded", "false");
+        servicesList.classList.remove("mobile-collapsed");
+        productsList.classList.remove("mobile-collapsed");
         recommendationsEmpty.hidden = true;
         serverDisclaimer.hidden = true;
         serverDisclaimer.textContent = "";
@@ -2845,7 +2927,9 @@
         resultSummaryHeading.textContent = "What stands out in your photos";
         resultSummaryCopy.textContent = "";
         strengthsHeading.textContent = "What appears subtle or not apparent";
-        planIntro.textContent = "Ranked from your visible appearance profile and mapped to Von & Co's current guides.";
+        planIntro.textContent = "Every source-supported match from your visible appearance profile, with visible priorities first.";
+        servicesHeading.textContent = "In-studio matches";
+        productsHeading.textContent = "Skincare matches";
         clearNode(resultInsights);
         clearNode(strengthsList);
         clearNode(prioritiesList);
@@ -2884,7 +2968,7 @@
           "Estimated stage: reviewing visible surface features.",
           "Estimated stage: organizing your visible profile.",
           "Estimated stage: matching Von & Co services and skincare.",
-          "Estimated stage: assembling your profile and shortlist."
+          "Estimated stage: assembling your profile and complete match set."
         ];
         var activeIndex = 0;
         for (var index = 0; index < stageTimings.length; index += 1) {
@@ -3189,14 +3273,21 @@
       function appendMatchedObservationTags(container, ids, map) {
         var uniqueIds = Array.isArray(ids) ? ids.filter(function (id, index, values) {
           return typeof id === "string" && values.indexOf(id) === index;
-        }).slice(0, 2) : [];
-        uniqueIds.forEach(function (id) {
+        }) : [];
+        uniqueIds.slice(0, 3).forEach(function (id) {
           var observation = map && map.get(id);
           var label = cleanText(observation && observation.label);
           if (label) {
             appendRecommendationTag(container, label, "");
           }
         });
+        if (uniqueIds.length > 3) {
+          appendRecommendationTag(
+            container,
+            "+" + (uniqueIds.length - 3) + " more profile matches",
+            "relationship-tag"
+          );
+        }
       }
 
       function recommendationUsesVisiblePriority(item, map) {
@@ -3218,7 +3309,7 @@
         var rank = document.createElement("p");
         rank.className = "recommendation-rank";
         rank.textContent = recommendationUsesVisiblePriority(service, map)
-          ? (index === 0 ? "Best match" : "Also consider")
+          ? (index === 0 ? "Priority match" : "Profile match")
           : "Maintenance match";
         card.appendChild(rank);
 
@@ -3291,7 +3382,7 @@
         rank.textContent = relationship === "Daily protection"
           ? "Daily essential"
           : (recommendationUsesVisiblePriority(product, map)
-            ? (index === 0 ? "Targeted pick" : "Also consider")
+            ? (index === 0 ? "Priority match" : "Profile match")
             : "Maintenance pick");
         card.appendChild(rank);
 
@@ -3336,12 +3427,37 @@
         return card;
       }
 
+      function disclosureButtonText(button, expanded) {
+        var count = Number(button.dataset.matchCount) || 0;
+        var label = cleanText(button.dataset.matchLabel) || "matches";
+        return expanded ? "Show fewer " + label : "Show all " + count + " " + label;
+      }
+
+      function configureRecommendationDisclosure(list, button, label) {
+        var count = list.childElementCount;
+        var hasMore = count > MOBILE_MATCH_PREVIEW_COUNT;
+        list.classList.toggle("mobile-collapsed", hasMore);
+        button.dataset.matchCount = String(count);
+        button.dataset.matchLabel = label;
+        button.setAttribute("aria-expanded", "false");
+        button.textContent = disclosureButtonText(button, false);
+        button.hidden = !hasMore;
+      }
+
+      function toggleRecommendationDisclosure(list, button) {
+        var expanded = button.getAttribute("aria-expanded") === "true";
+        var nextExpanded = !expanded;
+        list.classList.toggle("mobile-collapsed", !nextExpanded);
+        button.setAttribute("aria-expanded", String(nextExpanded));
+        button.textContent = disclosureButtonText(button, nextExpanded);
+      }
+
       function renderRecommendations(recommendations, map) {
         clearNode(servicesList);
         clearNode(productsList);
 
-        var services = recommendations && Array.isArray(recommendations.services) ? recommendations.services.slice(0, 3) : [];
-        var products = recommendations && Array.isArray(recommendations.products) ? recommendations.products.slice(0, 3) : [];
+        var services = recommendations && Array.isArray(recommendations.services) ? recommendations.services : [];
+        var products = recommendations && Array.isArray(recommendations.products) ? recommendations.products : [];
 
         services.forEach(function (service, index) {
           var card = createServiceCard(service, index, map);
@@ -3357,9 +3473,20 @@
           }
         });
 
-        servicesSection.hidden = servicesList.childElementCount === 0;
-        productsSection.hidden = productsList.childElementCount === 0;
-        recommendationsEmpty.hidden = servicesList.childElementCount > 0 || productsList.childElementCount > 0;
+        var serviceCount = servicesList.childElementCount;
+        var productCount = productsList.childElementCount;
+        servicesSection.hidden = serviceCount === 0;
+        productsSection.hidden = productCount === 0;
+        servicesHeading.textContent = "In-studio matches (" + serviceCount + ")";
+        productsHeading.textContent = "Skincare matches (" + productCount + ")";
+        servicesJump.textContent = "In-studio (" + serviceCount + ")";
+        productsJump.textContent = "Skincare (" + productCount + ")";
+        servicesJump.hidden = serviceCount === 0;
+        productsJump.hidden = productCount === 0;
+        recommendationJump.hidden = serviceCount === 0 && productCount === 0;
+        configureRecommendationDisclosure(servicesList, servicesMoreButton, "in-studio matches");
+        configureRecommendationDisclosure(productsList, productsMoreButton, "skincare matches");
+        recommendationsEmpty.hidden = serviceCount > 0 || productCount > 0;
       }
 
       function renderServerDisclaimer(data) {
@@ -3619,6 +3746,12 @@
 
       photoUpload.addEventListener("change", handleUploadSelection);
       analyzeButton.addEventListener("click", submitPreview);
+      servicesMoreButton.addEventListener("click", function () {
+        toggleRecommendationDisclosure(servicesList, servicesMoreButton);
+      });
+      productsMoreButton.addEventListener("click", function () {
+        toggleRecommendationDisclosure(productsList, productsMoreButton);
+      });
       capturePhotoButton.addEventListener("click", captureCurrentPhoto);
       closeCameraButton.addEventListener("click", closeCamera);
       returnFromRetakeButton.addEventListener("click", returnToPhotos);

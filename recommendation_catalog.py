@@ -17,11 +17,15 @@ from __future__ import annotations
 from typing import Any, Mapping, Sequence
 
 
-CATALOG_VERSION = "naples-appearance-recommendations-v2.1.0"
+CATALOG_VERSION = "naples-appearance-recommendations-v3.0.0"
 
-ALL_AREAS = frozenset({"face", "neck_chest", "hands", "back", "legs"})
+ALL_AREAS = frozenset({"face", "neck", "chest", "hands", "back", "legs"})
 FACE_ONLY = frozenset({"face"})
-FACE_AND_NECK = frozenset({"face", "neck_chest"})
+FACE_AND_NECK = frozenset({"face", "neck"})
+FACE_CHEST_HANDS = frozenset({"face", "chest", "hands"})
+FACE_CHEST_LEGS = frozenset({"face", "chest", "legs"})
+CHEST_AND_HANDS = frozenset({"chest", "hands"})
+NOT_IMAGE_MAPPED = frozenset()
 
 # Immutable evidence identifiers make each catalog entry independently auditable.
 # The hashes are for the exact provider PDFs reviewed when this catalog version
@@ -87,6 +91,36 @@ SOURCE_EVIDENCE: dict[str, dict[str, str]] = {
         "url": "https://www.vonandcoaesthetics.com/services/sculptra-in-naples/",
         "reviewed": "2026-07-12",
     },
+    "von_botox_service_page": {
+        "title": "Von & Co Botox treatment page",
+        "url": "https://www.vonandcoaesthetics.com/services/botox-in-naples/",
+        "reviewed": "2026-07-12",
+    },
+    "von_dysport_service_page": {
+        "title": "Von & Co Dysport treatment page",
+        "url": "https://www.vonandcoaesthetics.com/services/dysport-in-naples/",
+        "reviewed": "2026-07-12",
+    },
+    "von_xeomin_service_page": {
+        "title": "Von & Co Xeomin treatment page",
+        "url": "https://www.vonandcoaesthetics.com/services/xeomin-in-naples/",
+        "reviewed": "2026-07-12",
+    },
+    "von_skinvive_service_page": {
+        "title": "Von & Co SkinVive treatment page",
+        "url": "https://www.vonandcoaesthetics.com/services/skinvive-in-naples/",
+        "reviewed": "2026-07-12",
+    },
+    "von_facials_service_page": {
+        "title": "Von & Co facials treatment page",
+        "url": "https://www.vonandcoaesthetics.com/services/facials-in-naples/",
+        "reviewed": "2026-07-12",
+    },
+    "von_all_services_page": {
+        "title": "Von & Co all-services page",
+        "url": "https://www.vonandcoaesthetics.com/services/all-services/",
+        "reviewed": "2026-07-12",
+    },
 }
 
 SERVICES_GUIDE_SOURCE = "services_quick_reference_107c045f"
@@ -94,12 +128,173 @@ PRODUCTS_GUIDE_SOURCE = "products_quick_reference_273ea983"
 
 
 SERVICE_CATALOG: dict[str, dict[str, Any]] = {
+    "botox": {
+        "name": "Botox",
+        "category": "Neurotoxin",
+        "summary": (
+            "Von & Co includes Botox among its provider-selected options for the "
+            "appearance of visible face or neck lines."
+        ),
+        "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/botox-in-naples/",
+        "areas": FACE_AND_NECK,
+        "sourceRefs": (SERVICES_GUIDE_SOURCE, "von_botox_service_page"),
+    },
+    "dysport": {
+        "name": "Dysport",
+        "category": "Neurotoxin",
+        "summary": (
+            "Von & Co includes Dysport among its provider-selected options for the "
+            "appearance of visible face or neck lines."
+        ),
+        "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/dysport-in-naples/",
+        "areas": FACE_AND_NECK,
+        "sourceRefs": (SERVICES_GUIDE_SOURCE, "von_dysport_service_page"),
+    },
+    "xeomin": {
+        "name": "Xeomin",
+        "category": "Neurotoxin",
+        "summary": (
+            "Von & Co includes Xeomin among its provider-selected options for the "
+            "appearance of visible face or neck lines."
+        ),
+        "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/xeomin-in-naples/",
+        "areas": FACE_AND_NECK,
+        "sourceRefs": (SERVICES_GUIDE_SOURCE, "von_xeomin_service_page"),
+    },
+    "dermal_fillers": {
+        "name": "Dermal Fillers",
+        "category": "HA injectable",
+        "summary": (
+            "Von & Co offers provider-selected HA fillers for guest goals involving "
+            "facial volume and contour."
+        ),
+        "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/all-services/",
+        "areas": FACE_ONLY,
+        "sourceRefs": (SERVICES_GUIDE_SOURCE, "von_all_services_page"),
+    },
+    "lip_filler": {
+        "name": "Lip Filler",
+        "category": "HA injectable",
+        "summary": (
+            "Von & Co offers provider-selected lip filler for guests who identify lip "
+            "enhancement as a goal."
+        ),
+        "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/all-services/",
+        "areas": FACE_ONLY,
+        "sourceRefs": (SERVICES_GUIDE_SOURCE, "von_all_services_page"),
+    },
+    "hydrafacial_elite": {
+        "name": "Elite HydraFacial",
+        "category": "Facial",
+        "summary": (
+            "The Elite HydraFacial includes the Customized steps for visible "
+            "pigment, pores, surface texture, or flaking, plus its expanded experience."
+        ),
+        "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/hydrafacial-in-naples/",
+        "areas": FACE_AND_NECK,
+        "sourceRefs": (SERVICES_GUIDE_SOURCE, "von_hydrafacial_service_page"),
+    },
+    "skinvive": {
+        "name": "SkinVive",
+        "category": "Skin-quality injectable",
+        "summary": (
+            "Von & Co uses SkinVive as a provider-led option for the appearance of "
+            "facial fine lines, texture, and hydration."
+        ),
+        "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/skinvive-in-naples/",
+        "areas": FACE_ONLY,
+        "sourceRefs": (SERVICES_GUIDE_SOURCE, "von_skinvive_service_page"),
+    },
+    "signature_facial": {
+        "name": "Signature Cleansing Facial",
+        "category": "Facial",
+        "summary": (
+            "A customizable cleansing, exfoliation, and hydration option to explore "
+            "for supported facial surface concerns."
+        ),
+        "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/facials-in-naples/",
+        "areas": FACE_ONLY,
+        "sourceRefs": (SERVICES_GUIDE_SOURCE, "von_facials_service_page"),
+    },
+    "anti_aging_facial": {
+        "name": "Anti-Aging Facial",
+        "category": "Facial",
+        "summary": (
+            "Von & Co's resurfacing and hydrating facial is an accessible option to "
+            "explore for supported visible lines and surface texture."
+        ),
+        "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/facials-in-naples/",
+        "areas": FACE_ONLY,
+        "sourceRefs": (SERVICES_GUIDE_SOURCE, "von_facials_service_page"),
+    },
+    "kybella": {
+        "name": "Kybella",
+        "category": "Contour injectable",
+        "summary": (
+            "Von & Co offers Kybella for provider-evaluated submental contour goals."
+        ),
+        "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/all-services/",
+        "areas": FACE_ONLY,
+        "sourceRefs": (SERVICES_GUIDE_SOURCE, "von_all_services_page"),
+    },
+    "laser_hair_removal": {
+        "name": "Laser Hair Removal",
+        "category": "Hair reduction",
+        "summary": (
+            "Von & Co offers laser hair reduction when unwanted hair is an explicit "
+            "guest goal."
+        ),
+        "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/all-services/",
+        "areas": ALL_AREAS,
+        "sourceRefs": (SERVICES_GUIDE_SOURCE, "von_all_services_page"),
+    },
+    "hair_restoration_prf": {
+        "name": "Hair Restoration (PRF)",
+        "category": "Hair restoration",
+        "summary": (
+            "Von & Co offers provider-led PRF hair restoration for an explicit scalp "
+            "hair goal."
+        ),
+        "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/all-services/",
+        "areas": NOT_IMAGE_MAPPED,
+        "sourceRefs": (SERVICES_GUIDE_SOURCE, "von_all_services_page"),
+    },
+    "brow_lamination": {
+        "name": "Brow Lamination",
+        "category": "Brow styling",
+        "summary": (
+            "Von & Co offers brow lamination when brow shaping is an explicit guest goal."
+        ),
+        "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/all-services/",
+        "areas": FACE_ONLY,
+        "sourceRefs": (SERVICES_GUIDE_SOURCE, "von_all_services_page"),
+    },
+    "semaglutide_melts": {
+        "name": "Semaglutide Melts",
+        "category": "Metabolism and wellness",
+        "summary": (
+            "A consultation-led wellness service that is never inferred from a skin photo."
+        ),
+        "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/all-services/",
+        "areas": NOT_IMAGE_MAPPED,
+        "sourceRefs": (SERVICES_GUIDE_SOURCE, "von_all_services_page"),
+    },
+    "tirzepatide_injections": {
+        "name": "Tirzepatide Injections",
+        "category": "Metabolism and wellness",
+        "summary": (
+            "A consultation-led wellness service that is never inferred from a skin photo."
+        ),
+        "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/all-services/",
+        "areas": NOT_IMAGE_MAPPED,
+        "sourceRefs": (SERVICES_GUIDE_SOURCE, "von_all_services_page"),
+    },
     "sciton_bbl_photofacial": {
         "name": "Sciton BBL Photofacial",
         "category": "Light treatment",
         "summary": (
             "Von & Co uses BBL in face-and-body plans focused on the appearance "
-            "of redness and uneven pigment."
+            "of redness, visible vessels, uneven pigment, and surface texture."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/bbl-treatment-in-naples/",
         "areas": ALL_AREAS,
@@ -109,8 +304,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Sciton Moxi Laser",
         "category": "Fractional laser",
         "summary": (
-            "Von & Co uses Moxi as a gentle fractional face-and-body option when "
-            "visible surface texture is a priority."
+            "Von & Co uses Moxi as a gentle fractional face-and-body option for "
+            "visible lines, pigment, pores, scar-like texture, and surface texture."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/moxi-laser-in-naples/",
         "areas": ALL_AREAS,
@@ -120,8 +315,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Microneedling",
         "category": "Collagen renewal",
         "summary": (
-            "Von & Co uses microneedling in facial plans focused on the appearance "
-            "of fine lines and collagen renewal."
+            "Von & Co uses microneedling in facial plans focused on visible lines, "
+            "pigment, pores, scar-like texture, and surface texture."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/microneedling-in-naples/",
         "areas": FACE_ONLY,
@@ -131,8 +326,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Microneedling + PRF",
         "category": "Collagen renewal",
         "summary": (
-            "Von & Co's provider guide places Microneedling + PRF among the options "
-            "for visible pore and scar-like texture concerns."
+            "Von & Co's provider guide uses PRF to enhance microneedling plans for "
+            "visible lines, pigment, pores, scar-like texture, and surface texture."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/microneedling-in-naples/",
         "areas": FACE_ONLY,
@@ -142,11 +337,11 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "RF Microneedling",
         "category": "Collagen renewal",
         "summary": (
-            "Von & Co uses RF microneedling when visible laxity, lines, pores, or "
-            "scar-like texture is a priority."
+            "Von & Co uses RF microneedling when visible laxity, lines, pigment, "
+            "pores, scar-like texture, or surface texture is a priority."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/rf-microneedling-in-naples/",
-        "areas": FACE_ONLY,
+        "areas": FACE_AND_NECK,
         "sourceRefs": (
             SERVICES_GUIDE_SOURCE,
             "von_rf_microneedling_service_page",
@@ -157,7 +352,7 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "category": "Hybrid fractional laser",
         "summary": (
             "Von & Co uses Halo for facial plans focused on visible pigment, lines, "
-            "pores, and scar-like texture."
+            "pores, surface texture, scar-like texture, and laxity."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/halo-laser-treatment-in-naples/",
         "areas": FACE_ONLY,
@@ -167,8 +362,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Chemical Peels",
         "category": "Resurfacing treatment",
         "summary": (
-            "Von & Co customizes peel options for plans focused on visible "
-            "discoloration and scar-like surface texture."
+            "Von & Co customizes peel options for visible lines, discoloration, "
+            "surface texture, blemish-like spots, and scar-like texture."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/chemical-peels-in-naples/",
         "areas": FACE_ONLY,
@@ -182,7 +377,7 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
             "pores are priorities in facial photos."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/hydrafacial-in-naples/",
-        "areas": FACE_ONLY,
+        "areas": FACE_AND_NECK,
         "sourceRefs": (SERVICES_GUIDE_SOURCE, "von_hydrafacial_service_page"),
     },
     "hydrafacial_customized": {
@@ -190,7 +385,7 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "category": "Facial",
         "summary": (
             "A customizable cleansing and exfoliation option to explore for "
-            "visible surface texture or flaking."
+            "visible pigment, surface texture, pores, or flaking."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/hydrafacial-in-naples/",
         "areas": FACE_AND_NECK,
@@ -201,7 +396,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "category": "Facial",
         "summary": (
             "Von & Co's provider guide positions SaltFacial as a gateway option "
-            "for visible texture, pores, and blemish-like appearance."
+            "for visible lines, pigment, texture, pores, blemish-like spots, and "
+            "scar-like appearance."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/salt-facial-in-naples/",
         "areas": FACE_ONLY,
@@ -222,50 +418,101 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Sculptra",
         "category": "Biostimulatory injectable",
         "summary": (
-            "A provider-led option to explore when visible laxity is part of the "
-            "facial profile."
+            "A provider-led option to explore when visible lines or laxity are part "
+            "of the selected area's profile."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/sculptra-in-naples/",
-        "areas": FACE_ONLY,
+        "areas": FACE_CHEST_LEGS,
         "sourceRefs": (SERVICES_GUIDE_SOURCE, "von_sculptra_service_page"),
     },
 }
 
 
-# Ordered by the provider service guide. A later candidate is used only when an
-# earlier candidate is unavailable for the selected area or room remains in the
-# recommendation set.
+# Source-derived from the locked provider guide plus each entry's cited current
+# Von page. A service appears under an observation only when one of those sources
+# directly supports the appearance relationship. Order follows guide sequence,
+# then the cited public-page additions; area gates are applied separately.
 APPEARANCE_SERVICE_MAP: dict[str, tuple[str, ...]] = {
-    "visible_lines": ("microneedling", "rf_microneedling"),
+    "visible_lines": (
+        "botox",
+        "dysport",
+        "xeomin",
+        "microneedling",
+        "microneedling_prf",
+        "rf_microneedling",
+        "sciton_moxi_laser",
+        "sciton_halo_laser",
+        "chemical_peels",
+        "saltfacial",
+        "skinvive",
+        "anti_aging_facial",
+        "sculptra",
+    ),
     "visible_redness": ("sciton_bbl_photofacial",),
     "pigment_variation": (
         "sciton_bbl_photofacial",
+        "sciton_moxi_laser",
         "sciton_halo_laser",
+        "microneedling",
+        "microneedling_prf",
+        "rf_microneedling",
         "chemical_peels",
+        "hydrafacial_customized",
+        "hydrafacial_elite",
+        "saltfacial",
     ),
     "surface_texture": (
         "sciton_moxi_laser",
+        "sciton_bbl_photofacial",
         "hydrafacial_customized",
+        "hydrafacial_elite",
         "saltfacial",
+        "skinvive",
+        "signature_facial",
+        "anti_aging_facial",
+        "sciton_halo_laser",
+        "microneedling",
+        "microneedling_prf",
+        "rf_microneedling",
+        "chemical_peels",
     ),
     "pore_visibility": (
         "hydrafacial_clarifying",
+        "hydrafacial_customized",
+        "hydrafacial_elite",
         "deep_pore_facial",
+        "saltfacial",
+        "microneedling",
         "microneedling_prf",
+        "sciton_moxi_laser",
+        "rf_microneedling",
+        "sciton_halo_laser",
+        "signature_facial",
     ),
     "laxity_appearance": ("rf_microneedling", "sculptra", "sciton_halo_laser"),
     "blemish_like_spots": (
         "hydrafacial_clarifying",
         "deep_pore_facial",
         "saltfacial",
+        "chemical_peels",
+        "signature_facial",
     ),
     "scar_like_texture": (
+        "microneedling",
         "microneedling_prf",
+        "sciton_moxi_laser",
         "rf_microneedling",
         "chemical_peels",
+        "sciton_halo_laser",
+        "saltfacial",
     ),
     "superficial_vessels": ("sciton_bbl_photofacial",),
-    "visible_flaking": ("hydrafacial_customized",),
+    "visible_flaking": (
+        "hydrafacial_customized",
+        "hydrafacial_elite",
+        "signature_facial",
+        "anti_aging_facial",
+    ),
 }
 
 PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
@@ -322,7 +569,7 @@ PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
         "brand": "Alastin",
         "category": "Firmness support",
         "availability": "Carried by Von & Co; confirm current availability.",
-        "areas": FACE_ONLY,
+        "areas": FACE_CHEST_HANDS,
         "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
     },
     "zo_growth_factor_serum": {
@@ -373,7 +620,186 @@ PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
         "areas": FACE_ONLY,
         "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
     },
+    "colorscience_brush_on_shield": {
+        "name": "Brush-On Shield",
+        "brand": "Colorescience",
+        "category": "Daily protection",
+        "availability": "Carried by Von & Co; confirm current availability.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
+    "isdin_eryfotona_actinica": {
+        "name": "Eryfotona Actinica",
+        "brand": "ISDIN",
+        "category": "Daily protection",
+        "availability": "Carried by Von & Co; confirm current availability.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
+    "isdin_eryfotona_tinted": {
+        "name": "Eryfotona Tinted",
+        "brand": "ISDIN",
+        "category": "Daily protection",
+        "availability": "Carried by Von & Co; confirm current availability.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
+    "alastin_hydratint": {
+        "name": "HydraTint SPF 36",
+        "brand": "Alastin",
+        "category": "Daily protection",
+        "availability": "Carried by Von & Co; confirm current availability.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
+    "pavise_dynamic_age_defense": {
+        "name": "Dynamic Age Defense",
+        "brand": "Pavise",
+        "category": "Daily protection",
+        "availability": "Carried by Von & Co; confirm current availability.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
+    "skinbetter_sunbetter_spf_68": {
+        "name": "Sunbetter SPF 68",
+        "brand": "SkinBetter Science",
+        "category": "Daily protection",
+        "availability": "Carried by Von & Co; confirm current availability.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
+    "colorscience_total_eye_spf_35": {
+        "name": "Total Eye SPF 35",
+        "brand": "Colorescience",
+        "category": "Eye protection",
+        "availability": "Carried by Von & Co; confirm current availability.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
+    "colorscience_lip_shine_spf_35": {
+        "name": "Lip Shine SPF 35",
+        "brand": "Colorescience",
+        "category": "Lip protection",
+        "availability": "Carried by Von & Co; confirm current availability.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
+    "zo_vitamin_c_10": {
+        "name": "10% Vitamin C",
+        "brand": "ZO Skin Health",
+        "category": "Tone + brightness",
+        "availability": "Ask a Von & Co provider before adding this active to your routine.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
+    "hydrinity_vivid_serum": {
+        "name": "Vivid Serum",
+        "brand": "Hydrinity",
+        "category": "Tone + brightness",
+        "availability": "Carried by Von & Co; confirm current availability.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
+    "isdin_retinal_advanced": {
+        "name": "Retinal Advanced",
+        "brand": "ISDIN",
+        "category": "Visible aging",
+        "availability": "Ask a Von & Co provider before adding this active to your routine.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
+    "hydrinity_retaxome": {
+        "name": "RetaXome",
+        "brand": "Hydrinity",
+        "category": "Visible aging",
+        "availability": "Ask a Von & Co provider before adding this active to your routine.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
+    "alastin_skin_nectar": {
+        "name": "Skin Nectar",
+        "brand": "Alastin",
+        "category": "Procedure support",
+        "availability": "Use with the pre- or post-procedure plan provided by Von & Co.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
+    "alastin_restorative_eye_cream": {
+        "name": "Restorative Eye Cream",
+        "brand": "Alastin",
+        "category": "Eye care",
+        "availability": "Carried by Von & Co; confirm current availability.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
+    "avene_cicalfate": {
+        "name": "Cicalfate+",
+        "brand": "Avène",
+        "category": "Barrier support",
+        "availability": "Use with the routine or procedure plan provided by Von & Co.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
+    "hydrinity_hyacyn_mist": {
+        "name": "Hyacyn Mist",
+        "brand": "Hydrinity",
+        "category": "Procedure support",
+        "availability": "Use with the routine or procedure plan provided by Von & Co.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
+    "revitalash_conditioner": {
+        "name": "RevitaLash Conditioner",
+        "brand": "RevitaLash",
+        "category": "Lash care",
+        "availability": "Carried by Von & Co; confirm current availability.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
+    "revitalash_brow_conditioner": {
+        "name": "RevitaLash Brow Conditioner",
+        "brand": "RevitaLash",
+        "category": "Brow care",
+        "availability": "Carried by Von & Co; confirm current availability.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
+    "skinbetter_alpharet_body": {
+        "name": "AlphaRet Body",
+        "brand": "SkinBetter Science",
+        "category": "Body texture + firmness",
+        "availability": "Ask a Von & Co provider before adding this active to your routine.",
+        "areas": CHEST_AND_HANDS,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
+    "zo_growth_factor_eye": {
+        "name": "Growth Factor Eye",
+        "brand": "ZO Skin Health",
+        "category": "Eye care",
+        "availability": "Carried by Von & Co; confirm current availability.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
+    "hydrinity_eye_renew": {
+        "name": "Eye Renew",
+        "brand": "Hydrinity",
+        "category": "Eye care",
+        "availability": "Carried by Von & Co; confirm current availability.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
+    "colorscience_lash_mascara": {
+        "name": "Lash Mascara",
+        "brand": "Colorescience",
+        "category": "Lash care",
+        "availability": "Carried by Von & Co; confirm current availability.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
 }
+
+MAX_SERVICE_RECOMMENDATIONS = len(SERVICE_CATALOG)
+MAX_PRODUCT_RECOMMENDATIONS = len(PRODUCT_CATALOG)
 
 
 # Relationship labels mirror the current Product Quick Reference. They describe
@@ -390,6 +816,8 @@ FACE_PRODUCT_MAP: dict[str, tuple[tuple[str, str], ...]] = {
     "pigment_variation": (
         ("skinbetter_even_tone", "Guide match"),
         ("isdin_melaclear_advanced", "Alternative match"),
+        ("zo_vitamin_c_10", "Additional guide match"),
+        ("hydrinity_vivid_serum", "Additional guide match"),
     ),
     "surface_texture": (
         ("zo_complexion_renewal_pads", "Guide match"),
@@ -410,6 +838,17 @@ FACE_PRODUCT_MAP: dict[str, tuple[tuple[str, str], ...]] = {
     "visible_flaking": (
         ("hydrinity_renewing_ha_serum", "Targeted match"),
         ("skinbetter_trio_moisture", "Alternative match"),
+    ),
+}
+
+BODY_PRODUCT_MAP: dict[str, tuple[tuple[str, str], ...]] = {
+    "visible_lines": (
+        ("alastin_restorative_skin_complex", "Guide match"),
+        ("skinbetter_alpharet_body", "Alternative match"),
+    ),
+    "laxity_appearance": (
+        ("alastin_restorative_skin_complex", "Guide match"),
+        ("skinbetter_alpharet_body", "Alternative match"),
     ),
 }
 
@@ -456,14 +895,14 @@ def _service_candidates(priorities: Sequence[str], body_area: str) -> dict[str, 
             if not service or body_area not in approved_areas:
                 continue
             _add_match(selected, service_id, observation_id)
-            if len(selected) >= 3:
-                return selected
     return selected
 
 
 def _product_map_for_area(body_area: str) -> Mapping[str, tuple[tuple[str, str], ...]]:
     if body_area == "face":
         return FACE_PRODUCT_MAP
+    if body_area in {"chest", "hands"}:
+        return BODY_PRODUCT_MAP
     return {}
 
 
@@ -484,10 +923,6 @@ def _product_candidates(
             if not product or body_area not in product["areas"]:
                 continue
             _add_match(selected, product_id, observation_id, relationship)
-            if len(selected) >= 2:
-                break
-        if len(selected) >= 2:
-            break
 
     if body_area == "face" and priorities:
         protection = PRODUCT_CATALOG[FACE_PROTECTION_PRODUCT_ID]
@@ -508,9 +943,12 @@ def build_appearance_recommendations(
 ) -> dict[str, list[dict[str, Any]]]:
     """Return deterministic, explainable service and product recommendations."""
 
-    ordered_priorities = [item for item in priorities if item in labels][:2]
-    service_matches = _service_candidates(ordered_priorities, body_area)
-    product_matches = _product_candidates(ordered_priorities, body_area)
+    ordered_observations: list[str] = []
+    for item in priorities:
+        if item in labels and item not in ordered_observations:
+            ordered_observations.append(item)
+    service_matches = _service_candidates(ordered_observations, body_area)
+    product_matches = _product_candidates(ordered_observations, body_area)
 
     services: list[dict[str, Any]] = []
     for service_id, match in service_matches.items():

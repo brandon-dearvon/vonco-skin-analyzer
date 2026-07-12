@@ -11,8 +11,8 @@
 }(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
 
-  var DEFAULT_PLAN_INTRO = "Ranked from your visible appearance profile and mapped to Von & Co's current guides.";
-  var MAINTENANCE_PLAN_INTRO = "Maintenance options mapped from subtle findings in your visible appearance profile and Von & Co's current guides.";
+  var DEFAULT_PLAN_INTRO = "Every source-supported match from your visible appearance profile, with visible priorities first.";
+  var MAINTENANCE_PLAN_INTRO = "Every source-supported maintenance match from subtle findings in your visible appearance profile.";
 
   function cleanText(value) {
     return typeof value === "string" ? value.trim().slice(0, 180) : "";
@@ -104,8 +104,8 @@
     if (subtleLabels.length) {
       copy = sentenceList(subtleLabels) + " appeared subtle in these photos. " + (hasRecommendations
         ? (priorityLabels.length
-          ? "Your full photo-based profile and closest Von & Co matches are below."
-          : "Your full photo-based profile and closest maintenance matches are below.")
+          ? "Your full photo-based profile and all supported Von & Co matches are below."
+          : "Your full photo-based profile and all supported maintenance matches are below.")
         : "Your full photo-based profile is below.");
       strengthsHeading = notApparentLabels.length
         ? "What appears subtle or not apparent"
@@ -115,7 +115,7 @@
       strengthsHeading = "What was not apparent";
     } else {
       copy = "Your full photo-based profile shows what was visible, what appeared subtle, and what could not be assessed clearly. " + (hasRecommendations
-        ? "Your closest Von & Co matches are below."
+        ? "All supported Von & Co matches are below."
         : "No automatic catalog match was added for this profile.");
       strengthsHeading = "What appears subtle or not apparent";
     }

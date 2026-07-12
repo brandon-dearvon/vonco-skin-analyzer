@@ -554,11 +554,31 @@ class ServerContractTests(unittest.TestCase):
         self.assertEqual(result["priorities"], [])
         self.assertEqual(
             [item["id"] for item in result["appearanceRecommendations"]["services"]],
-            ["sciton_bbl_photofacial", "sciton_moxi_laser", "hydrafacial_customized"],
+            [
+                "sciton_bbl_photofacial",
+                "sciton_moxi_laser",
+                "hydrafacial_customized",
+                "hydrafacial_elite",
+                "saltfacial",
+                "skinvive",
+                "signature_facial",
+                "anti_aging_facial",
+                "sciton_halo_laser",
+                "microneedling",
+                "microneedling_prf",
+                "rf_microneedling",
+                "chemical_peels",
+            ],
         )
         self.assertEqual(
             [item["id"] for item in result["appearanceRecommendations"]["products"]],
-            ["avene_thermal_water", "zo_complexion_renewal_pads", "colorscience_face_shield"],
+            [
+                "avene_thermal_water",
+                "zo_complexion_renewal_pads",
+                "skinbetter_alto_defense",
+                "skinbetter_peel_pads",
+                "colorscience_face_shield",
+            ],
         )
 
     def test_not_observed_findings_do_not_drive_maintenance_matches(self) -> None:
@@ -626,11 +646,35 @@ class ServerContractTests(unittest.TestCase):
         self.assertEqual(result["priorities"], [])
         self.assertEqual(
             [item["id"] for item in result["appearanceRecommendations"]["services"]],
-            ["microneedling", "sciton_moxi_laser", "rf_microneedling"],
+            [
+                "botox",
+                "sciton_moxi_laser",
+                "dysport",
+                "sciton_bbl_photofacial",
+                "xeomin",
+                "hydrafacial_customized",
+                "microneedling",
+                "hydrafacial_elite",
+                "microneedling_prf",
+                "saltfacial",
+                "rf_microneedling",
+                "skinvive",
+                "signature_facial",
+                "sciton_halo_laser",
+                "anti_aging_facial",
+                "chemical_peels",
+                "sculptra",
+            ],
         )
         self.assertEqual(
             [item["id"] for item in result["appearanceRecommendations"]["products"]],
-            ["skinbetter_alpharet", "zo_complexion_renewal_pads", "colorscience_face_shield"],
+            [
+                "skinbetter_alpharet",
+                "zo_complexion_renewal_pads",
+                "zo_wrinkle_texture_repair",
+                "skinbetter_peel_pads",
+                "colorscience_face_shield",
+            ],
         )
 
     def test_medical_review_reason_is_limited_to_open_or_broken_skin(self) -> None:
@@ -645,15 +689,15 @@ class ServerContractTests(unittest.TestCase):
             "quality": {"overall": "suitable", "issues": [], "guidance": []},
             "observations": [
                 {
-                    "id": "visible_lines",
-                    "label": "Visible lines",
+                    "id": "blemish_like_spots",
+                    "label": "Blemish-like spots",
                     "level": "visible",
-                    "description": "Visible lines can be seen in the submitted area.",
+                    "description": "Blemish-like spots can be seen in the submitted area.",
                     "angles": ["single"],
                 }
             ],
             "strengths": [],
-            "priorities": ["visible_lines"],
+            "priorities": ["blemish_like_spots"],
             "medicalReview": {"suggested": False, "reason": "none"},
         }
         with mock.patch.dict(
@@ -669,7 +713,7 @@ class ServerContractTests(unittest.TestCase):
         topics = analysis_engine._discussion_topics(["pigment_variation"], "face")
         self.assertEqual(
             [topic["id"] for topic in topics],
-            ["sciton_bbl_photofacial", "sciton_halo_laser"],
+            ["sciton_bbl_photofacial", "sciton_moxi_laser"],
         )
 
     def test_medical_review_suppresses_cosmetic_topics(self) -> None:
@@ -904,12 +948,12 @@ class ServerContractTests(unittest.TestCase):
             self.assertIn("Your skin is personal.", html)
             self.assertIn("Your next step should be too.", html)
             self.assertIn("full visible-skin profile", html)
-            self.assertIn("ranked Von &amp; Co services and skincare", html)
+            self.assertIn("Von &amp; Co services and skincare matched to what stands out", html)
             self.assertIn("Full visible profile", html)
             self.assertIn("What looks strong", html)
             self.assertIn("What stands out", html)
-            self.assertIn("Ranked service + skincare matches", html)
-            self.assertIn("Your closest Von &amp; Co matches", html)
+            self.assertIn("Matched service + skincare options", html)
+            self.assertIn("Your Von &amp; Co matches", html)
             self.assertIn('aria-label="Your skin analysis may include"', html)
             self.assertNotIn("Start with what", html)
             self.assertIn('font-family: "Arsenica";', html)
@@ -1066,13 +1110,35 @@ class ServerContractTests(unittest.TestCase):
             )
             self.assertIn('id="servicesSection"', html)
             self.assertIn('id="productsSection"', html)
+            self.assertIn('<option value="neck">Neck</option>', html)
+            self.assertIn('<option value="chest">Chest</option>', html)
+            self.assertNotIn('value="neck_chest"', html)
+            self.assertIn('id="recommendationJump"', html)
+            self.assertIn('id="servicesMoreButton"', html)
+            self.assertIn('id="productsMoreButton"', html)
             self.assertIn('id="recommendationsEmpty"', html)
             self.assertIn("renderRecommendations(data.appearanceRecommendations, map);", html)
             self.assertIn("function officialServiceUrl(value)", html)
             self.assertIn('url.pathname.indexOf("/services/") === 0', html)
-            self.assertIn("services.slice(0, 3)", html)
-            self.assertIn("products.slice(0, 3)", html)
-            self.assertIn("Best match", html)
+            self.assertIn("Array.isArray(recommendations.services) ? recommendations.services : []", html)
+            self.assertIn("Array.isArray(recommendations.products) ? recommendations.products : []", html)
+            self.assertNotIn("services.slice(0, 3)", html)
+            self.assertNotIn("products.slice(0, 3)", html)
+            self.assertIn('"In-studio matches (" + serviceCount', html)
+            self.assertIn('"Skincare matches (" + productCount', html)
+            self.assertIn("All supported service options", html)
+            self.assertIn("All supported skincare options", html)
+            self.assertIn("grid-template-columns: minmax(0, 1fr);", html)
+            self.assertIn("var MOBILE_MATCH_PREVIEW_COUNT = 4;", html)
+            self.assertIn("function configureRecommendationDisclosure", html)
+            self.assertIn("function toggleRecommendationDisclosure", html)
+            self.assertIn('"Show all " + count + " " + label', html)
+            self.assertIn(
+                ".recommendation-list.mobile-collapsed .recommendation-card:nth-child(n + 5)",
+                html,
+            )
+            self.assertIn("Priority match", html)
+            self.assertIn("Profile match", html)
             self.assertIn("Maintenance match", html)
             self.assertIn("Maintenance pick", html)
             self.assertIn("appeared subtle in these photos", helper)
@@ -1080,7 +1146,7 @@ class ServerContractTests(unittest.TestCase):
             self.assertIn("priorityLabels.length", helper)
             self.assertIn("recommendationItems.forEach", helper)
             self.assertIn("subtleIds.push(id)", helper)
-            self.assertIn("Maintenance options mapped from subtle findings", helper)
+            self.assertIn("Every source-supported maintenance match", helper)
             self.assertIn("Daily essential", html)
             self.assertIn("Why this matches:", html)
             self.assertIn("Book your complimentary consultation", html)

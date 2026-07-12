@@ -20,14 +20,19 @@ from typing import Any, Callable, Iterable, Mapping, Sequence
 
 from PIL import Image, ImageCms, ImageOps, ImageStat, UnidentifiedImageError
 
-from recommendation_catalog import CATALOG_VERSION, build_appearance_recommendations
+from recommendation_catalog import (
+    CATALOG_VERSION,
+    MAX_PRODUCT_RECOMMENDATIONS,
+    MAX_SERVICE_RECOMMENDATIONS,
+    build_appearance_recommendations,
+)
 
 
 LOGGER = logging.getLogger(__name__)
 
-ANALYSIS_VERSION = "visible-surface-v1.3.2"
+ANALYSIS_VERSION = "visible-surface-v1.4.0"
 PROMPT_VERSION = "visible-surface-prompt-v1.1.0"
-SCHEMA_VERSION = "visible-surface-response-schema-v1.1.0"
+SCHEMA_VERSION = "visible-surface-response-schema-v1.2.0"
 TOPIC_MAPPING_VERSION = CATALOG_VERSION
 
 DEFAULT_PROVIDER_ORDER = ("gemini",)
@@ -100,20 +105,23 @@ MEDICAL_REASON_CODES = (
     "open_or_broken_skin",
 )
 
+NECK_CHEST_OBSERVATIONS = (
+    "visible_lines",
+    "visible_redness",
+    "pigment_variation",
+    "surface_texture",
+    "pore_visibility",
+    "laxity_appearance",
+    "blemish_like_spots",
+    "scar_like_texture",
+    "superficial_vessels",
+    "visible_flaking",
+)
+
 BODY_AREA_OBSERVATIONS: dict[str, tuple[str, ...]] = {
     "face": tuple(OBSERVATION_LABELS),
-    "neck_chest": (
-        "visible_lines",
-        "visible_redness",
-        "pigment_variation",
-        "surface_texture",
-        "pore_visibility",
-        "laxity_appearance",
-        "blemish_like_spots",
-        "scar_like_texture",
-        "superficial_vessels",
-        "visible_flaking",
-    ),
+    "neck": NECK_CHEST_OBSERVATIONS,
+    "chest": NECK_CHEST_OBSERVATIONS,
     "hands": (
         "visible_lines",
         "visible_redness",
@@ -154,11 +162,17 @@ BODY_AREA_ANGLE_CONTEXT: dict[str, dict[str, str]] = {
         "left": "left facial profile",
         "right": "right facial profile",
     },
-    "neck_chest": {
-        "single": "single user-selected neck and chest view",
-        "front": "center neck and chest view",
-        "left": "left oblique neck and chest view",
-        "right": "right oblique neck and chest view",
+    "neck": {
+        "single": "single user-selected neck view",
+        "front": "center neck view",
+        "left": "left oblique neck view",
+        "right": "right oblique neck view",
+    },
+    "chest": {
+        "single": "single user-selected upper-chest view",
+        "front": "center upper-chest view",
+        "left": "left oblique upper-chest view",
+        "right": "right oblique upper-chest view",
     },
     "hands": {
         "single": "single user-selected hand view",
@@ -186,9 +200,13 @@ BODY_AREA_QUALITY_CONTEXT: dict[str, str] = {
         "chin is clear enough to review. Cropped hair, ears, shoulders, or neck do "
         "not make an otherwise clear face photo unsuitable."
     ),
-    "neck_chest": (
-        "Accept the photo when the neck and/or upper chest skin being previewed is "
-        "clear enough to review; a full torso view is not required."
+    "neck": (
+        "Accept the photo when the intended neck skin is clear enough to review; "
+        "the upper chest does not need to be visible."
+    ),
+    "chest": (
+        "Accept the photo when the intended upper-chest skin is clear enough to "
+        "review; a full torso view is not required."
     ),
     "hands": (
         "Accept the photo when the intended hand skin is clear enough to review; "
@@ -661,9 +679,15 @@ def _validate_appearance_recommendations(
     )
     services = recommendations["services"]
     products = recommendations["products"]
-    if not isinstance(services, list) or len(services) > 3:
+    if (
+        not isinstance(services, list)
+        or len(services) > MAX_SERVICE_RECOMMENDATIONS
+    ):
         raise SchemaValidationError("appearanceRecommendations.services is invalid")
-    if not isinstance(products, list) or len(products) > 3:
+    if (
+        not isinstance(products, list)
+        or len(products) > MAX_PRODUCT_RECOMMENDATIONS
+    ):
         raise SchemaValidationError("appearanceRecommendations.products is invalid")
 
     for index, service in enumerate(services):
@@ -687,7 +711,7 @@ def _validate_appearance_recommendations(
             item["matchedObservationIds"],
             f"{path}.matchedObservationIds",
             allowed=recommendation_ids,
-            max_items=2,
+            max_items=len(recommendation_ids),
         )
         if not matched_ids:
             raise SchemaValidationError(f"{path} must cite an eligible observed finding")
@@ -725,7 +749,7 @@ def _validate_appearance_recommendations(
             item["matchedObservationIds"],
             f"{path}.matchedObservationIds",
             allowed=recommendation_ids,
-            max_items=2,
+            max_items=len(recommendation_ids),
         )
         if not matched_ids:
             raise SchemaValidationError(f"{path} must cite an eligible observed finding")
@@ -845,7 +869,7 @@ def validate_final_result(payload: Any) -> dict[str, Any]:
         _require_exact_keys(topic, {"id", "name", "why"}, f"discussionTopics[{index}]")
         _require_string(topic["id"], f"discussionTopics[{index}].id", max_length=80)
         _require_string(topic["name"], f"discussionTopics[{index}].name", max_length=120)
-        _require_string(topic["why"], f"discussionTopics[{index}].why", max_length=240)
+        _require_string(topic["why"], f"discussionTopics[{index}].why", max_length=320)
     medical = _require_exact_keys(result["medicalReview"], {"suggested", "message"}, "medicalReview")
     if not isinstance(medical["suggested"], bool):
         raise SchemaValidationError("medicalReview.suggested must be boolean")
@@ -1199,23 +1223,42 @@ def _recommendation_basis(
     observations: Sequence[Mapping[str, Any]],
     body_area: str,
 ) -> list[str]:
-    """Prefer visible priorities, then top subtle findings for maintenance matches."""
+    """Return every supported visible match, or every subtle maintenance match."""
 
-    if priorities:
-        return list(priorities[:2])
     levels_by_id = {
         str(item.get("id")): str(item.get("level")) for item in observations
     }
-    ordered_subtle = [
-        item for item in strengths if levels_by_id.get(item) == "subtle"
-    ]
+    ordered_visible: list[str] = []
+    for observation_id in priorities:
+        if (
+            levels_by_id.get(observation_id) in {"visible", "prominent"}
+            and observation_id not in ordered_visible
+        ):
+            ordered_visible.append(observation_id)
+    for level in ("prominent", "visible"):
+        for observation_id in BODY_AREA_OBSERVATIONS.get(body_area, ()):
+            if (
+                levels_by_id.get(observation_id) == level
+                and observation_id not in ordered_visible
+            ):
+                ordered_visible.append(observation_id)
+    if ordered_visible:
+        return ordered_visible
+
+    ordered_subtle: list[str] = []
+    for observation_id in strengths:
+        if (
+            levels_by_id.get(observation_id) == "subtle"
+            and observation_id not in ordered_subtle
+        ):
+            ordered_subtle.append(observation_id)
     for observation_id in BODY_AREA_OBSERVATIONS.get(body_area, ()):
         if (
             levels_by_id.get(observation_id) == "subtle"
             and observation_id not in ordered_subtle
         ):
             ordered_subtle.append(observation_id)
-    return ordered_subtle[:2]
+    return ordered_subtle
 
 
 def _discussion_topics(

@@ -20,10 +20,10 @@ No other AI provider or model is used as a fallback. If Gemini is unavailable, t
   second request occurs only after an exception or schema-invalid response;
   there is no cross-provider fallback
 - Post-response handling: strict application validation before any result is shown
-- Analysis version: `visible-surface-v1.3.2`
+- Analysis version: `visible-surface-v1.4.0`
 - Prompt version: `visible-surface-prompt-v1.1.0`
-- Response schema: `visible-surface-response-schema-v1.1.0`
-- Recommendation catalog: `naples-appearance-recommendations-v2.1.0`
+- Response schema: `visible-surface-response-schema-v1.2.0`
+- Recommendation catalog: `naples-appearance-recommendations-v3.0.0`
 
 ## Recommendation architecture
 
@@ -37,11 +37,14 @@ response passes validation, the server applies a
 versioned, deterministic catalog to create service and skincare matches from Von
 & Co's current provider guides.
 
-- `visible` or `prominent` priority IDs lead the matches; when no priority is
-  present, up to two `subtle` findings can produce clearly labeled maintenance
-  matches so a usable photo does not end in an empty plan;
+- `visible` or `prominent` priority IDs lead the matches, followed by every other
+  supported visible or prominent finding; when none is present, every supported
+  `subtle` finding can produce clearly labeled maintenance matches so a usable
+  photo does not end in an empty plan;
 - `not_observed` and `unable_to_assess` findings never produce a match;
 - the selected body area must be explicitly approved in the catalog;
+- neck and chest are separate capture choices so neck-only and chest-only catalog
+  support cannot be treated as interchangeable;
 - retake results and the narrowly defined open-or-broken-skin medical-review
   state suppress every service and product; the model is not allowed to decide
   whether a mole, spot, or lesion is medically concerning;
@@ -50,9 +53,10 @@ versioned, deterministic catalog to create service and skincare matches from Von
   `visible_flaking` is never converted into a hydration measurement;
 - an exact appearance ID may create only the service or product matches explicitly
   approved for that ID and selected body area in the frozen catalog;
-- results are capped at three services and three products, deduplicated, and
-  returned with the appearance IDs that caused each match. Face results use at
-  most two targeted products plus the catalog's daily SPF essential;
+- every eligible catalog match is returned, deduplicated, and labeled with all
+  appearance IDs that caused the match. Response validation is bounded by the
+  versioned catalog cardinality rather than an arbitrary display cap. Face
+  results also include the catalog's daily SPF essential;
 - the application never turns a catalog match into eligibility, safety,
   diagnosis, expected outcome, or real-time inventory language.
 
@@ -69,12 +73,13 @@ only after a valid response actually arrives.
 
 A completed result presents a concise quick read, visible strengths and priorities,
 the full returned ordinal profile (`not_observed`, `subtle`, `visible`,
-`prominent`, or `unable_to_assess`) with model-returned photo-view evidence, and then the ranked
+`prominent`, or `unable_to_assess`) with model-returned photo-view evidence, and then the ordered
 server-owned service and skincare matches. The consultation action sits beside the
 quick read, while limitations and the in-person-evaluation requirement remain
-visible in compact supporting copy. On mobile, service and product cards use
-horizontal, labeled swipe rows and the category-by-category profile remains
-available behind one disclosure control. The sticky branded header keeps the main
+visible in compact supporting copy. On mobile, service and product cards use a
+single-column layout with explicit full counts and progressive-disclosure controls;
+every match remains in the document and can be expanded without a carousel. The
+category-by-category profile remains available behind one disclosure control. The sticky branded header keeps the main
 Von & Co site reachable throughout the result, and a completed result includes a
 direct path back to analyze another photo or area.
 

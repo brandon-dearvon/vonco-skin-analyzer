@@ -34,11 +34,11 @@ assert.deepEqual(maintenance.subtleLabels, ["Visible lines", "Visible surface te
 assert.equal(maintenance.heading, "No strong visible priority stands out.");
 assert.equal(
   maintenance.copy,
-  "Visible lines and Visible surface texture appeared subtle in these photos. Your full photo-based profile and closest maintenance matches are below.",
+  "Visible lines and Visible surface texture appeared subtle in these photos. Your full photo-based profile and all supported maintenance matches are below.",
 );
 assert.equal(maintenance.secondaryInsightLabel, "Subtle finding");
 assert.equal(maintenance.secondaryInsightValue, "Visible lines");
-assert.match(maintenance.planIntro, /^Maintenance options mapped from subtle findings/);
+assert.match(maintenance.planIntro, /^Every source-supported maintenance match/);
 
 const mixedPayload = {
   observations,
@@ -54,10 +54,10 @@ const mixed = summaryHelper.build(mixedPayload);
 assert.equal(mixed.heading, "Visible redness stands out most.");
 assert.equal(
   mixed.copy,
-  "Visible surface texture and Visible lines appeared subtle in these photos. Your full photo-based profile and closest Von & Co matches are below.",
+  "Visible surface texture and Visible lines appeared subtle in these photos. Your full photo-based profile and all supported Von & Co matches are below.",
 );
 assert.doesNotMatch(mixed.copy, /maintenance/i);
-assert.match(mixed.planIntro, /^Ranked from your visible appearance profile/);
+assert.match(mixed.planIntro, /^Every source-supported match/);
 assert.doesNotMatch(mixed.planIntro, /maintenance/i);
 
 process.stdout.write("Result summary regression cases passed\n");
