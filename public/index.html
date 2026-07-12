@@ -3,13 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="A complimentary Von &amp; Co preview of visible skin surface features from photos.">
-  <title>Visible Skin Preview | Von &amp; Co Aesthetics</title>
+  <meta name="description" content="Upload one or three photos for a complimentary Von &amp; Co preview of visible skin strengths, priorities, and consultation topics.">
+  <title>Complimentary Skin Preview | Von &amp; Co Aesthetics</title>
   <link rel="icon" type="image/png" href="/favicon_evergreen.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
   <style>
+    @font-face {
+      font-family: "Arsenica";
+      src: url("/arsenica-regular.otf") format("opentype");
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+    }
+
     :root {
       --evergreen: #516862;
       --evergreen-dark: #3f534e;
@@ -155,21 +163,23 @@
 
     .main-site-link {
       min-width: 0;
-      min-height: 44px;
+      min-height: 52px;
       flex: 0 1 auto;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 9px;
-      padding: 7px 8px 7px 16px;
+      gap: 10px;
+      padding: 9px 9px 9px 18px;
       border: 1px solid var(--evergreen);
       border-radius: 999px;
       background: var(--evergreen);
       box-shadow: 0 8px 20px rgba(63, 83, 78, 0.18);
       color: var(--white);
-      font-size: 0.78rem;
+      font-family: "Fira Sans", "Trebuchet MS", sans-serif;
+      font-size: 15px;
       font-weight: 600;
-      letter-spacing: 0.075em;
+      letter-spacing: 1.5px;
+      line-height: 16px;
       text-decoration: none;
       text-transform: uppercase;
       transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
@@ -195,14 +205,14 @@
     .main-site-link-label {
       min-width: 0;
       display: inline-flex;
-      gap: 0.35em;
+      gap: 0.45em;
       white-space: nowrap;
     }
 
     .main-site-arrow {
-      width: 30px;
-      height: 30px;
-      flex: 0 0 30px;
+      width: 32px;
+      height: 32px;
+      flex: 0 0 32px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -227,16 +237,17 @@
     }
 
     .intro {
-      max-width: 780px;
-      padding: 14px 4px 20px;
+      max-width: 900px;
+      padding: 16px 4px 22px;
     }
 
     .eyebrow {
-      margin: 0 0 5px;
+      margin: 0 0 7px;
       color: var(--evergreen-dark);
-      font-size: 0.76rem;
+      font-size: 15px;
       font-weight: 600;
-      letter-spacing: 0.13em;
+      letter-spacing: 1.5px;
+      line-height: 16px;
       text-transform: uppercase;
     }
 
@@ -245,23 +256,58 @@
     h3,
     h4 {
       color: var(--evergreen-dark);
-      font-family: Georgia, "Times New Roman", serif;
+      font-family: "Arsenica", Georgia, "Times New Roman", serif;
       font-weight: 400;
       line-height: 1.14;
     }
 
     h1 {
-      max-width: 720px;
+      max-width: 980px;
       margin: 0;
       font-size: clamp(2rem, 5.2vw, 3.8rem);
-      letter-spacing: -0.025em;
+      letter-spacing: -0.012em;
+      text-wrap: balance;
+    }
+
+    .hero-mobile-line {
+      display: block;
     }
 
     .intro-copy {
-      max-width: 700px;
-      margin: 10px 0 0;
+      max-width: 890px;
+      margin: 12px 0 0;
       color: var(--charcoal-soft);
       font-size: clamp(0.98rem, 2vw, 1.08rem);
+      line-height: 1.62;
+    }
+
+    .intro-benefits {
+      max-width: 900px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 24px;
+      margin: 13px 0 0;
+      padding: 0;
+      color: var(--evergreen-dark);
+      list-style: none;
+    }
+
+    .intro-benefits li {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .intro-benefits li::before {
+      width: 7px;
+      height: 7px;
+      flex: 0 0 7px;
+      border-radius: 50%;
+      background: var(--sand);
+      content: "";
     }
 
     .workspace {
@@ -450,7 +496,7 @@
       display: grid;
       place-items: center;
       color: rgba(63, 83, 78, 0.62);
-      font-family: Georgia, "Times New Roman", serif;
+      font-family: "Arsenica", Georgia, "Times New Roman", serif;
       font-size: clamp(2rem, 6vw, 4.3rem);
     }
 
@@ -510,10 +556,11 @@
       padding: 11px 20px;
       border-radius: 999px;
       cursor: pointer;
-      font-size: 0.79rem;
+      font-family: "Fira Sans", "Trebuchet MS", sans-serif;
+      font-size: 15px;
       font-weight: 600;
-      letter-spacing: 0.075em;
-      line-height: 1.15;
+      letter-spacing: 1.5px;
+      line-height: 16px;
       text-align: center;
       text-decoration: none;
       text-transform: uppercase;
@@ -980,19 +1027,19 @@
 
       .intro {
         max-width: none;
-        padding: 8px 4px 14px;
+        padding: 11px 4px 18px;
       }
 
       h1 {
         max-width: 980px;
-        font-size: clamp(2.4rem, 4vw, 3rem);
+        font-size: clamp(2.5rem, 4.2vw, 3.25rem);
         line-height: 1.08;
       }
 
       .intro-copy {
-        max-width: 760px;
-        margin-top: 6px;
-        font-size: 1rem;
+        max-width: 890px;
+        margin-top: 9px;
+        font-size: 1.02rem;
       }
 
       .workspace {
@@ -1052,16 +1099,17 @@
 
       .main-site-link {
         gap: 7px;
-        padding: 7px 8px 7px 11px;
-        font-size: 0.7rem;
-        letter-spacing: 0.055em;
+        padding: 8px 8px 8px 12px;
+        font-size: 15px;
+        letter-spacing: 1.5px;
+        line-height: 16px;
       }
 
       .main-site-link-label {
         flex-direction: column;
         align-items: flex-start;
         gap: 1px;
-        line-height: 1.15;
+        line-height: 16px;
       }
 
       .main-site-arrow {
@@ -1072,20 +1120,25 @@
       }
 
       .intro {
-        padding: 10px 2px 14px;
+        padding: 12px 2px 18px;
       }
 
       h1 {
         font-size: clamp(1.8rem, 9vw, 2.6rem);
       }
 
-      .hero-mobile-line {
-        display: block;
+      .intro-copy {
+        margin-top: 8px;
+        font-size: 0.95rem;
       }
 
-      .intro-copy {
-        margin-top: 6px;
-        font-size: 0.93rem;
+      .intro-benefits {
+        gap: 7px 16px;
+        margin-top: 11px;
+      }
+
+      .intro-benefits li {
+        font-size: 0.84rem;
       }
 
       .workspace {
@@ -1215,6 +1268,35 @@
       }
     }
 
+    @media (max-width: 360px) {
+      .site-nav {
+        gap: 8px;
+      }
+
+      .site-nav .brand-link {
+        padding: 4px 2px;
+      }
+
+      .site-nav .brand-link img {
+        width: 88px;
+      }
+
+      .main-site-link {
+        gap: 5px;
+        padding: 7px 6px 7px 9px;
+        font-size: 15px;
+        letter-spacing: 1.5px;
+        line-height: 16px;
+      }
+
+      .main-site-arrow {
+        width: 22px;
+        height: 22px;
+        flex-basis: 22px;
+        font-size: 0.8rem;
+      }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       html {
         scroll-behavior: auto;
@@ -1289,9 +1371,14 @@
 
   <main id="previewWorkspace">
     <section class="intro" aria-labelledby="pageTitle">
-      <p class="eyebrow">Visible skin preview</p>
-      <h1 id="pageTitle">Start with what <span class="hero-mobile-line">you can see.</span></h1>
-      <p class="intro-copy">Add one or three clear photos for a brief preview of visible surface features. For a closer look, book a complimentary VISIA consultation with Von &amp; Co.</p>
+      <p class="eyebrow">Complimentary skin preview</p>
+      <h1 id="pageTitle">See what stands out. <span class="hero-mobile-line">Know what to discuss next.</span></h1>
+      <p class="intro-copy">Upload one or three clear photos for a personalized look at visible lines, redness, pigment, texture, pores, and more.</p>
+      <ul class="intro-benefits" aria-label="Your skin preview may include">
+        <li>Visible strengths</li>
+        <li>Visible priorities</li>
+        <li>Personalized discussion topics</li>
+      </ul>
     </section>
 
     <section class="workspace" id="captureWorkspace" aria-labelledby="captureTitle">

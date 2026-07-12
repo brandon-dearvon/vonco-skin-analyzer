@@ -10,6 +10,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="icon" type="image/png" href="/favicon_evergreen.png">
   <style>
+    @font-face {
+      font-family: "Arsenica";
+      src: url("/arsenica-regular.otf") format("opentype");
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+    }
+
     :root {
       --evergreen: #516862;
       --von-white: #ebeae5;
@@ -63,7 +71,12 @@
       padding: 10px 16px;
       border: 1px solid var(--evergreen);
       border-radius: 999px;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      line-height: 16px;
       text-decoration: none;
+      text-transform: uppercase;
     }
     main {
       width: min(760px, calc(100% - 32px));
@@ -76,8 +89,8 @@
     }
     h1, h2 {
       color: var(--evergreen);
-      font-family: Georgia, serif;
-      font-weight: 500;
+      font-family: "Arsenica", Georgia, serif;
+      font-weight: 400;
       line-height: 1.18;
     }
     h1 { margin: 0 0 10px; font-size: clamp(2rem, 6vw, 3.2rem); }
@@ -116,7 +129,6 @@
       .nav img { width: clamp(118px, 32vw, 132px); }
       .home-link {
         padding: 8px 10px;
-        font-size: 0.78rem;
       }
       main {
         width: calc(100% - 20px);
@@ -124,6 +136,10 @@
         padding: 24px 20px;
         border-radius: 16px;
       }
+    }
+    @media (max-width: 360px) {
+      .nav > a:first-child { padding: 5px 2px; }
+      .nav img { width: 90px; }
     }
   </style>
 </head>

@@ -673,6 +673,40 @@ class ServerContractTests(unittest.TestCase):
         finally:
             response.close()
 
+    def test_hero_preserves_consumer_value_and_brand_cta_typography(self) -> None:
+        response = self.client.get("/")
+        try:
+            self.assertEqual(response.status_code, 200)
+            html = response.get_data(as_text=True)
+            self.assertIn("See what stands out.", html)
+            self.assertIn("Know what to discuss next.", html)
+            self.assertIn("Visible strengths", html)
+            self.assertIn("Visible priorities", html)
+            self.assertIn("Personalized discussion topics", html)
+            self.assertIn('aria-label="Your skin preview may include"', html)
+            self.assertNotIn("Start with what", html)
+            self.assertIn('font-family: "Arsenica";', html)
+
+            cta_css = html[
+                html.index(".main-site-link {") : html.index(
+                    ".main-site-link:hover", html.index(".main-site-link {")
+                )
+            ]
+            self.assertIn('font-family: "Fira Sans", "Trebuchet MS", sans-serif;', cta_css)
+            self.assertIn("font-size: 15px;", cta_css)
+            self.assertIn("letter-spacing: 1.5px;", cta_css)
+            self.assertIn("line-height: 16px;", cta_css)
+        finally:
+            response.close()
+
+        font_response = self.client.get("/arsenica-regular.otf")
+        try:
+            self.assertEqual(font_response.status_code, 200)
+            self.assertEqual(font_response.content_type, "font/otf")
+            self.assertGreater(len(font_response.data), 100_000)
+        finally:
+            font_response.close()
+
     def test_embedded_icc_profile_is_converted_then_stripped(self) -> None:
         image = Image.open(io.BytesIO(image_bytes()))
         profile = ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB")).tobytes()
