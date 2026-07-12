@@ -1113,7 +1113,9 @@ class ServerContractTests(unittest.TestCase):
             self.assertNotIn("Start with what", html)
             self.assertIn('font-family: "Arsenica";', html)
             self.assertIn("position: sticky;", html)
-            self.assertIn("Visit Von &amp; Co", html)
+            self.assertIn("Learn More", html)
+            self.assertIn('aria-label="Learn more about Von &amp; Co Aesthetics"', html)
+            self.assertNotIn("Visit Von &amp; Co", html)
 
             cta_css = html[
                 html.index(".main-site-link {") : html.index(
