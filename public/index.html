@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="A complimentary Von &amp; Co preview of visible skin surface features from photos.">
   <title>Visible Skin Preview | Von &amp; Co Aesthetics</title>
-  <link rel="icon" type="image/png" href="/logo_clean.png">
+  <link rel="icon" type="image/png" href="/favicon_evergreen.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
@@ -122,13 +122,14 @@
     }
 
     .site-nav {
-      width: min(1120px, calc(100% - 32px));
-      min-height: 68px;
+      width: min(1120px, calc(100% - 48px));
+      min-height: 96px;
       margin: 0 auto;
+      padding: 12px 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 20px;
+      gap: 16px;
     }
 
     .brand-link {
@@ -139,11 +140,16 @@
       border-radius: 6px;
     }
 
-    .brand-link img {
+    .site-nav .brand-link {
+      flex: 0 1 auto;
+      padding: 6px 10px;
+    }
+
+    .site-nav .brand-link img {
       display: block;
-      width: 150px;
+      width: 164px;
       height: auto;
-      aspect-ratio: 682 / 292;
+      aspect-ratio: 1549 / 848;
       object-fit: contain;
     }
 
@@ -785,7 +791,7 @@
       display: block;
       width: 154px;
       height: auto;
-      aspect-ratio: 341 / 146;
+      aspect-ratio: 1549 / 848;
       object-fit: contain;
     }
 
@@ -902,16 +908,22 @@
       }
 
       .site-nav {
-        width: calc(100% - 20px);
-        min-height: 62px;
+        width: calc(100% - 24px);
+        min-height: 0;
+        padding: 8px 0;
+        gap: 10px;
       }
 
-      .brand-link img {
-        width: 125px;
+      .site-nav .brand-link {
+        padding: 6px 8px;
+      }
+
+      .site-nav .brand-link img {
+        width: clamp(118px, 32vw, 132px);
       }
 
       .main-site-link {
-        padding: 8px 12px;
+        padding: 8px 10px;
         font-size: 0.7rem;
       }
 
@@ -1110,7 +1122,7 @@
   <header class="site-header">
     <nav class="site-nav" aria-label="Von &amp; Co navigation">
       <a class="brand-link" href="https://www.vonandcoaesthetics.com/" target="_blank" rel="noopener noreferrer" aria-label="Visit the Von &amp; Co main website">
-        <img src="/logo.png" alt="Von &amp; Co Medical Aesthetics Studio" width="682" height="292">
+        <img src="/logo_evergreen.png" alt="Von &amp; Co Medical Aesthetics Studio" width="1549" height="848" fetchpriority="high">
       </a>
       <a class="main-site-link" href="https://www.vonandcoaesthetics.com/" target="_blank" rel="noopener noreferrer">Visit Von &amp; Co</a>
     </nav>
@@ -1295,7 +1307,7 @@
   <footer class="site-footer">
     <div class="footer-inner">
       <a class="brand-link" href="https://www.vonandcoaesthetics.com/" target="_blank" rel="noopener noreferrer" aria-label="Visit the Von &amp; Co main website">
-        <img class="footer-logo" src="/logo_white.png" alt="Von &amp; Co Medical Aesthetics Studio" width="341" height="146">
+        <img class="footer-logo" src="/logo_white_hd.png" alt="Von &amp; Co Medical Aesthetics Studio" width="1549" height="848" loading="lazy" decoding="async">
       </a>
       <div class="footer-links">
         <a href="https://www.vonandcoaesthetics.com/" target="_blank" rel="noopener noreferrer">Main website</a>

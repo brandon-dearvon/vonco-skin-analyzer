@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="icon" href="/logo_clean.png">
+  <link rel="icon" type="image/png" href="/favicon_evergreen.png">
   <style>
     :root {
       --evergreen: #516862;
@@ -30,15 +30,31 @@
       border-bottom: 1px solid rgba(81, 104, 98, 0.18);
     }
     .nav {
-      width: min(1080px, calc(100% - 32px));
-      min-height: 76px;
+      width: min(1080px, calc(100% - 48px));
+      min-height: 96px;
       margin: 0 auto;
+      padding: 12px 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 20px;
+      gap: 16px;
     }
-    .nav img { width: 150px; height: auto; display: block; }
+    .nav > a:first-child {
+      min-width: 44px;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      flex: 0 1 auto;
+      padding: 6px 10px;
+      border-radius: 6px;
+    }
+    .nav img {
+      width: 164px;
+      height: auto;
+      aspect-ratio: 1549 / 848;
+      display: block;
+      object-fit: contain;
+    }
     .nav a, main a { color: var(--evergreen); font-weight: 600; }
     .home-link {
       min-height: 44px;
@@ -89,13 +105,33 @@
       font-size: 0.9rem;
     }
     footer a { color: var(--white); }
+    @media (max-width: 600px) {
+      .nav {
+        width: calc(100% - 24px);
+        min-height: 0;
+        padding: 8px 0;
+        gap: 10px;
+      }
+      .nav > a:first-child { padding: 6px 8px; }
+      .nav img { width: clamp(118px, 32vw, 132px); }
+      .home-link {
+        padding: 8px 10px;
+        font-size: 0.78rem;
+      }
+      main {
+        width: calc(100% - 20px);
+        margin: 20px auto 44px;
+        padding: 24px 20px;
+        border-radius: 16px;
+      }
+    }
   </style>
 </head>
 <body>
   <header>
     <nav class="nav" aria-label="Von &amp; Co navigation">
       <a href="/" aria-label="Return to the Von &amp; Co skin preview">
-        <img src="/logo.png" alt="Von &amp; Co Medical Aesthetics Studio" width="682" height="292">
+        <img src="/logo_evergreen.png" alt="Von &amp; Co Medical Aesthetics Studio" width="1549" height="848" fetchpriority="high">
       </a>
       <a class="home-link" href="https://www.vonandcoaesthetics.com/" target="_blank" rel="noopener noreferrer">Von &amp; Co home</a>
     </nav>
