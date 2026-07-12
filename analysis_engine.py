@@ -252,6 +252,7 @@ MAX_UPLOAD_BYTES = 12 * 1024 * 1024
 MAX_IMAGE_DIMENSION = 1600
 MAX_IMAGE_PIXELS = 40_000_000
 MIN_IMAGE_DIMENSION = 480
+SUPPORTED_PIL_FORMATS = {"JPEG", "MPO", "PNG", "WEBP"}
 
 
 def _enum_schema(values: Iterable[str]) -> dict[str, Any]:
@@ -791,12 +792,20 @@ def normalize_image(file_object: Any, angle: str) -> NormalizedImage:
             warnings.simplefilter("error", Image.DecompressionBombWarning)
             with Image.open(BytesIO(raw)) as opened:
                 embedded_icc = opened.info.get("icc_profile")
-                if opened.format not in {"JPEG", "PNG", "WEBP"}:
+                # Some phones and photo apps store an ordinary primary JPEG
+                # inside an MPO (multi-picture) container. Browsers and macOS
+                # correctly identify these files as JPEGs, while Pillow reports
+                # the container as "MPO". Review only the primary frame and
+                # normalize it to the same metadata-free JPEG used for every
+                # other supported upload.
+                if opened.format not in SUPPORTED_PIL_FORMATS:
                     raise ImageIntakeError(
                         "unsupported_image",
                         "use_a_supported_image_format",
                         "Please upload a JPEG, PNG, or WebP image.",
                     )
+                if opened.format == "MPO":
+                    opened.seek(0)
                 if opened.width * opened.height > MAX_IMAGE_PIXELS:
                     raise ImageIntakeError(
                         "unsupported_image",

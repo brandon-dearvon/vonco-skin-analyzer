@@ -913,6 +913,76 @@
       margin-top: 14px;
     }
 
+    @media (min-width: 761px) {
+      .site-nav {
+        width: min(1040px, calc(100% - 28px));
+        min-height: 0;
+        padding: 6px 0;
+      }
+
+      .site-nav .brand-link {
+        padding: 4px 10px;
+      }
+
+      .site-nav .brand-link img {
+        width: 136px;
+      }
+
+      main {
+        padding: 14px 0 48px;
+      }
+
+      .intro {
+        max-width: none;
+        padding: 8px 4px 14px;
+      }
+
+      h1 {
+        max-width: 980px;
+        font-size: clamp(2.4rem, 4vw, 3rem);
+        line-height: 1.08;
+      }
+
+      .intro-copy {
+        max-width: 760px;
+        margin-top: 6px;
+        font-size: 1rem;
+      }
+
+      .workspace {
+        padding: 26px 28px;
+      }
+
+      .setup-grid {
+        grid-template-columns: minmax(260px, 420px);
+        padding-bottom: 14px;
+      }
+
+      .capture-section {
+        padding-top: 16px;
+      }
+
+      .capture-topline {
+        align-items: center;
+        margin-bottom: 12px;
+      }
+    }
+
+    @media (min-width: 761px) and (max-width: 900px) {
+      .capture-topline {
+        display: block;
+      }
+
+      .capture-guidance {
+        margin-bottom: 12px;
+      }
+
+      .mode-switch {
+        width: 100%;
+        min-width: 0;
+      }
+    }
+
     @media (max-width: 760px) {
       main {
         width: min(100% - 20px, 680px);

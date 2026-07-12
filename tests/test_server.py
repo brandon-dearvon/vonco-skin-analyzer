@@ -32,6 +32,25 @@ def image_bytes(size: tuple[int, int] = (640, 640)) -> bytes:
     return output.getvalue()
 
 
+def mpo_image_bytes(size: tuple[int, int] = (640, 480)) -> bytes:
+    primary = Image.new("RGB", size, (176, 151, 137))
+    draw = ImageDraw.Draw(primary)
+    draw.rectangle((0, 0, size[0] // 2, size[1]), fill=(116, 89, 82))
+    orientation = primary.getexif()
+    orientation[274] = 6
+    secondary = Image.new("L", (320, 240), 151)
+    output = io.BytesIO()
+    primary.save(
+        output,
+        format="MPO",
+        save_all=True,
+        append_images=[secondary],
+        quality=90,
+        exif=orientation,
+    )
+    return output.getvalue()
+
+
 def complete_model_result(angles: list[str] | None = None) -> dict:
     angles = angles or ["single"]
     return {
@@ -567,6 +586,52 @@ class ServerContractTests(unittest.TestCase):
         )
         self.assertEqual(result["observations"], [])
         self.assertEqual(result["discussionTopics"], [])
+
+    def test_mpo_jpeg_container_uses_primary_frame(self) -> None:
+        encoded = mpo_image_bytes()
+        with Image.open(io.BytesIO(encoded)) as source:
+            self.assertEqual(source.format, "MPO")
+            self.assertEqual(source.n_frames, 2)
+            self.assertEqual(source.getexif().get(274), 6)
+            source.seek(1)
+            self.assertEqual(source.size, (320, 240))
+            self.assertEqual(source.mode, "L")
+
+        normalized = analysis_engine.normalize_image(io.BytesIO(encoded), "single")
+        self.assertEqual((normalized.width, normalized.height), (480, 640))
+        self.assertEqual(normalized.media_type, "image/jpeg")
+        with Image.open(io.BytesIO(normalized.data)) as output:
+            self.assertEqual(output.format, "JPEG")
+            self.assertEqual(output.mode, "RGB")
+            self.assertEqual(getattr(output, "n_frames", 1), 1)
+
+    def test_mpo_jpeg_upload_reaches_provider(self) -> None:
+        observed = {}
+
+        def fake_provider(images, body_area, api_key, model):
+            observed.update(
+                image_count=len(images),
+                format=Image.open(io.BytesIO(images[0].data)).format,
+                body_area=body_area,
+            )
+            return complete_model_result(["single"])
+
+        with mock.patch.dict(
+            analysis_engine.PROVIDER_CALLS, {"openai": fake_provider}, clear=False
+        ):
+            response = self.client.post(
+                "/api/analyze",
+                data={
+                    "image": (io.BytesIO(mpo_image_bytes()), "portrait.jpeg"),
+                    "body_area": "face",
+                    "age_confirmed": "true",
+                },
+                content_type="multipart/form-data",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(observed, {"image_count": 1, "format": "JPEG", "body_area": "face"})
+        self.assertEqual(response.get_json()["status"], "complete")
 
     def test_age_confirmation_is_required(self) -> None:
         data = {
