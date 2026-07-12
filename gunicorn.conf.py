@@ -9,7 +9,7 @@ worker_class = "gthread"
 threads = 4
 workers = 1
 
-# Three provider attempts are capped at 38 seconds each.
+# At most two same-model provider attempts use a 38-second SDK timeout each.
 timeout = 120
 
 # Recycle workers every 50 requests to prevent memory leaks

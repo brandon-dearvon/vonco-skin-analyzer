@@ -16,9 +16,11 @@ No other AI provider or model is used as a fallback. If Gemini is unavailable, t
 - Maximum output tokens: `8192`
 - Image input: one or three normalized JPEG images in a single request
 - Output: `application/json` constrained by the Gemini-compatible schema
-- Retry behavior: one bounded provider request; no cross-provider fallback
+- Retry behavior: at most two bounded requests to the same Gemini model; the
+  second request occurs only after an exception or schema-invalid response;
+  there is no cross-provider fallback
 - Post-response handling: strict application validation before any result is shown
-- Analysis version: `visible-surface-v1.3.1`
+- Analysis version: `visible-surface-v1.3.2`
 - Prompt version: `visible-surface-prompt-v1.1.0`
 - Response schema: `visible-surface-response-schema-v1.1.0`
 - Recommendation catalog: `naples-appearance-recommendations-v2.1.0`

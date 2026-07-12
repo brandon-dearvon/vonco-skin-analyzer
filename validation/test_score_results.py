@@ -5,7 +5,7 @@ from score_results import score, weighted_kappa, wilson_interval
 
 def candidate_fields():
     return {
-        "analysisVersion": "visible-surface-v1.3.1",
+        "analysisVersion": "visible-surface-v1.3.2",
         "schemaVersion": "visible-surface-response-schema-v1.1.0",
         "topicMappingVersion": "naples-appearance-recommendations-v2.1.0",
         "promptHash": "locked-prompt-hash",

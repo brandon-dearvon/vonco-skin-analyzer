@@ -25,7 +25,7 @@ from recommendation_catalog import CATALOG_VERSION, build_appearance_recommendat
 
 LOGGER = logging.getLogger(__name__)
 
-ANALYSIS_VERSION = "visible-surface-v1.3.1"
+ANALYSIS_VERSION = "visible-surface-v1.3.2"
 PROMPT_VERSION = "visible-surface-prompt-v1.1.0"
 SCHEMA_VERSION = "visible-surface-response-schema-v1.1.0"
 TOPIC_MAPPING_VERSION = CATALOG_VERSION
@@ -36,6 +36,7 @@ DEFAULT_MODELS = {
 }
 GEMINI_THINKING_LEVEL = "high"
 GEMINI_MAX_OUTPUT_TOKENS = 8192
+GEMINI_PROVIDER_ATTEMPTS = 2
 
 DISCLAIMER = (
     "Photo-based preview only. Service and product matches are educational "
@@ -1067,7 +1068,8 @@ def provider_timeout_seconds() -> float:
         configured = float(os.getenv("PROVIDER_TIMEOUT_SECONDS", "35"))
     except ValueError:
         configured = 35.0
-    # Bound the single Gemini request well inside Gunicorn's 120-second limit.
+    # Bound each Gemini request so a single same-model retry remains inside
+    # Gunicorn's 120-second limit.
     return min(38.0, max(5.0, configured))
 
 
@@ -1170,15 +1172,22 @@ def analyze_with_providers(
             continue
         configured_count += 1
         selected_model = model_name(provider)
-        try:
-            raw = PROVIDER_CALLS[provider](images, body_area, api_key, selected_model)
-            validated = validate_model_output(
-                raw, [image.angle for image in images], body_area=body_area
-            )
-            return validated, provider, selected_model
-        except Exception as exc:
-            # Never log request content, images, filenames, model text, keys, or PII.
-            LOGGER.warning("Analyzer provider %s failed (%s)", provider, type(exc).__name__)
+        for attempt in range(1, GEMINI_PROVIDER_ATTEMPTS + 1):
+            try:
+                raw = PROVIDER_CALLS[provider](images, body_area, api_key, selected_model)
+                validated = validate_model_output(
+                    raw, [image.angle for image in images], body_area=body_area
+                )
+                return validated, provider, selected_model
+            except Exception as exc:
+                # Never log request content, images, filenames, model text, keys, or PII.
+                LOGGER.warning(
+                    "Analyzer provider %s attempt %d/%d failed (%s)",
+                    provider,
+                    attempt,
+                    GEMINI_PROVIDER_ATTEMPTS,
+                    type(exc).__name__,
+                )
     if configured_count == 0:
         LOGGER.warning("Analyzer has no configured providers")
     raise ProviderUnavailable("No configured provider produced a valid response")

@@ -274,7 +274,7 @@ class ServerContractTests(unittest.TestCase):
         self.assertTrue(health["providerAvailable"])
         self.assertNotIn("openaiStore", health["privacy"])
 
-    def test_invalid_gemini_schema_fails_closed_without_fallback(self) -> None:
+    def test_invalid_gemini_schema_retries_once_then_fails_closed(self) -> None:
         invalid = complete_model_result()
         invalid["observations"] = invalid["observations"] * 6
         calls = []
@@ -301,7 +301,53 @@ class ServerContractTests(unittest.TestCase):
             with self.assertRaises(analysis_engine.ProviderUnavailable):
                 analysis_engine.analyze(normalized, "face")
 
-        self.assertEqual(calls, ["gemini"])
+        self.assertEqual(calls, ["gemini", "gemini"])
+
+    def test_gemini_retry_accepts_second_strictly_valid_response(self) -> None:
+        invalid = complete_model_result()
+        invalid["overallScore"] = 91
+        calls = []
+
+        def flaky_gemini(*_):
+            calls.append("gemini")
+            return invalid if len(calls) == 1 else complete_model_result()
+
+        normalized = [
+            analysis_engine.NormalizedImage("single", b"jpeg", "image/jpeg", 640, 640)
+        ]
+        with mock.patch.dict(
+            analysis_engine.PROVIDER_CALLS,
+            {"gemini": flaky_gemini},
+            clear=False,
+        ):
+            result = analysis_engine.analyze(normalized, "face")
+
+        self.assertEqual(calls, ["gemini", "gemini"])
+        self.assertEqual(result["status"], "complete")
+        self.assertEqual(result["model"]["provider"], "gemini")
+        self.assertEqual(analysis_engine.GEMINI_PROVIDER_ATTEMPTS, 2)
+
+    def test_gemini_retry_accepts_after_transient_provider_exception(self) -> None:
+        calls = []
+
+        def transient_gemini(*_):
+            calls.append("gemini")
+            if len(calls) == 1:
+                raise TimeoutError("simulated provider timeout")
+            return complete_model_result()
+
+        normalized = [
+            analysis_engine.NormalizedImage("single", b"jpeg", "image/jpeg", 640, 640)
+        ]
+        with mock.patch.dict(
+            analysis_engine.PROVIDER_CALLS,
+            {"gemini": transient_gemini},
+            clear=False,
+        ):
+            result = analysis_engine.analyze(normalized, "face")
+
+        self.assertEqual(calls, ["gemini", "gemini"])
+        self.assertEqual(result["status"], "complete")
 
     def test_gemini_uses_system_instruction_and_strict_response_schema(self) -> None:
         captured = {}
