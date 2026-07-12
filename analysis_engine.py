@@ -25,7 +25,7 @@ from recommendation_catalog import CATALOG_VERSION, build_appearance_recommendat
 
 LOGGER = logging.getLogger(__name__)
 
-ANALYSIS_VERSION = "visible-surface-v1.3.0"
+ANALYSIS_VERSION = "visible-surface-v1.3.1"
 PROMPT_VERSION = "visible-surface-prompt-v1.1.0"
 SCHEMA_VERSION = "visible-surface-response-schema-v1.1.0"
 TOPIC_MAPPING_VERSION = CATALOG_VERSION
@@ -651,7 +651,7 @@ def validate_model_output(
 
 
 def _validate_appearance_recommendations(
-    value: Any, priorities: Sequence[str]
+    value: Any, recommendation_ids: Sequence[str]
 ) -> dict[str, Any]:
     """Validate the public catalog projection before deterministic comparison."""
 
@@ -685,11 +685,11 @@ def _validate_appearance_recommendations(
         matched_ids = _require_string_list(
             item["matchedObservationIds"],
             f"{path}.matchedObservationIds",
-            allowed=priorities,
+            allowed=recommendation_ids,
             max_items=2,
         )
         if not matched_ids:
-            raise SchemaValidationError(f"{path} must cite a visible priority")
+            raise SchemaValidationError(f"{path} must cite an eligible observed finding")
         _require_string(item["why"], f"{path}.why", max_length=320)
         learn_more_url = _require_string(
             item["learnMoreUrl"], f"{path}.learnMoreUrl", max_length=240
@@ -723,11 +723,11 @@ def _validate_appearance_recommendations(
         matched_ids = _require_string_list(
             item["matchedObservationIds"],
             f"{path}.matchedObservationIds",
-            allowed=priorities,
+            allowed=recommendation_ids,
             max_items=2,
         )
         if not matched_ids:
-            raise SchemaValidationError(f"{path} must cite a visible priority")
+            raise SchemaValidationError(f"{path} must cite an eligible observed finding")
         _require_string(item["why"], f"{path}.why", max_length=320)
         _require_string(item["availability"], f"{path}.availability", max_length=240)
 
@@ -829,8 +829,14 @@ def validate_final_result(payload: Any) -> dict[str, Any]:
         raise SchemaValidationError("public strength is unsupported")
     if any(levels_by_id.get(item) not in {"visible", "prominent"} for item in priorities):
         raise SchemaValidationError("public priority is unsupported")
+    recommendation_ids = _recommendation_basis(
+        strengths,
+        priorities,
+        observations_value,
+        result["bodyArea"],
+    )
     recommendations = _validate_appearance_recommendations(
-        result["appearanceRecommendations"], priorities
+        result["appearanceRecommendations"], recommendation_ids
     )
     if not isinstance(result["discussionTopics"], list) or len(result["discussionTopics"]) > 2:
         raise SchemaValidationError("discussionTopics is invalid")
@@ -866,12 +872,12 @@ def validate_final_result(payload: Any) -> dict[str, Any]:
         )
     if result["status"] == "complete":
         expected_recommendations = build_appearance_recommendations(
-            priorities, result["bodyArea"], OBSERVATION_LABELS
+            recommendation_ids, result["bodyArea"], OBSERVATION_LABELS
         )
         if recommendations != expected_recommendations:
             raise SchemaValidationError("appearance recommendations are not deterministic")
         if result["discussionTopics"] != _discussion_topics(
-            priorities, result["bodyArea"]
+            recommendation_ids, result["bodyArea"]
         ):
             raise SchemaValidationError("discussion topics are not deterministic")
     if result["disclaimer"] != DISCLAIMER:
@@ -1178,13 +1184,38 @@ def analyze_with_providers(
     raise ProviderUnavailable("No configured provider produced a valid response")
 
 
+def _recommendation_basis(
+    strengths: Sequence[str],
+    priorities: Sequence[str],
+    observations: Sequence[Mapping[str, Any]],
+    body_area: str,
+) -> list[str]:
+    """Prefer visible priorities, then top subtle findings for maintenance matches."""
+
+    if priorities:
+        return list(priorities[:2])
+    levels_by_id = {
+        str(item.get("id")): str(item.get("level")) for item in observations
+    }
+    ordered_subtle = [
+        item for item in strengths if levels_by_id.get(item) == "subtle"
+    ]
+    for observation_id in BODY_AREA_OBSERVATIONS.get(body_area, ()):
+        if (
+            levels_by_id.get(observation_id) == "subtle"
+            and observation_id not in ordered_subtle
+        ):
+            ordered_subtle.append(observation_id)
+    return ordered_subtle[:2]
+
+
 def _discussion_topics(
-    priorities: Sequence[str], body_area: str
+    recommendation_ids: Sequence[str], body_area: str
 ) -> list[dict[str, str]]:
     """Return the legacy topic alias from the first two catalog matches."""
 
     recommendations = build_appearance_recommendations(
-        priorities, body_area, OBSERVATION_LABELS
+        recommendation_ids, body_area, OBSERVATION_LABELS
     )
     return [
         {
@@ -1226,11 +1257,17 @@ def build_final_result(
     if medical_suggested:
         status = "medical_review"
     suppress_cosmetic_findings = status in {"medical_review", "retake"}
+    recommendation_ids = _recommendation_basis(
+        model_result["strengths"],
+        model_result["priorities"],
+        model_result["observations"],
+        body_area,
+    )
     recommendations = (
         {"services": [], "products": []}
         if suppress_cosmetic_findings
         else build_appearance_recommendations(
-            model_result["priorities"], body_area, OBSERVATION_LABELS
+            recommendation_ids, body_area, OBSERVATION_LABELS
         )
     )
     topics = (

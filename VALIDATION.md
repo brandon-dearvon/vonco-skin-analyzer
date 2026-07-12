@@ -36,13 +36,15 @@ clearance.
 
 Service and product matches must be generated only after the appearance response
 passes validation. A match must be tied to the exact visible-feature ID and body
-area approved in the frozen catalog. The mapper cannot change the meaning of that
-feature—for example, blemish-like spots cannot be converted into acne and visible
-flaking cannot be converted into a hydration measurement. A catalog-approved
-appearance match is an educational option, not a diagnosis, suitability decision,
-or expected outcome. Every result retains the small-print requirement for an
-in-person evaluation before treatment and medical evaluation of any concerning
-lesion.
+area approved in the frozen catalog. Visible or prominent priorities lead; only
+when none exist may up to two subtle findings drive maintenance-labeled matches.
+Not-observed and unable-to-assess findings must never drive a match. The mapper
+cannot change the meaning of that feature—for example, blemish-like spots cannot
+be converted into acne and visible flaking cannot be converted into a hydration
+measurement. A catalog-approved appearance match is an educational option, not a
+diagnosis, suitability decision, or expected outcome. Every result retains the
+small-print requirement for an in-person evaluation before treatment and medical
+evaluation of any concerning lesion.
 
 ## Validation design
 

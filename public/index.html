@@ -2043,7 +2043,7 @@
         </li>
         <li class="loading-step" data-loading-step="3" data-state="pending">
           <span class="loading-step-marker" aria-hidden="true">4</span>
-          <span class="loading-step-copy"><span class="loading-step-title">Skin-profile organization</span><span class="loading-step-detail">Visible strengths and the clearest priorities are organized.</span></span>
+          <span class="loading-step-copy"><span class="loading-step-title">Skin-profile organization</span><span class="loading-step-detail">Subtle findings and the clearest priorities are organized.</span></span>
         </li>
         <li class="loading-step" data-loading-step="4" data-state="pending">
           <span class="loading-step-marker" aria-hidden="true">5</span>
@@ -2070,7 +2070,7 @@
         </section>
 
         <section class="result-section" id="strengthsSection" aria-labelledby="strengthsHeading">
-          <h3 id="strengthsHeading">Visible strengths</h3>
+          <h3 id="strengthsHeading">What appears subtle or not apparent</h3>
           <div class="observation-list" id="strengthsList"></div>
         </section>
 
@@ -2088,7 +2088,7 @@
         <section class="plan-section" id="planSection" aria-labelledby="planHeading">
           <p class="plan-kicker">Matched to your photos</p>
           <h3 class="plan-heading" id="planHeading">Your closest Von &amp; Co matches</h3>
-          <p class="plan-intro">Ranked from the appearance priorities visible in your photos and mapped to Von &amp; Co's current guides.</p>
+          <p class="plan-intro" id="planIntro">Ranked from your visible appearance profile and mapped to Von &amp; Co's current guides.</p>
 
           <section class="recommendation-group" id="servicesSection" aria-labelledby="servicesHeading" hidden>
             <h4 id="servicesHeading">Where to start in studio</h4>
@@ -2327,11 +2327,13 @@
       var resultSummaryCopy = document.getElementById("resultSummaryCopy");
       var resultInsights = document.getElementById("resultInsights");
       var strengthsSection = document.getElementById("strengthsSection");
+      var strengthsHeading = document.getElementById("strengthsHeading");
       var prioritiesSection = document.getElementById("prioritiesSection");
       var profileSection = document.getElementById("profileSection");
       var profileList = document.getElementById("profileList");
       var limitationsSection = document.getElementById("limitationsSection");
       var planSection = document.getElementById("planSection");
+      var planIntro = document.getElementById("planIntro");
       var servicesSection = document.getElementById("servicesSection");
       var productsSection = document.getElementById("productsSection");
       var strengthsList = document.getElementById("strengthsList");
@@ -2880,6 +2882,8 @@
         resultMeta.textContent = "";
         resultSummaryHeading.textContent = "What stands out in your photos";
         resultSummaryCopy.textContent = "";
+        strengthsHeading.textContent = "What appears subtle or not apparent";
+        planIntro.textContent = "Ranked from your visible appearance profile and mapped to Von & Co's current guides.";
         clearNode(resultInsights);
         clearNode(strengthsList);
         clearNode(prioritiesList);
@@ -2916,7 +2920,7 @@
           "Estimated stage: preparing your photos.",
           "Estimated stage: checking clarity, lighting, framing, and view order.",
           "Estimated stage: reviewing visible surface features.",
-          "Estimated stage: organizing strengths and priorities.",
+          "Estimated stage: organizing your visible profile.",
           "Estimated stage: matching Von & Co services and skincare.",
           "Estimated stage: assembling your profile and shortlist."
         ];
@@ -3100,7 +3104,20 @@
       function renderResultSummary(data, map) {
         clearNode(resultInsights);
         var priorityLabels = observationLabels(data.priorities, map);
-        var strengthLabels = observationLabels(data.strengths, map);
+        var strengthIds = Array.isArray(data.strengths) ? data.strengths : [];
+        var subtleLabels = observationLabels(strengthIds.filter(function (id) {
+          var observation = map.get(id);
+          return observation && observation.level === "subtle";
+        }), map);
+        var notApparentLabels = observationLabels(strengthIds.filter(function (id) {
+          var observation = map.get(id);
+          return observation && observation.level === "not_observed";
+        }), map);
+        var recommendations = data && data.appearanceRecommendations;
+        var hasRecommendations = Boolean(recommendations && (
+          (Array.isArray(recommendations.services) && recommendations.services.length) ||
+          (Array.isArray(recommendations.products) && recommendations.products.length)
+        ));
         var observations = Array.isArray(data.observations) ? data.observations : [];
         var reviewedCount = observations.filter(function (observation) {
           return observation && observation.level !== "unable_to_assess";
@@ -3112,14 +3129,30 @@
           resultSummaryHeading.textContent = "No strong visible priority stands out.";
         }
 
-        if (strengthLabels.length) {
-          resultSummaryCopy.textContent = sentenceList(strengthLabels) + (strengthLabels.length === 1 ? " appears to be a strength worth maintaining. " : " appear to be strengths worth maintaining. ") + "Your full photo-based profile and closest Von & Co matches are below.";
+        if (subtleLabels.length) {
+          resultSummaryCopy.textContent = sentenceList(subtleLabels) + " appeared subtle in these photos. " + (hasRecommendations
+            ? (priorityLabels.length
+              ? "Your full photo-based profile and closest Von & Co matches are below."
+              : "Your full photo-based profile and closest maintenance matches are below.")
+            : "Your full photo-based profile is below.");
+          strengthsHeading.textContent = notApparentLabels.length
+            ? "What appears subtle or not apparent"
+            : "What appears subtle";
+        } else if (notApparentLabels.length) {
+          resultSummaryCopy.textContent = sentenceList(notApparentLabels) + " did not stand out in these photos. Your full photo-based profile is below.";
+          strengthsHeading.textContent = "What was not apparent";
         } else {
-          resultSummaryCopy.textContent = "Your full photo-based profile shows what was visible, what appeared subtle, and what could not be assessed clearly. Your closest Von & Co matches are below.";
+          resultSummaryCopy.textContent = "Your full photo-based profile shows what was visible, what appeared subtle, and what could not be assessed clearly. " + (hasRecommendations
+            ? "Your closest Von & Co matches are below."
+            : "No automatic catalog match was added for this profile.");
+          strengthsHeading.textContent = "What appears subtle or not apparent";
         }
 
         appendResultInsight("Top visible focus", priorityLabels[0] || "No single focus");
-        appendResultInsight("Visible strength", strengthLabels[0] || "No single standout");
+        appendResultInsight(
+          subtleLabels.length ? "Subtle finding" : "Not apparent",
+          subtleLabels[0] || notApparentLabels[0] || "No single standout"
+        );
         appendResultInsight(
           "Profile coverage",
           observations.length ? reviewedCount + " of " + observations.length + " categories reviewed" : "No categories reviewed"
@@ -3259,6 +3292,13 @@
         });
       }
 
+      function recommendationUsesVisiblePriority(item, map) {
+        return Array.isArray(item && item.matchedObservationIds) && item.matchedObservationIds.some(function (id) {
+          var observation = map && map.get(id);
+          return observation && (observation.level === "visible" || observation.level === "prominent");
+        });
+      }
+
       function createServiceCard(service, index, map) {
         var name = cleanText(service && service.name);
         if (!name) {
@@ -3270,7 +3310,9 @@
 
         var rank = document.createElement("p");
         rank.className = "recommendation-rank";
-        rank.textContent = index === 0 ? "Best match" : "Also consider";
+        rank.textContent = recommendationUsesVisiblePriority(service, map)
+          ? (index === 0 ? "Best match" : "Also consider")
+          : "Maintenance match";
         card.appendChild(rank);
 
         var category = document.createElement("p");
@@ -3339,7 +3381,11 @@
         var relationship = cleanText(product.relationship);
         var rank = document.createElement("p");
         rank.className = "recommendation-rank";
-        rank.textContent = relationship === "Daily protection" ? "Daily essential" : (index === 0 ? "Targeted pick" : "Also consider");
+        rank.textContent = relationship === "Daily protection"
+          ? "Daily essential"
+          : (recommendationUsesVisiblePriority(product, map)
+            ? (index === 0 ? "Targeted pick" : "Also consider")
+            : "Maintenance pick");
         card.appendChild(rank);
 
         var brand = document.createElement("p");
@@ -3389,6 +3435,14 @@
 
         var services = recommendations && Array.isArray(recommendations.services) ? recommendations.services.slice(0, 3) : [];
         var products = recommendations && Array.isArray(recommendations.products) ? recommendations.products.slice(0, 3) : [];
+        var recommendationItems = services.concat(products);
+        var hasVisiblePriorityMatch = recommendationItems.some(function (item) {
+          return recommendationUsesVisiblePriority(item, map);
+        });
+
+        planIntro.textContent = recommendationItems.length && !hasVisiblePriorityMatch
+          ? "Maintenance options mapped from subtle findings in your visible appearance profile and Von & Co's current guides."
+          : "Ranked from your visible appearance profile and mapped to Von & Co's current guides.";
 
         services.forEach(function (service, index) {
           var card = createServiceCard(service, index, map);

@@ -491,6 +491,49 @@ class ServerContractTests(unittest.TestCase):
         self.assertEqual(by_id["pore_visibility"]["angles"], [])
         self.assertIn("could not be assessed from", by_id["pore_visibility"]["description"])
 
+    def test_subtle_findings_drive_maintenance_matches_when_no_priority_exists(self) -> None:
+        raw = complete_model_result()
+        raw["observations"][0]["level"] = "subtle"
+        raw["strengths"] = ["visible_redness", "surface_texture"]
+        raw["priorities"] = []
+        validated = analysis_engine.validate_model_output(raw, ["single"], "face")
+        result = analysis_engine.build_final_result(
+            validated,
+            provider="gemini",
+            selected_model="gemini-3.5-flash",
+            image_count=1,
+            body_area="face",
+        )
+
+        self.assertEqual(result["priorities"], [])
+        self.assertEqual(
+            [item["id"] for item in result["appearanceRecommendations"]["services"]],
+            ["sciton_bbl_photofacial", "sciton_moxi_laser", "hydrafacial_customized"],
+        )
+        self.assertEqual(
+            [item["id"] for item in result["appearanceRecommendations"]["products"]],
+            ["avene_thermal_water", "zo_complexion_renewal_pads", "colorscience_face_shield"],
+        )
+
+    def test_not_observed_findings_do_not_drive_maintenance_matches(self) -> None:
+        raw = complete_model_result()
+        for observation in raw["observations"]:
+            observation["level"] = "not_observed"
+        raw["strengths"] = ["visible_redness", "surface_texture"]
+        raw["priorities"] = []
+        validated = analysis_engine.validate_model_output(raw, ["single"], "face")
+        result = analysis_engine.build_final_result(
+            validated,
+            provider="gemini",
+            selected_model="gemini-3.5-flash",
+            image_count=1,
+            body_area="face",
+        )
+        self.assertEqual(
+            result["appearanceRecommendations"],
+            {"services": [], "products": []},
+        )
+
     def test_medical_review_reason_is_limited_to_open_or_broken_skin(self) -> None:
         self.assertEqual(
             analysis_engine.MEDICAL_REASON_CODES,
@@ -861,7 +904,9 @@ class ServerContractTests(unittest.TestCase):
             self.assertIn("Your quick read", html)
             self.assertIn("function renderResultSummary(data, map)", html)
             self.assertIn("Top visible focus", html)
-            self.assertIn("Visible strength", html)
+            self.assertIn("Subtle finding", html)
+            self.assertIn("Not apparent", html)
+            self.assertNotIn("strength worth maintaining", html)
             self.assertIn("Profile coverage", html)
             self.assertIn("Book your complimentary consultation", html)
 
@@ -912,6 +957,12 @@ class ServerContractTests(unittest.TestCase):
             self.assertIn("services.slice(0, 3)", html)
             self.assertIn("products.slice(0, 3)", html)
             self.assertIn("Best match", html)
+            self.assertIn("Maintenance match", html)
+            self.assertIn("Maintenance pick", html)
+            self.assertIn("appeared subtle in these photos", html)
+            self.assertIn("did not stand out in these photos", html)
+            self.assertIn("priorityLabels.length", html)
+            self.assertIn("Maintenance options mapped from subtle findings", html)
             self.assertIn("Daily essential", html)
             self.assertIn("Why this matches:", html)
             self.assertIn("Book your complimentary consultation", html)

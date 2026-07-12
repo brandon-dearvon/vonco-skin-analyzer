@@ -14,7 +14,7 @@ Each JSONL row must contain:
     "lighting": "standardized-or-consumer"
   },
   "candidate": {
-    "analysisVersion": "visible-surface-v1.3.0",
+    "analysisVersion": "visible-surface-v1.3.1",
     "schemaVersion": "visible-surface-response-schema-v1.1.0",
     "topicMappingVersion": "naples-appearance-recommendations-v2.1.0",
     "promptHash": "recorded-prompt-hash",

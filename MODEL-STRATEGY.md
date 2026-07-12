@@ -18,7 +18,7 @@ No other AI provider or model is used as a fallback. If Gemini is unavailable, t
 - Output: `application/json` constrained by the Gemini-compatible schema
 - Retry behavior: one bounded provider request; no cross-provider fallback
 - Post-response handling: strict application validation before any result is shown
-- Analysis version: `visible-surface-v1.3.0`
+- Analysis version: `visible-surface-v1.3.1`
 - Prompt version: `visible-surface-prompt-v1.1.0`
 - Response schema: `visible-surface-response-schema-v1.1.0`
 - Recommendation catalog: `naples-appearance-recommendations-v2.1.0`
@@ -35,7 +35,10 @@ response passes validation, the server applies a
 versioned, deterministic catalog to create service and skincare matches from Von
 & Co's current provider guides.
 
-- only `visible` or `prominent` priority IDs can produce a match;
+- `visible` or `prominent` priority IDs lead the matches; when no priority is
+  present, up to two `subtle` findings can produce clearly labeled maintenance
+  matches so a usable photo does not end in an empty plan;
+- `not_observed` and `unable_to_assess` findings never produce a match;
 - the selected body area must be explicitly approved in the catalog;
 - retake results and the narrowly defined open-or-broken-skin medical-review
   state suppress every service and product; the model is not allowed to decide
