@@ -38,12 +38,11 @@ GEMINI_THINKING_LEVEL = "high"
 GEMINI_MAX_OUTPUT_TOKENS = 8192
 
 DISCLAIMER = (
-    "This AI preview is limited to visible surface features in the submitted "
-    "images. Service and product matches are educational starting points from "
-    "Von & Co's current guides, not a diagnosis or a determination of product or "
-    "treatment suitability, safety, eligibility, or availability. It cannot "
-    "diagnose or rule out disease or replace an in-person evaluation by a "
-    "qualified provider."
+    "Photo-based preview only. Service and product matches are educational "
+    "options from Von & Co's current guides. It cannot diagnose or rule out "
+    "disease or determine treatment or product suitability. An in-person "
+    "evaluation is required before treatment, and any concerning lesion should "
+    "be evaluated by a qualified medical professional."
 )
 
 OBSERVATION_LABELS: dict[str, str] = {

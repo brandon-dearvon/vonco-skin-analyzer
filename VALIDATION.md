@@ -32,8 +32,10 @@ Service and product matches must be generated only after the appearance response
 passes validation. The mapper must abstain when the photo vocabulary does not
 support the corresponding concern—for example, blemish-like spots cannot be
 converted into acne and visible flaking cannot be converted into dehydration.
-If one of these ambiguous appearances is a priority, every automatic match is
-held so another cosmetic feature cannot route around the abstention rule.
+An ambiguous appearance does not create a match itself, but it does not suppress
+an independently supported appearance match. Every result retains the small-print
+requirement for an in-person evaluation before treatment and medical evaluation
+of any concerning lesion.
 
 ## Validation design
 

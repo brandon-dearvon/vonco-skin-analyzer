@@ -146,18 +146,27 @@ class RecommendationCatalogTests(unittest.TestCase):
                 )
                 self.assertEqual(recommendations, {"services": [], "products": []})
 
-    def test_ambiguous_priority_holds_otherwise_supported_matches(self) -> None:
-        for hold_id in recommendation_catalog.RECOMMENDATION_HOLD_IDS:
-            with self.subTest(hold_id=hold_id):
+    def test_unmapped_priority_does_not_suppress_supported_matches(self) -> None:
+        for unmapped_id in (
+            "blemish_like_spots",
+            "superficial_vessels",
+            "visible_flaking",
+        ):
+            with self.subTest(unmapped_id=unmapped_id):
                 recommendations = (
                     recommendation_catalog.build_appearance_recommendations(
-                        ["visible_lines", hold_id],
+                        ["visible_lines", unmapped_id],
                         "face",
                         analysis_engine.OBSERVATION_LABELS,
                     )
                 )
                 self.assertEqual(
-                    recommendations, {"services": [], "products": []}
+                    [item["id"] for item in recommendations["services"]],
+                    ["microneedling", "rf_microneedling"],
+                )
+                self.assertEqual(
+                    [item["id"] for item in recommendations["products"]],
+                    ["skinbetter_alpharet", "zo_wrinkle_texture_repair"],
                 )
 
     def test_products_are_suppressed_outside_face(self) -> None:
@@ -328,15 +337,42 @@ class PublicRecommendationContractTests(unittest.TestCase):
         with self.assertRaises(analysis_engine.SchemaValidationError):
             analysis_engine.validate_model_output(injected, ["single"], body_area="face")
 
-    def test_ambiguous_public_priority_holds_the_complete_shortlist(self) -> None:
-        for hold_id in recommendation_catalog.RECOMMENDATION_HOLD_IDS:
-            with self.subTest(hold_id=hold_id):
-                result = _public_result(["visible_lines", hold_id])
+    def test_unmapped_public_priority_preserves_supported_shortlist(self) -> None:
+        for unmapped_id in (
+            "blemish_like_spots",
+            "superficial_vessels",
+            "visible_flaking",
+        ):
+            with self.subTest(unmapped_id=unmapped_id):
+                result = _public_result(["visible_lines", unmapped_id])
                 self.assertEqual(
-                    result["appearanceRecommendations"],
-                    {"services": [], "products": []},
+                    [
+                        item["id"]
+                        for item in result["appearanceRecommendations"]["services"]
+                    ],
+                    ["microneedling", "rf_microneedling"],
                 )
-                self.assertEqual(result["discussionTopics"], [])
+                self.assertEqual(
+                    [
+                        item["id"]
+                        for item in result["appearanceRecommendations"]["products"]
+                    ],
+                    ["skinbetter_alpharet", "zo_wrinkle_texture_repair"],
+                )
+                self.assertEqual(
+                    [item["id"] for item in result["discussionTopics"]],
+                    ["microneedling", "rf_microneedling"],
+                )
+
+    def test_disclaimer_requires_in_person_evaluation_for_concerning_lesions(self) -> None:
+        self.assertIn(
+            "An in-person evaluation is required before treatment",
+            analysis_engine.DISCLAIMER,
+        )
+        self.assertIn(
+            "any concerning lesion should be evaluated",
+            analysis_engine.DISCLAIMER,
+        )
 
     def test_public_shape_versions_caps_and_compatibility_alias(self) -> None:
         result = _public_result(["visible_lines", "pigment_variation"])

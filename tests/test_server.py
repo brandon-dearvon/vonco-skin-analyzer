@@ -716,6 +716,13 @@ class ServerContractTests(unittest.TestCase):
             self.assertIn("Von &amp; Co and Google Gemini", html)
             self.assertIn('class="footer-fine-print"', html)
             self.assertIn("Photo-based cosmetic preview only.", html)
+            self.assertIn(
+                "An in-person evaluation is required before treatment", html
+            )
+            self.assertIn(
+                "any concerning lesion should be evaluated by a qualified medical professional",
+                html,
+            )
             self.assertIn(".server-disclaimer:not([hidden])", html)
             retake_block = html[
                 html.index("function renderRetake(data)") : html.index(

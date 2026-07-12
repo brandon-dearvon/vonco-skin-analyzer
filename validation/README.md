@@ -16,7 +16,7 @@ Each JSONL row must contain:
   "candidate": {
     "analysisVersion": "visible-surface-v1.2.0",
     "schemaVersion": "visible-surface-response-schema-v1.1.0",
-    "topicMappingVersion": "naples-appearance-recommendations-v2.0.1",
+    "topicMappingVersion": "naples-appearance-recommendations-v2.0.2",
     "promptHash": "recorded-prompt-hash",
     "model": {
       "provider": "gemini",

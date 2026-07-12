@@ -17,17 +17,10 @@ from __future__ import annotations
 from typing import Any, Mapping, Sequence
 
 
-CATALOG_VERSION = "naples-appearance-recommendations-v2.0.1"
+CATALOG_VERSION = "naples-appearance-recommendations-v2.0.2"
 
 ALL_AREAS = frozenset({"face", "neck_chest", "hands", "back", "legs"})
 FACE_ONLY = frozenset({"face"})
-
-# These ordinary-photo appearances need history or in-person context before any
-# service or product should be paired with the image. If one is a priority, the
-# mapper holds the entire automatic shortlist rather than recommending around it.
-RECOMMENDATION_HOLD_IDS = frozenset(
-    {"blemish_like_spots", "superficial_vessels", "visible_flaking"}
-)
 
 # Immutable evidence identifiers make each catalog entry independently auditable.
 # The hashes are for the exact provider PDFs reviewed when this catalog version
@@ -387,8 +380,6 @@ def build_appearance_recommendations(
     """Return deterministic, explainable service and product recommendations."""
 
     ordered_priorities = [item for item in priorities if item in labels][:2]
-    if RECOMMENDATION_HOLD_IDS.intersection(ordered_priorities):
-        return {"services": [], "products": []}
     service_matches = _service_candidates(ordered_priorities, body_area)
     product_matches = _product_candidates(ordered_priorities, body_area)
 
