@@ -12,7 +12,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
-from PIL import Image, ImageCms, ImageDraw
+from PIL import Image, ImageCms, ImageDraw, ImageFilter
 
 import analysis_engine
 from analysis_engine import FINAL_RESULT_KEYS
@@ -32,10 +32,20 @@ def image_bytes(size: tuple[int, int] = (640, 640)) -> bytes:
     return output.getvalue()
 
 
+def blurred_image_bytes(size: tuple[int, int] = (640, 640)) -> bytes:
+    with Image.open(io.BytesIO(image_bytes(size))) as image:
+        blurred = image.filter(ImageFilter.GaussianBlur(radius=8))
+        output = io.BytesIO()
+        blurred.save(output, format="JPEG", quality=90)
+        return output.getvalue()
+
+
 def mpo_image_bytes(size: tuple[int, int] = (640, 480)) -> bytes:
     primary = Image.new("RGB", size, (176, 151, 137))
     draw = ImageDraw.Draw(primary)
     draw.rectangle((0, 0, size[0] // 2, size[1]), fill=(116, 89, 82))
+    for offset in range(40, size[0], 80):
+        draw.line((offset, 0, offset, size[1]), fill=(92, 70, 66), width=3)
     orientation = primary.getexif()
     orientation[274] = 6
     secondary = Image.new("L", (320, 240), 151)
@@ -950,6 +960,41 @@ class ServerContractTests(unittest.TestCase):
         self.assertEqual(result["observations"], [])
         self.assertEqual(result["discussionTopics"], [])
 
+    def test_blurry_image_returns_structured_422_before_provider(self) -> None:
+        provider_calls = []
+
+        def unexpected_provider(*_):
+            provider_calls.append(True)
+            return complete_model_result()
+
+        with mock.patch.dict(
+            analysis_engine.PROVIDER_CALLS,
+            {"gemini": unexpected_provider},
+            clear=False,
+        ):
+            response = self.client.post(
+                "/api/analyze",
+                data={
+                    "image": (io.BytesIO(blurred_image_bytes()), "blurred.jpg"),
+                    "body_area": "legs",
+                    "age_confirmed": "true",
+                },
+                content_type="multipart/form-data",
+            )
+
+        self.assertEqual(response.status_code, 422)
+        result = response.get_json()
+        self.assertEqual(result["status"], "retake")
+        self.assertEqual(result["quality"]["issues"], ["blur"])
+        self.assertEqual(
+            result["quality"]["guidance"], ["hold_camera_steady"]
+        )
+        self.assertEqual(
+            result["appearanceRecommendations"],
+            {"services": [], "products": []},
+        )
+        self.assertEqual(provider_calls, [])
+
     def test_mpo_jpeg_container_uses_primary_frame(self) -> None:
         encoded = mpo_image_bytes()
         with Image.open(io.BytesIO(encoded)) as source:
@@ -1298,6 +1343,10 @@ class ServerContractTests(unittest.TestCase):
         image = Image.new("CMYK", (640, 640), (0, 80, 80, 20))
         draw = ImageDraw.Draw(image)
         draw.rectangle((0, 0, 319, 639), fill=(80, 0, 20, 0))
+        for y in range(0, 640, 40):
+            for x in range(0, 640, 40):
+                if ((x // 40) + (y // 40)) % 2 == 0:
+                    draw.rectangle((x, y, x + 19, y + 19), fill=(0, 0, 0, 100))
         encoded = io.BytesIO()
         image.save(encoded, format="JPEG", quality=90, icc_profile=b"test-cmyk-profile")
         observed = {}

@@ -30,7 +30,7 @@ from recommendation_catalog import (
 
 LOGGER = logging.getLogger(__name__)
 
-ANALYSIS_VERSION = "visible-surface-v1.4.1"
+ANALYSIS_VERSION = "visible-surface-v1.4.2"
 PROMPT_VERSION = "visible-surface-prompt-v1.1.0"
 SCHEMA_VERSION = "visible-surface-response-schema-v1.2.0"
 TOPIC_MAPPING_VERSION = CATALOG_VERSION
@@ -249,6 +249,10 @@ MAX_UPLOAD_BYTES = 12 * 1024 * 1024
 MAX_IMAGE_DIMENSION = 1600
 MAX_IMAGE_PIXELS = 40_000_000
 MIN_IMAGE_DIMENSION = 480
+# A high-percentile edge measure keeps naturally smooth skin from dominating
+# the check while still catching images with no reliably sharp detail.
+SHARPNESS_PERCENTILE = 0.995
+MIN_SHARPNESS_PERCENTILE = 30
 SUPPORTED_PIL_FORMATS = {"JPEG", "MPO", "PNG", "WEBP"}
 
 
@@ -1036,6 +1040,36 @@ def normalize_image(file_object: Any, angle: str) -> NormalizedImage:
                         "low_contrast",
                         "use_natural_even_light",
                         "A basic capture-quality check found too little visible contrast for an honest review. Please retake the image.",
+                    )
+                sharpness_values: list[int] = []
+                pixels = grayscale.load()
+                sample_width, sample_height = grayscale.size
+                for y in range(1, sample_height - 1):
+                    for x in range(1, sample_width - 1):
+                        center = pixels[x, y]
+                        sharpness_values.append(
+                            abs(
+                                pixels[x - 1, y]
+                                + pixels[x + 1, y]
+                                + pixels[x, y - 1]
+                                + pixels[x, y + 1]
+                                - (4 * center)
+                            )
+                        )
+                sharpness_values.sort()
+                sharpness_index = min(
+                    len(sharpness_values) - 1,
+                    int((len(sharpness_values) - 1) * SHARPNESS_PERCENTILE),
+                )
+                if (
+                    not sharpness_values
+                    or sharpness_values[sharpness_index]
+                    < MIN_SHARPNESS_PERCENTILE
+                ):
+                    raise ImageIntakeError(
+                        "blur",
+                        "hold_camera_steady",
+                        "A basic capture-quality check found the image too soft to review. Please retake it with the camera held steady.",
                     )
                 image.thumbnail((MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION), Image.Resampling.LANCZOS)
                 output = BytesIO()
