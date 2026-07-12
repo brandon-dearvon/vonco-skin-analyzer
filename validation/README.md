@@ -14,14 +14,14 @@ Each JSONL row must contain:
     "lighting": "standardized-or-consumer"
   },
   "candidate": {
-    "analysisVersion": "visible-surface-v1.2.0",
+    "analysisVersion": "visible-surface-v1.3.0",
     "schemaVersion": "visible-surface-response-schema-v1.1.0",
-    "topicMappingVersion": "naples-appearance-recommendations-v2.0.2",
+    "topicMappingVersion": "naples-appearance-recommendations-v2.1.0",
     "promptHash": "recorded-prompt-hash",
     "model": {
       "provider": "gemini",
       "name": "gemini-3.5-flash",
-      "promptVersion": "visible-surface-prompt-v1.0.0"
+      "promptVersion": "visible-surface-prompt-v1.1.0"
     }
   },
   "reference": {

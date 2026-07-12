@@ -35,7 +35,7 @@ def _model_result(
         }
         medical_review = {
             "suggested": True,
-            "reason": "visible_concern_outside_cosmetic_scope",
+            "reason": "open_or_broken_skin",
         }
     elif status == "retake":
         quality = {
@@ -74,7 +74,7 @@ class RecommendationCatalogTests(unittest.TestCase):
         evidence_ids = set(recommendation_catalog.SOURCE_EVIDENCE)
         for source_id, source in recommendation_catalog.SOURCE_EVIDENCE.items():
             with self.subTest(source_id=source_id):
-                self.assertEqual(source["reviewed"], "2026-07-11")
+                self.assertIn(source["reviewed"], {"2026-07-11", "2026-07-12"})
                 self.assertTrue(source.get("sha256") or source.get("url"))
                 if "sha256" in source:
                     self.assertEqual(len(source["sha256"]), 64)
@@ -94,31 +94,67 @@ class RecommendationCatalogTests(unittest.TestCase):
         expected = {
             "visible_lines": (
                 ["microneedling", "rf_microneedling"],
-                ["skinbetter_alpharet", "zo_wrinkle_texture_repair"],
+                [
+                    "skinbetter_alpharet",
+                    "zo_wrinkle_texture_repair",
+                    "colorscience_face_shield",
+                ],
             ),
             "visible_redness": (
                 ["sciton_bbl_photofacial"],
-                ["avene_thermal_water", "skinbetter_alto_defense"],
+                [
+                    "avene_thermal_water",
+                    "skinbetter_alto_defense",
+                    "colorscience_face_shield",
+                ],
             ),
             "pigment_variation": (
                 ["sciton_bbl_photofacial", "sciton_halo_laser", "chemical_peels"],
-                ["skinbetter_even_tone", "isdin_melaclear_advanced"],
+                [
+                    "skinbetter_even_tone",
+                    "isdin_melaclear_advanced",
+                    "colorscience_face_shield",
+                ],
             ),
             "surface_texture": (
-                ["sciton_moxi_laser", "rf_microneedling", "sciton_halo_laser"],
-                ["zo_complexion_renewal_pads", "skinbetter_peel_pads"],
+                ["sciton_moxi_laser", "hydrafacial_customized", "saltfacial"],
+                [
+                    "zo_complexion_renewal_pads",
+                    "skinbetter_peel_pads",
+                    "colorscience_face_shield",
+                ],
             ),
             "pore_visibility": (
-                ["microneedling_prf", "sciton_halo_laser"],
-                [],
+                ["hydrafacial_clarifying", "deep_pore_facial", "microneedling_prf"],
+                ["zo_complexion_renewal_pads", "colorscience_face_shield"],
             ),
             "laxity_appearance": (
-                ["rf_microneedling", "sciton_halo_laser"],
-                ["alastin_restorative_skin_complex", "zo_growth_factor_serum"],
+                ["rf_microneedling", "sculptra", "sciton_halo_laser"],
+                [
+                    "alastin_restorative_skin_complex",
+                    "zo_growth_factor_serum",
+                    "colorscience_face_shield",
+                ],
+            ),
+            "blemish_like_spots": (
+                ["hydrafacial_clarifying", "deep_pore_facial", "saltfacial"],
+                ["zo_complexion_renewal_pads", "colorscience_face_shield"],
             ),
             "scar_like_texture": (
                 ["microneedling_prf", "rf_microneedling", "chemical_peels"],
-                [],
+                ["colorscience_face_shield"],
+            ),
+            "superficial_vessels": (
+                ["sciton_bbl_photofacial"],
+                ["colorscience_face_shield"],
+            ),
+            "visible_flaking": (
+                ["hydrafacial_customized"],
+                [
+                    "hydrinity_renewing_ha_serum",
+                    "skinbetter_trio_moisture",
+                    "colorscience_face_shield",
+                ],
             ),
         }
 
@@ -134,39 +170,74 @@ class RecommendationCatalogTests(unittest.TestCase):
                     [item["id"] for item in recommendations["products"]], product_ids
                 )
 
-    def test_unsupported_photo_only_inferences_abstain(self) -> None:
-        for observation_id in (
-            "blemish_like_spots",
-            "superficial_vessels",
-            "visible_flaking",
-        ):
+    def test_every_face_priority_gets_one_daily_spf_essential(self) -> None:
+        for observation_id in analysis_engine.BODY_AREA_OBSERVATIONS["face"]:
             with self.subTest(observation_id=observation_id):
                 recommendations = recommendation_catalog.build_appearance_recommendations(
                     [observation_id], "face", analysis_engine.OBSERVATION_LABELS
                 )
-                self.assertEqual(recommendations, {"services": [], "products": []})
+                products = recommendations["products"]
+                product_ids = [item["id"] for item in products]
+                self.assertLessEqual(len(products), 3)
+                self.assertEqual(product_ids[-1], "colorscience_face_shield")
+                self.assertEqual(product_ids.count("colorscience_face_shield"), 1)
 
-    def test_unmapped_priority_does_not_suppress_supported_matches(self) -> None:
-        for unmapped_id in (
-            "blemish_like_spots",
-            "superficial_vessels",
-            "visible_flaking",
-        ):
-            with self.subTest(unmapped_id=unmapped_id):
+                protection = products[-1]
+                self.assertEqual(protection["category"], "Daily protection")
+                self.assertEqual(protection["relationship"], "Daily protection")
+                self.assertEqual(
+                    protection["matchedObservationIds"], [observation_id]
+                )
+                self.assertIn("daily SPF", protection["why"])
+
+        no_priorities = recommendation_catalog.build_appearance_recommendations(
+            [], "face", analysis_engine.OBSERVATION_LABELS
+        )
+        self.assertEqual(no_priorities["products"], [])
+
+    def test_combined_priorities_preserve_each_supported_shortlist(self) -> None:
+        cases = {
+            "blemish_like_spots": (
+                ["microneedling", "hydrafacial_clarifying", "rf_microneedling"],
+                [
+                    "skinbetter_alpharet",
+                    "zo_complexion_renewal_pads",
+                    "colorscience_face_shield",
+                ],
+            ),
+            "superficial_vessels": (
+                ["microneedling", "sciton_bbl_photofacial", "rf_microneedling"],
+                [
+                    "skinbetter_alpharet",
+                    "zo_wrinkle_texture_repair",
+                    "colorscience_face_shield",
+                ],
+            ),
+            "visible_flaking": (
+                ["microneedling", "hydrafacial_customized", "rf_microneedling"],
+                [
+                    "skinbetter_alpharet",
+                    "hydrinity_renewing_ha_serum",
+                    "colorscience_face_shield",
+                ],
+            ),
+        }
+        for observation_id, (expected_services, expected_products) in cases.items():
+            with self.subTest(observation_id=observation_id):
                 recommendations = (
                     recommendation_catalog.build_appearance_recommendations(
-                        ["visible_lines", unmapped_id],
+                        ["visible_lines", observation_id],
                         "face",
                         analysis_engine.OBSERVATION_LABELS,
                     )
                 )
                 self.assertEqual(
                     [item["id"] for item in recommendations["services"]],
-                    ["microneedling", "rf_microneedling"],
+                    expected_services,
                 )
                 self.assertEqual(
                     [item["id"] for item in recommendations["products"]],
-                    ["skinbetter_alpharet", "zo_wrinkle_texture_repair"],
+                    expected_products,
                 )
 
     def test_products_are_suppressed_outside_face(self) -> None:
@@ -209,45 +280,103 @@ class RecommendationCatalogTests(unittest.TestCase):
             ],
             "surface_texture": [
                 "sciton_moxi_laser",
+                "hydrafacial_customized",
+                "saltfacial",
+            ],
+            "pore_visibility": [
+                "hydrafacial_clarifying",
+                "deep_pore_facial",
+                "microneedling_prf",
+            ],
+            "laxity_appearance": [
                 "rf_microneedling",
+                "sculptra",
                 "sciton_halo_laser",
             ],
-            "pore_visibility": ["microneedling_prf", "sciton_halo_laser"],
-            "laxity_appearance": ["rf_microneedling", "sciton_halo_laser"],
-            "blemish_like_spots": [],
+            "blemish_like_spots": [
+                "hydrafacial_clarifying",
+                "deep_pore_facial",
+                "saltfacial",
+            ],
             "scar_like_texture": [
                 "microneedling_prf",
                 "rf_microneedling",
                 "chemical_peels",
             ],
-            "superficial_vessels": [],
-            "visible_flaking": [],
+            "superficial_vessels": ["sciton_bbl_photofacial"],
+            "visible_flaking": ["hydrafacial_customized"],
         }
         face_products = {
-            "visible_lines": ["skinbetter_alpharet", "zo_wrinkle_texture_repair"],
-            "visible_redness": ["avene_thermal_water", "skinbetter_alto_defense"],
+            "visible_lines": [
+                "skinbetter_alpharet",
+                "zo_wrinkle_texture_repair",
+                "colorscience_face_shield",
+            ],
+            "visible_redness": [
+                "avene_thermal_water",
+                "skinbetter_alto_defense",
+                "colorscience_face_shield",
+            ],
             "pigment_variation": [
                 "skinbetter_even_tone",
                 "isdin_melaclear_advanced",
+                "colorscience_face_shield",
             ],
             "surface_texture": [
                 "zo_complexion_renewal_pads",
                 "skinbetter_peel_pads",
+                "colorscience_face_shield",
             ],
-            "pore_visibility": [],
+            "pore_visibility": [
+                "zo_complexion_renewal_pads",
+                "colorscience_face_shield",
+            ],
             "laxity_appearance": [
                 "alastin_restorative_skin_complex",
                 "zo_growth_factor_serum",
+                "colorscience_face_shield",
             ],
-            "blemish_like_spots": [],
-            "scar_like_texture": [],
-            "superficial_vessels": [],
-            "visible_flaking": [],
+            "blemish_like_spots": [
+                "zo_complexion_renewal_pads",
+                "colorscience_face_shield",
+            ],
+            "scar_like_texture": ["colorscience_face_shield"],
+            "superficial_vessels": ["colorscience_face_shield"],
+            "visible_flaking": [
+                "hydrinity_renewing_ha_serum",
+                "skinbetter_trio_moisture",
+                "colorscience_face_shield",
+            ],
         }
         body_services = {
-            "visible_redness": ["sciton_bbl_photofacial"],
-            "pigment_variation": ["sciton_bbl_photofacial"],
-            "surface_texture": ["sciton_moxi_laser"],
+            "neck_chest": {
+                "visible_redness": ["sciton_bbl_photofacial"],
+                "pigment_variation": ["sciton_bbl_photofacial"],
+                "surface_texture": [
+                    "sciton_moxi_laser",
+                    "hydrafacial_customized",
+                ],
+                "superficial_vessels": ["sciton_bbl_photofacial"],
+                "visible_flaking": ["hydrafacial_customized"],
+            },
+            "hands": {
+                "visible_redness": ["sciton_bbl_photofacial"],
+                "pigment_variation": ["sciton_bbl_photofacial"],
+                "surface_texture": ["sciton_moxi_laser"],
+                "superficial_vessels": ["sciton_bbl_photofacial"],
+            },
+            "back": {
+                "visible_redness": ["sciton_bbl_photofacial"],
+                "pigment_variation": ["sciton_bbl_photofacial"],
+                "surface_texture": ["sciton_moxi_laser"],
+                "superficial_vessels": ["sciton_bbl_photofacial"],
+            },
+            "legs": {
+                "visible_redness": ["sciton_bbl_photofacial"],
+                "pigment_variation": ["sciton_bbl_photofacial"],
+                "surface_texture": ["sciton_moxi_laser"],
+                "superficial_vessels": ["sciton_bbl_photofacial"],
+            },
         }
 
         for body_area in ("face", "neck_chest", "hands", "back", "legs"):
@@ -265,7 +394,7 @@ class RecommendationCatalogTests(unittest.TestCase):
                     expected_services = (
                         face_services[observation_id]
                         if body_area == "face"
-                        else body_services.get(observation_id, [])
+                        else body_services[body_area].get(observation_id, [])
                     )
                     expected_products = (
                         face_products[observation_id]
@@ -292,7 +421,7 @@ class RecommendationCatalogTests(unittest.TestCase):
 
         self.assertEqual(first, second)
         self.assertLessEqual(len(first["services"]), 3)
-        self.assertLessEqual(len(first["products"]), 2)
+        self.assertLessEqual(len(first["products"]), 3)
         self.assertEqual(
             [item["id"] for item in first["services"]],
             ["sciton_bbl_photofacial", "sciton_halo_laser", "chemical_peels"],
@@ -302,8 +431,13 @@ class RecommendationCatalogTests(unittest.TestCase):
         )
         self.assertEqual(
             [item["id"] for item in first["products"]],
-            ["avene_thermal_water", "skinbetter_even_tone"],
+            [
+                "avene_thermal_water",
+                "skinbetter_even_tone",
+                "colorscience_face_shield",
+            ],
         )
+        self.assertEqual(first["products"][-1]["relationship"], "Daily protection")
         self.assertEqual(
             len({item["id"] for item in first["services"]}),
             len(first["services"]),
@@ -337,31 +471,53 @@ class PublicRecommendationContractTests(unittest.TestCase):
         with self.assertRaises(analysis_engine.SchemaValidationError):
             analysis_engine.validate_model_output(injected, ["single"], body_area="face")
 
-    def test_unmapped_public_priority_preserves_supported_shortlist(self) -> None:
-        for unmapped_id in (
-            "blemish_like_spots",
-            "superficial_vessels",
-            "visible_flaking",
-        ):
-            with self.subTest(unmapped_id=unmapped_id):
-                result = _public_result(["visible_lines", unmapped_id])
+    def test_combined_public_priorities_preserve_supported_shortlists(self) -> None:
+        cases = {
+            "blemish_like_spots": (
+                ["microneedling", "hydrafacial_clarifying", "rf_microneedling"],
+                [
+                    "skinbetter_alpharet",
+                    "zo_complexion_renewal_pads",
+                    "colorscience_face_shield",
+                ],
+            ),
+            "superficial_vessels": (
+                ["microneedling", "sciton_bbl_photofacial", "rf_microneedling"],
+                [
+                    "skinbetter_alpharet",
+                    "zo_wrinkle_texture_repair",
+                    "colorscience_face_shield",
+                ],
+            ),
+            "visible_flaking": (
+                ["microneedling", "hydrafacial_customized", "rf_microneedling"],
+                [
+                    "skinbetter_alpharet",
+                    "hydrinity_renewing_ha_serum",
+                    "colorscience_face_shield",
+                ],
+            ),
+        }
+        for observation_id, (expected_services, expected_products) in cases.items():
+            with self.subTest(observation_id=observation_id):
+                result = _public_result(["visible_lines", observation_id])
                 self.assertEqual(
                     [
                         item["id"]
                         for item in result["appearanceRecommendations"]["services"]
                     ],
-                    ["microneedling", "rf_microneedling"],
+                    expected_services,
                 )
                 self.assertEqual(
                     [
                         item["id"]
                         for item in result["appearanceRecommendations"]["products"]
                     ],
-                    ["skinbetter_alpharet", "zo_wrinkle_texture_repair"],
+                    expected_products,
                 )
                 self.assertEqual(
                     [item["id"] for item in result["discussionTopics"]],
-                    ["microneedling", "rf_microneedling"],
+                    expected_services[:2],
                 )
 
     def test_disclaimer_requires_in_person_evaluation_for_concerning_lesions(self) -> None:
@@ -380,7 +536,7 @@ class PublicRecommendationContractTests(unittest.TestCase):
 
         self.assertEqual(set(recommendations), {"services", "products"})
         self.assertLessEqual(len(recommendations["services"]), 3)
-        self.assertLessEqual(len(recommendations["products"]), 2)
+        self.assertLessEqual(len(recommendations["products"]), 3)
         self.assertEqual(
             set(recommendations["services"][0]),
             {

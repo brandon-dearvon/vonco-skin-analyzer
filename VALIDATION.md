@@ -26,16 +26,23 @@ The tool must not:
 - determine treatment eligibility, contraindications, or medical suitability;
 - reassure a guest that no concerning condition is present.
 
-If the model suggests that professional medical review may be appropriate, the application suppresses aesthetic discussion topics and displays a non-diagnostic referral message. A lack of such a flag never implies medical clearance.
+The model is not allowed to decide whether a mole, spot, or lesion is medically
+concerning. The medical-review state is limited to directly visible open, broken,
+or actively bleeding-like skin that makes a cosmetic preview inappropriate; it
+suppresses aesthetic matches and displays a non-diagnostic in-person referral.
+Unclear photos route to retake. Every other result retains the same compact
+in-person-evaluation disclaimer, and a completed preview never implies medical
+clearance.
 
 Service and product matches must be generated only after the appearance response
-passes validation. The mapper must abstain when the photo vocabulary does not
-support the corresponding concern—for example, blemish-like spots cannot be
-converted into acne and visible flaking cannot be converted into dehydration.
-An ambiguous appearance does not create a match itself, but it does not suppress
-an independently supported appearance match. Every result retains the small-print
-requirement for an in-person evaluation before treatment and medical evaluation
-of any concerning lesion.
+passes validation. A match must be tied to the exact visible-feature ID and body
+area approved in the frozen catalog. The mapper cannot change the meaning of that
+feature—for example, blemish-like spots cannot be converted into acne and visible
+flaking cannot be converted into a hydration measurement. A catalog-approved
+appearance match is an educational option, not a diagnosis, suitability decision,
+or expected outcome. Every result retains the small-print requirement for an
+in-person evaluation before treatment and medical evaluation of any concerning
+lesion.
 
 ## Validation design
 
@@ -64,7 +71,8 @@ The validation set must include:
 - a broad range of visible-feature severity, including genuinely clear skin;
 - varied skin tones, devices, lighting, makeup, facial hair, and image quality;
 - invalid inputs, screenshots, filters, occlusion, non-skin images, minors, and prompt-injection text inside images;
-- examples that should trigger retake, unable-to-assess, and medical-review messaging.
+- examples that should trigger retake, unable-to-assess, and the narrow
+  open-or-broken-skin medical-review messaging.
 
 The final sample size and subgroup minimums must be set by a prespecified power calculation with a biostatistician. They must not be chosen after results are reviewed.
 
@@ -111,7 +119,27 @@ covering contraindications, skin type, medications, pregnancy, current routine,
 goals, provider judgment, and outcomes. The current application therefore routes
 all matches to a consultation.
 
-### 6. Run in stages
+### 6. Validate the consumer presentation separately
+
+Automated and browser-level tests must verify that the six-stage waiting tracker
+does not represent estimated client-side stages as completed backend work. Steps
+remain numbered while the request is pending; the interface may advance the active
+stage and progress percentage with elapsed time, but it marks all stages complete
+only after an accepted API response arrives.
+
+For a complete response, tests must verify that the interface shows the quick-read
+summary, visible strengths and priorities, every returned ordinal observation,
+the evidence views supplied for each observation, ranked server-owned matches, and
+the consultation action. The product display cap is three. A missing permitted
+category may be represented only as `unable_to_assess`; the application must not
+invent a positive or negative finding, score, mask, recommendation, or supporting
+view for that placeholder, and it must preserve the compact in-person-evaluation
+disclaimer. Responsive QA must also
+verify that mobile recommendation rows remain horizontally usable, the complete
+profile disclosure retains every category, and the sticky main-site navigation
+does not cover the result heading.
+
+### 7. Run in stages
 
 1. Offline technical verification with synthetic and consented test images.
 2. Blinded retrospective validation on a locked set.

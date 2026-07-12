@@ -97,7 +97,7 @@
 
     .skip-link {
       position: fixed;
-      top: 8px;
+      top: -100px;
       left: 8px;
       z-index: 2000;
       padding: 12px 16px;
@@ -105,11 +105,10 @@
       color: var(--evergreen-dark);
       border: 2px solid var(--evergreen);
       border-radius: 8px;
-      transform: translateY(-150%);
     }
 
     .skip-link:focus {
-      transform: translateY(0);
+      top: 8px;
     }
 
     .visually-hidden {
@@ -125,6 +124,9 @@
     }
 
     .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 900;
       background: var(--white);
       border-bottom: 1px solid rgba(81, 104, 98, 0.18);
     }
@@ -312,6 +314,7 @@
 
     .workspace {
       padding: clamp(18px, 3.5vw, 34px);
+      scroll-margin-top: 112px;
       background: var(--white);
       border: 1px solid rgba(81, 104, 98, 0.16);
       border-radius: var(--radius-lg);
@@ -659,6 +662,7 @@
     .results-shell {
       margin-top: 20px;
       padding: clamp(22px, 4vw, 36px);
+      scroll-margin-top: 112px;
       background: var(--white);
       border: 1px solid rgba(81, 104, 98, 0.17);
       border-radius: var(--radius-lg);
@@ -666,17 +670,20 @@
     }
 
     .loading-panel {
-      text-align: center;
+      text-align: left;
+      scroll-margin-top: 112px;
     }
 
     .loading-panel h2 {
       margin: 0;
+      text-align: center;
       font-size: clamp(1.55rem, 3vw, 2.1rem);
     }
 
     .loading-message {
       margin: 8px 0 0;
       color: var(--charcoal-soft);
+      text-align: center;
     }
 
     .progress-track {
@@ -689,11 +696,11 @@
     }
 
     .progress-fill {
-      width: 42%;
+      width: 0;
       height: 100%;
       background: var(--evergreen);
       border-radius: inherit;
-      animation: progress-sweep 1.5s ease-in-out infinite alternate;
+      transition: width 650ms ease;
     }
 
     .elapsed {
@@ -701,20 +708,115 @@
       color: var(--charcoal-soft);
       font-size: 0.85rem;
       font-variant-numeric: tabular-nums;
+      text-align: center;
     }
 
-    @keyframes progress-sweep {
-      from {
-        transform: translateX(-15%);
-      }
-      to {
-        transform: translateX(150%);
-      }
+    .loading-steps {
+      width: min(620px, 100%);
+      margin: 8px auto 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .loading-steps-label {
+      width: min(620px, 100%);
+      margin: 22px auto 0;
+      color: var(--evergreen-dark);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .loading-step {
+      position: relative;
+      display: grid;
+      grid-template-columns: 32px minmax(0, 1fr);
+      gap: 12px;
+      min-height: 54px;
+      color: #7c817f;
+    }
+
+    .loading-step:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      top: 31px;
+      bottom: 0;
+      left: 15px;
+      width: 1px;
+      background: rgba(81, 104, 98, 0.2);
+    }
+
+    .loading-step-marker {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      width: 32px;
+      height: 32px;
+      place-items: center;
+      background: #f3f3f0;
+      border: 1px solid rgba(81, 104, 98, 0.25);
+      border-radius: 50%;
+      color: var(--charcoal-soft);
+      font-size: 0.76rem;
+      font-weight: 600;
+    }
+
+    .loading-step-copy {
+      padding: 4px 0 15px;
+    }
+
+    .loading-step-title {
+      display: block;
+      color: inherit;
+      font-size: 0.93rem;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .loading-step-detail {
+      display: block;
+      margin-top: 2px;
+      color: var(--charcoal-soft);
+      font-size: 0.78rem;
+      line-height: 1.4;
+    }
+
+    .loading-step[data-state="active"] {
+      color: var(--evergreen-dark);
+    }
+
+    .loading-step[data-state="active"] .loading-step-marker {
+      color: var(--white);
+      background: var(--evergreen);
+      border-color: var(--evergreen);
+      box-shadow: 0 0 0 5px rgba(81, 104, 98, 0.12);
+    }
+
+    .loading-step[data-state="previous"] {
+      color: var(--evergreen-dark);
+    }
+
+    .loading-step[data-state="previous"] .loading-step-marker {
+      color: var(--evergreen-dark);
+      background: rgba(192, 200, 169, 0.45);
+      border-color: var(--mint);
+    }
+
+    .loading-step[data-state="done"] {
+      color: var(--evergreen-dark);
+    }
+
+    .loading-step[data-state="done"] .loading-step-marker {
+      color: var(--evergreen-dark);
+      background: var(--mint);
+      border-color: var(--mint);
     }
 
     .results-heading {
       margin: 0;
       font-size: clamp(1.8rem, 4vw, 2.75rem);
+      scroll-margin-top: 112px;
     }
 
     .result-meta {
@@ -733,6 +835,83 @@
 
     .result-section {
       margin-top: 28px;
+    }
+
+    .result-summary {
+      margin-top: 22px;
+      padding: 22px;
+      color: var(--white);
+      background: var(--evergreen);
+      border-radius: var(--radius-md);
+    }
+
+    .result-summary .plan-kicker {
+      color: var(--mint);
+    }
+
+    .result-summary h3 {
+      max-width: 760px;
+      margin: 0;
+      color: var(--white);
+      font-size: clamp(1.5rem, 3.5vw, 2.15rem);
+    }
+
+    .result-summary-copy {
+      max-width: 760px;
+      margin: 8px 0 0;
+      color: rgba(255, 255, 255, 0.86);
+      font-size: 0.94rem;
+    }
+
+    .result-insights {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .result-insight {
+      min-width: 0;
+      padding: 11px 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+    }
+
+    .result-insight-label,
+    .result-insight-value {
+      display: block;
+    }
+
+    .result-insight-label {
+      color: rgba(255, 255, 255, 0.68);
+      font-size: 0.67rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      line-height: 1.3;
+      text-transform: uppercase;
+    }
+
+    .result-insight-value {
+      margin-top: 3px;
+      overflow-wrap: anywhere;
+      color: var(--white);
+      font-size: 0.9rem;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .result-summary-action {
+      display: inline-flex;
+      margin-top: 18px;
+      color: var(--evergreen-dark);
+      background: var(--white);
+      border-color: var(--white);
+    }
+
+    body.has-results .intro,
+    body.has-results .workspace {
+      display: none;
     }
 
     .result-section h3 {
@@ -786,6 +965,148 @@
     .angles {
       color: var(--charcoal-soft) !important;
       font-size: 0.78rem !important;
+    }
+
+    .profile-intro {
+      max-width: 720px;
+      margin: -5px 0 15px;
+      color: var(--charcoal-soft);
+      font-size: 0.88rem;
+    }
+
+    .profile-disclosure > summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 16px 18px;
+      cursor: pointer;
+      background: #f8f8f6;
+      border: 1px solid rgba(81, 104, 98, 0.18);
+      border-radius: var(--radius-md);
+      list-style: none;
+    }
+
+    .profile-disclosure > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .profile-summary-title,
+    .profile-summary-copy {
+      display: block;
+    }
+
+    .profile-summary-title {
+      color: var(--evergreen-dark);
+      font-family: "Arsenica", Georgia, serif;
+      font-size: 1.32rem;
+      line-height: 1.2;
+    }
+
+    .profile-summary-copy {
+      margin-top: 3px;
+      color: var(--charcoal-soft);
+      font-size: 0.78rem;
+      line-height: 1.4;
+    }
+
+    .profile-summary-icon {
+      width: 30px;
+      height: 30px;
+      flex: 0 0 30px;
+      display: grid;
+      place-items: center;
+      color: var(--white);
+      background: var(--evergreen);
+      border-radius: 50%;
+      font-size: 1.15rem;
+      line-height: 1;
+      transition: transform 160ms ease;
+    }
+
+    .profile-disclosure[open] .profile-summary-icon {
+      transform: rotate(45deg);
+    }
+
+    .profile-disclosure[open] > summary {
+      margin-bottom: 16px;
+    }
+
+    .profile-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .profile-item {
+      min-width: 0;
+      padding: 15px 16px;
+      background: #f8f8f6;
+      border: 1px solid rgba(81, 104, 98, 0.16);
+      border-radius: var(--radius-sm);
+    }
+
+    .profile-item-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .profile-item h4 {
+      margin: 0;
+      font-family: "Fira Sans", "Trebuchet MS", sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .profile-level {
+      flex: 0 0 auto;
+      color: var(--evergreen-dark);
+      font-size: 0.73rem;
+      font-weight: 600;
+    }
+
+    .profile-meter {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 4px;
+      margin-top: 11px;
+    }
+
+    .profile-meter-segment {
+      height: 6px;
+      background: #dfe2dd;
+      border-radius: 999px;
+    }
+
+    .profile-meter-segment.is-filled {
+      background: var(--sand);
+    }
+
+    .profile-item[data-level="not_observed"] .profile-meter-segment:first-child,
+    .profile-item[data-level="subtle"] .profile-meter-segment.is-filled {
+      background: var(--mint);
+    }
+
+    .profile-item[data-level="visible"] .profile-meter-segment.is-filled {
+      background: var(--sand);
+    }
+
+    .profile-item[data-level="prominent"] .profile-meter-segment.is-filled {
+      background: var(--peach-dark);
+    }
+
+    .profile-item[data-level="unable_to_assess"] .profile-meter-segment {
+      background: repeating-linear-gradient(135deg, #e3e4df 0 4px, #f3f3f0 4px 8px);
+    }
+
+    .profile-description {
+      margin: 9px 0 0;
+      color: var(--charcoal-soft);
+      font-size: 0.78rem;
+      line-height: 1.45;
     }
 
     .plan-section {
@@ -845,7 +1166,21 @@
     }
 
     .product-list {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .recommendation-rank {
+      align-self: flex-start;
+      margin: 0 0 9px;
+      padding: 4px 8px;
+      color: var(--evergreen-dark);
+      background: rgba(193, 168, 144, 0.22);
+      border-radius: 999px;
+      font-size: 0.67rem;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      line-height: 1.3;
+      text-transform: uppercase;
     }
 
     .recommendation-card {
@@ -901,6 +1236,11 @@
       color: var(--charcoal);
       font-size: 0.88rem;
       line-height: 1.52;
+    }
+
+    .recommendation-why-label {
+      color: var(--evergreen-dark);
+      font-weight: 600;
     }
 
     .recommendation-availability {
@@ -1035,6 +1375,12 @@
       justify-content: flex-end;
       gap: 10px 20px;
       font-size: 0.88rem;
+    }
+
+    .mobile-swipe-hint {
+      display: none;
+      color: var(--evergreen-dark);
+      font-weight: 600;
     }
 
     .footer-links a {
@@ -1382,13 +1728,34 @@
       }
 
       .observation-list,
+      .profile-list,
       .upload-preview-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .result-insights {
         grid-template-columns: 1fr;
       }
 
       .service-list,
       .product-list {
-        grid-template-columns: 1fr;
+        grid-template-columns: none;
+        grid-auto-flow: column;
+        grid-auto-columns: calc(100% - 34px);
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+        padding: 2px 2px 12px;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: thin;
+      }
+
+      .service-list .recommendation-card,
+      .product-list .recommendation-card {
+        scroll-snap-align: start;
+      }
+
+      .mobile-swipe-hint {
+        display: inline;
       }
 
       .plan-section {
@@ -1433,6 +1800,10 @@
 
       .result-actions {
         display: grid;
+      }
+
+      .result-summary {
+        padding: 18px;
       }
     }
 
@@ -1479,7 +1850,6 @@
       }
 
       .progress-fill {
-        width: 100%;
         transform: none;
       }
     }
@@ -1541,12 +1911,12 @@
     <section class="intro" aria-labelledby="pageTitle">
       <p class="eyebrow">Complimentary photo-based skin analysis</p>
       <h1 id="pageTitle">Your skin is personal. <span class="hero-mobile-line">Your next step should be too.</span></h1>
-      <p class="intro-copy">Upload one or three clear photos to see visible strengths and priorities, then explore Von &amp; Co services and skincare matched to what appears in your photos.</p>
+      <p class="intro-copy">Upload one or three clear photos for a full visible-skin profile, then see ranked Von &amp; Co services and skincare matched to what stands out.</p>
       <ul class="intro-benefits" aria-label="Your skin analysis may include">
-        <li>Visible strengths</li>
-        <li>Visible priorities</li>
-        <li>Matched studio services</li>
-        <li>Skincare shortlist</li>
+        <li>Full visible profile</li>
+        <li>What looks strong</li>
+        <li>What stands out</li>
+        <li>Ranked service + skincare matches</li>
       </ul>
     </section>
 
@@ -1651,12 +2021,39 @@
     </section>
 
     <section class="loading-panel" id="loadingPanel" aria-labelledby="loadingHeading" hidden>
-      <h2 id="loadingHeading" tabindex="-1">Reviewing your photos together</h2>
-      <p class="loading-message" id="loadingMessage">Checking photo quality and visible surface details.</p>
-      <div class="progress-track" role="progressbar" aria-label="Creating visible skin preview" aria-valuetext="Processing photos">
-        <div class="progress-fill"></div>
+      <h2 id="loadingHeading" tabindex="-1">Creating your personal skin preview</h2>
+      <p class="loading-message" id="loadingMessage">Estimated stage: preparing your photos.</p>
+      <div class="progress-track" id="loadingProgress" role="progressbar" aria-label="Estimated preview progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="Estimated stage: preparing photos">
+        <div class="progress-fill" id="loadingProgressFill"></div>
       </div>
       <p class="elapsed" id="elapsedText">Elapsed: 0 seconds</p>
+      <p class="loading-steps-label">Estimated preview stages</p>
+      <ol class="loading-steps" id="loadingSteps" aria-label="Analysis progress">
+        <li class="loading-step" data-loading-step="0" data-state="active">
+          <span class="loading-step-marker" aria-hidden="true">1</span>
+          <span class="loading-step-copy"><span class="loading-step-title">Photo preparation</span><span class="loading-step-detail">One or three images are prepared for review.</span></span>
+        </li>
+        <li class="loading-step" data-loading-step="1" data-state="pending">
+          <span class="loading-step-marker" aria-hidden="true">2</span>
+          <span class="loading-step-copy"><span class="loading-step-title">Image-quality check</span><span class="loading-step-detail">Clarity, lighting, framing, and view order are checked.</span></span>
+        </li>
+        <li class="loading-step" data-loading-step="2" data-state="pending">
+          <span class="loading-step-marker" aria-hidden="true">3</span>
+          <span class="loading-step-copy"><span class="loading-step-title">Visible-feature review</span><span class="loading-step-detail">Lines, redness, pigment, texture, and other visible details are reviewed.</span></span>
+        </li>
+        <li class="loading-step" data-loading-step="3" data-state="pending">
+          <span class="loading-step-marker" aria-hidden="true">4</span>
+          <span class="loading-step-copy"><span class="loading-step-title">Skin-profile organization</span><span class="loading-step-detail">Visible strengths and the clearest priorities are organized.</span></span>
+        </li>
+        <li class="loading-step" data-loading-step="4" data-state="pending">
+          <span class="loading-step-marker" aria-hidden="true">5</span>
+          <span class="loading-step-copy"><span class="loading-step-title">Von &amp; Co matching</span><span class="loading-step-detail">Priorities are connected to current service and skincare guides.</span></span>
+        </li>
+        <li class="loading-step" data-loading-step="5" data-state="pending">
+          <span class="loading-step-marker" aria-hidden="true">6</span>
+          <span class="loading-step-copy"><span class="loading-step-title">Preview assembly</span><span class="loading-step-detail">Your profile and next-step shortlist are assembled.</span></span>
+        </li>
+      </ol>
     </section>
 
     <section class="results-shell" id="resultsShell" aria-labelledby="resultsHeading" hidden>
@@ -1664,6 +2061,14 @@
       <p class="result-meta" id="resultMeta"></p>
 
       <div id="completeResults" hidden>
+        <section class="result-summary" id="resultSummary" aria-labelledby="resultSummaryHeading">
+          <p class="plan-kicker">Your quick read</p>
+          <h3 id="resultSummaryHeading">What stands out in your photos</h3>
+          <p class="result-summary-copy" id="resultSummaryCopy"></p>
+          <div class="result-insights" id="resultInsights"></div>
+          <a class="button result-summary-action" href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" rel="noopener noreferrer">Book your complimentary consultation</a>
+        </section>
+
         <section class="result-section" id="strengthsSection" aria-labelledby="strengthsHeading">
           <h3 id="strengthsHeading">Visible strengths</h3>
           <div class="observation-list" id="strengthsList"></div>
@@ -1682,26 +2087,38 @@
 
         <section class="plan-section" id="planSection" aria-labelledby="planHeading">
           <p class="plan-kicker">Matched to your photos</p>
-          <h3 class="plan-heading" id="planHeading">Your Von &amp; Co matches</h3>
-          <p class="plan-intro">Your visible priorities, translated into Von &amp; Co service and skincare options to explore.</p>
+          <h3 class="plan-heading" id="planHeading">Your closest Von &amp; Co matches</h3>
+          <p class="plan-intro">Ranked from the appearance priorities visible in your photos and mapped to Von &amp; Co's current guides.</p>
 
           <section class="recommendation-group" id="servicesSection" aria-labelledby="servicesHeading" hidden>
-            <h4 id="servicesHeading">In-studio matches</h4>
-            <p class="recommendation-group-copy">Services connected to the appearance priorities visible in your photos.</p>
+            <h4 id="servicesHeading">Where to start in studio</h4>
+            <p class="recommendation-group-copy">The strongest service matches to explore first with a Von &amp; Co provider. <span class="mobile-swipe-hint">Swipe to see all.</span></p>
             <div class="recommendation-list service-list" id="servicesList"></div>
           </section>
 
           <section class="recommendation-group" id="productsSection" aria-labelledby="productsHeading" hidden>
-            <h4 id="productsHeading">Your skincare shortlist</h4>
-            <p class="recommendation-group-copy">Products from Von &amp; Co's current guide matched to your visible priorities.</p>
+            <h4 id="productsHeading">Your at-home shortlist</h4>
+            <p class="recommendation-group-copy">Targeted options and daily protection from Von &amp; Co's current product guide. <span class="mobile-swipe-hint">Swipe to see all.</span></p>
             <div class="recommendation-list product-list" id="productsList"></div>
           </section>
 
           <p class="recommendation-empty" id="recommendationsEmpty" hidden>No service or skincare match was added automatically for this photo area. Bring your preview to a complimentary consultation to explore options with a Von &amp; Co provider.</p>
         </section>
 
+        <details class="result-section profile-disclosure" id="profileSection">
+          <summary>
+            <span>
+              <span class="profile-summary-title" id="profileHeading">Your category-by-category skin profile</span>
+              <span class="profile-summary-copy">See every category reviewed in your photos.</span>
+            </span>
+            <span class="profile-summary-icon" aria-hidden="true">+</span>
+          </summary>
+          <p class="profile-intro">Each level describes how noticeable a feature appears in these photos. It is not a diagnosis or a health score.</p>
+          <div class="profile-list" id="profileList"></div>
+        </details>
+
         <div class="result-actions">
-          <a class="button button-primary" href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" rel="noopener noreferrer">Book your complimentary VISIA consultation</a>
+          <button class="button button-secondary" id="analyzeAnotherButton" type="button">Analyze another photo or area</button>
           <button class="button button-secondary" id="printButton" type="button">Print or save</button>
         </div>
       </div>
@@ -1815,6 +2232,27 @@
         legs: "Legs"
       };
 
+      var profileOrder = [
+        "visible_lines",
+        "visible_redness",
+        "pigment_variation",
+        "surface_texture",
+        "pore_visibility",
+        "laxity_appearance",
+        "blemish_like_spots",
+        "scar_like_texture",
+        "superficial_vessels",
+        "visible_flaking"
+      ];
+
+      var profileLevelCopy = {
+        not_observed: { label: "Not visible", filled: 1 },
+        subtle: { label: "Subtle", filled: 2 },
+        visible: { label: "Visible", filled: 3 },
+        prominent: { label: "Prominent", filled: 4 },
+        unable_to_assess: { label: "Not assessed", filled: 0 }
+      };
+
       var qualityIssueCopy = {
         not_skin: "The selected file does not show enough visible skin for this preview.",
         blur: "One or more photos are too blurry to review responsibly.",
@@ -1877,13 +2315,21 @@
       var loadingPanel = document.getElementById("loadingPanel");
       var loadingHeading = document.getElementById("loadingHeading");
       var loadingMessage = document.getElementById("loadingMessage");
+      var loadingProgress = document.getElementById("loadingProgress");
+      var loadingProgressFill = document.getElementById("loadingProgressFill");
+      var loadingSteps = Array.prototype.slice.call(document.querySelectorAll("[data-loading-step]"));
       var elapsedText = document.getElementById("elapsedText");
       var resultsShell = document.getElementById("resultsShell");
       var resultsHeading = document.getElementById("resultsHeading");
       var resultMeta = document.getElementById("resultMeta");
       var completeResults = document.getElementById("completeResults");
+      var resultSummaryHeading = document.getElementById("resultSummaryHeading");
+      var resultSummaryCopy = document.getElementById("resultSummaryCopy");
+      var resultInsights = document.getElementById("resultInsights");
       var strengthsSection = document.getElementById("strengthsSection");
       var prioritiesSection = document.getElementById("prioritiesSection");
+      var profileSection = document.getElementById("profileSection");
+      var profileList = document.getElementById("profileList");
       var limitationsSection = document.getElementById("limitationsSection");
       var planSection = document.getElementById("planSection");
       var servicesSection = document.getElementById("servicesSection");
@@ -1902,6 +2348,7 @@
       var retakeList = document.getElementById("retakeList");
       var unavailablePanel = document.getElementById("unavailablePanel");
       var unavailableMessage = document.getElementById("unavailableMessage");
+      var analyzeAnotherButton = document.getElementById("analyzeAnotherButton");
       var printButton = document.getElementById("printButton");
       var returnFromRetakeButton = document.getElementById("returnFromRetakeButton");
       var returnFromErrorButton = document.getElementById("returnFromErrorButton");
@@ -2422,6 +2869,7 @@
         unavailablePanel.hidden = true;
         strengthsSection.hidden = false;
         prioritiesSection.hidden = false;
+        profileSection.hidden = false;
         limitationsSection.hidden = true;
         planSection.hidden = false;
         servicesSection.hidden = true;
@@ -2430,8 +2878,12 @@
         serverDisclaimer.hidden = true;
         serverDisclaimer.textContent = "";
         resultMeta.textContent = "";
+        resultSummaryHeading.textContent = "What stands out in your photos";
+        resultSummaryCopy.textContent = "";
+        clearNode(resultInsights);
         clearNode(strengthsList);
         clearNode(prioritiesList);
+        clearNode(profileList);
         clearNode(limitationsList);
         clearNode(qualityLimitationsList);
         clearNode(servicesList);
@@ -2439,7 +2891,59 @@
         clearNode(retakeList);
       }
 
+      function setLoadingStage(activeIndex, complete) {
+        loadingSteps.forEach(function (step, index) {
+          var marker = step.querySelector(".loading-step-marker");
+          var stateName = complete ? "done" : (index === activeIndex ? "active" : (index < activeIndex ? "previous" : "pending"));
+          step.dataset.state = stateName;
+          if (marker) {
+            marker.textContent = complete ? "\u2713" : String(index + 1);
+          }
+        });
+      }
+
+      function setLoadingProgress(percent, ariaText) {
+        var safePercent = Math.max(0, Math.min(100, Math.round(percent)));
+        loadingProgressFill.style.width = safePercent + "%";
+        loadingProgress.setAttribute("aria-valuenow", String(safePercent));
+        loadingProgress.setAttribute("aria-valuetext", ariaText);
+      }
+
+      function updateLoadingProgress(seconds) {
+        var stageTimings = [0, 2, 5, 10, 16, 22];
+        var stageTargets = [8, 20, 38, 58, 78, 90];
+        var stageMessages = [
+          "Estimated stage: preparing your photos.",
+          "Estimated stage: checking clarity, lighting, framing, and view order.",
+          "Estimated stage: reviewing visible surface features.",
+          "Estimated stage: organizing strengths and priorities.",
+          "Estimated stage: matching Von & Co services and skincare.",
+          "Estimated stage: assembling your profile and shortlist."
+        ];
+        var activeIndex = 0;
+        for (var index = 0; index < stageTimings.length; index += 1) {
+          if (seconds >= stageTimings[index]) {
+            activeIndex = index;
+          }
+        }
+
+        var progress = stageTargets[activeIndex];
+        if (activeIndex < stageTimings.length - 1) {
+          var startTime = stageTimings[activeIndex];
+          var endTime = stageTimings[activeIndex + 1];
+          var fraction = Math.min(1, (seconds - startTime) / (endTime - startTime));
+          progress += (stageTargets[activeIndex + 1] - progress) * fraction;
+        } else {
+          progress = Math.min(94, stageTargets[activeIndex] + Math.max(0, seconds - stageTimings[activeIndex]) * 0.12);
+        }
+
+        setLoadingStage(activeIndex, false);
+        loadingMessage.textContent = stageMessages[activeIndex];
+        setLoadingProgress(progress, stageMessages[activeIndex]);
+      }
+
       function startLoading() {
+        document.body.classList.remove("has-results");
         state.requestPending = true;
         setCaptureControlsDisabled(true);
         syncAnalyzeState();
@@ -2448,25 +2952,29 @@
         captureWorkspace.setAttribute("aria-busy", "true");
         state.loadingStartedAt = Date.now();
         elapsedText.textContent = "Elapsed: 0 seconds";
-        loadingMessage.textContent = "Checking photo quality and visible surface details.";
+        updateLoadingProgress(0);
         loadingHeading.focus();
+        loadingPanel.scrollIntoView({ block: "start" });
 
         state.loadingTimer = window.setInterval(function () {
           var seconds = Math.floor((Date.now() - state.loadingStartedAt) / 1000);
           elapsedText.textContent = "Elapsed: " + seconds + (seconds === 1 ? " second" : " seconds");
-
-          if (seconds >= 30) {
-            loadingMessage.textContent = "The request is still processing. Please keep this page open.";
-          } else if (seconds >= 12) {
-            loadingMessage.textContent = "Reviewing the selected views together.";
-          }
+          updateLoadingProgress(seconds);
         }, 1000);
       }
 
-      function stopLoading() {
+      async function stopLoading(success) {
         if (state.loadingTimer) {
           window.clearInterval(state.loadingTimer);
           state.loadingTimer = null;
+        }
+        if (success) {
+          setLoadingStage(loadingSteps.length - 1, true);
+          loadingMessage.textContent = "Your personalized preview is ready.";
+          setLoadingProgress(100, "Your personalized preview is ready");
+          await new Promise(function (resolve) {
+            window.setTimeout(resolve, 320);
+          });
         }
         state.requestPending = false;
         setCaptureControlsDisabled(false);
@@ -2478,6 +2986,7 @@
       function showResultsShell(title) {
         resultsHeading.textContent = title;
         resultsShell.hidden = false;
+        document.body.classList.add("has-results");
         resultsHeading.focus();
         resultsShell.scrollIntoView({ block: "start" });
       }
@@ -2555,6 +3064,140 @@
         section.hidden = container.childElementCount === 0;
       }
 
+      function sentenceList(values) {
+        if (!values.length) {
+          return "";
+        }
+        if (values.length === 1) {
+          return values[0];
+        }
+        return values.slice(0, -1).join(", ") + " and " + values[values.length - 1];
+      }
+
+      function observationLabels(ids, map) {
+        return (Array.isArray(ids) ? ids : []).map(function (id) {
+          var observation = map.get(id);
+          return cleanText(observation && observation.label);
+        }).filter(Boolean).slice(0, 2);
+      }
+
+      function appendResultInsight(label, value) {
+        var insight = document.createElement("div");
+        insight.className = "result-insight";
+
+        var labelNode = document.createElement("span");
+        labelNode.className = "result-insight-label";
+        labelNode.textContent = label;
+        insight.appendChild(labelNode);
+
+        var valueNode = document.createElement("span");
+        valueNode.className = "result-insight-value";
+        valueNode.textContent = value;
+        insight.appendChild(valueNode);
+        resultInsights.appendChild(insight);
+      }
+
+      function renderResultSummary(data, map) {
+        clearNode(resultInsights);
+        var priorityLabels = observationLabels(data.priorities, map);
+        var strengthLabels = observationLabels(data.strengths, map);
+        var observations = Array.isArray(data.observations) ? data.observations : [];
+        var reviewedCount = observations.filter(function (observation) {
+          return observation && observation.level !== "unable_to_assess";
+        }).length;
+
+        if (priorityLabels.length) {
+          resultSummaryHeading.textContent = sentenceList(priorityLabels) + (priorityLabels.length === 1 ? " stands out most." : " stand out most.");
+        } else {
+          resultSummaryHeading.textContent = "No strong visible priority stands out.";
+        }
+
+        if (strengthLabels.length) {
+          resultSummaryCopy.textContent = sentenceList(strengthLabels) + (strengthLabels.length === 1 ? " appears to be a strength worth maintaining. " : " appear to be strengths worth maintaining. ") + "Your full photo-based profile and closest Von & Co matches are below.";
+        } else {
+          resultSummaryCopy.textContent = "Your full photo-based profile shows what was visible, what appeared subtle, and what could not be assessed clearly. Your closest Von & Co matches are below.";
+        }
+
+        appendResultInsight("Top visible focus", priorityLabels[0] || "No single focus");
+        appendResultInsight("Visible strength", strengthLabels[0] || "No single standout");
+        appendResultInsight(
+          "Profile coverage",
+          observations.length ? reviewedCount + " of " + observations.length + " categories reviewed" : "No categories reviewed"
+        );
+      }
+
+      function createProfileItem(observation, resultArea) {
+        var level = cleanText(observation && observation.level);
+        var levelInfo = profileLevelCopy[level];
+        var label = cleanText(observation && observation.label);
+        if (!levelInfo || !label) {
+          return null;
+        }
+
+        var item = document.createElement("article");
+        item.className = "profile-item";
+        item.dataset.level = level;
+
+        var header = document.createElement("div");
+        header.className = "profile-item-header";
+        var heading = document.createElement("h4");
+        heading.textContent = label;
+        header.appendChild(heading);
+        var levelNode = document.createElement("span");
+        levelNode.className = "profile-level";
+        levelNode.textContent = levelInfo.label;
+        header.appendChild(levelNode);
+        item.appendChild(header);
+
+        var meter = document.createElement("div");
+        meter.className = "profile-meter";
+        meter.setAttribute("role", "img");
+        meter.setAttribute("aria-label", label + ": " + levelInfo.label);
+        for (var index = 0; index < 4; index += 1) {
+          var segment = document.createElement("span");
+          segment.className = "profile-meter-segment" + (index < levelInfo.filled ? " is-filled" : "");
+          meter.appendChild(segment);
+        }
+        item.appendChild(meter);
+
+        var description = cleanText(observation.description);
+        if (description) {
+          var descriptionNode = document.createElement("p");
+          descriptionNode.className = "profile-description";
+          descriptionNode.textContent = description;
+          item.appendChild(descriptionNode);
+        }
+
+        if (Array.isArray(observation.angles) && observation.angles.length) {
+          var angleValues = observation.angles.map(cleanText).filter(Boolean).slice(0, 3).map(function (angle) {
+            return visibleAngleLabel(angle, resultArea);
+          });
+          if (angleValues.length) {
+            var evidenceNode = document.createElement("p");
+            evidenceNode.className = "angles";
+            evidenceNode.textContent = "Evidence: " + angleValues.join(", ");
+            item.appendChild(evidenceNode);
+          }
+        }
+        return item;
+      }
+
+      function renderProfile(data, resultArea) {
+        clearNode(profileList);
+        var observations = Array.isArray(data.observations) ? data.observations.slice() : [];
+        observations.sort(function (left, right) {
+          return profileOrder.indexOf(left.id) - profileOrder.indexOf(right.id);
+        });
+        observations.forEach(function (observation) {
+          var item = createProfileItem(observation, resultArea);
+          if (item) {
+            profileList.appendChild(item);
+          }
+        });
+        profileSection.hidden = profileList.childElementCount === 0;
+        profileSection.open = window.matchMedia("(min-width: 761px)").matches;
+      }
+
       function renderLimitations(data, resultArea) {
         clearNode(limitationsList);
         clearNode(qualityLimitationsList);
@@ -2603,7 +3246,20 @@
         limitationsSection.hidden = limitationsList.childElementCount === 0 && qualityLimitationsList.childElementCount === 0;
       }
 
-      function createServiceCard(service) {
+      function appendMatchedObservationTags(container, ids, map) {
+        var uniqueIds = Array.isArray(ids) ? ids.filter(function (id, index, values) {
+          return typeof id === "string" && values.indexOf(id) === index;
+        }).slice(0, 2) : [];
+        uniqueIds.forEach(function (id) {
+          var observation = map && map.get(id);
+          var label = cleanText(observation && observation.label);
+          if (label) {
+            appendRecommendationTag(container, label, "");
+          }
+        });
+      }
+
+      function createServiceCard(service, index, map) {
         var name = cleanText(service && service.name);
         if (!name) {
           return null;
@@ -2611,6 +3267,11 @@
 
         var card = document.createElement("article");
         card.className = "recommendation-card service-card";
+
+        var rank = document.createElement("p");
+        rank.className = "recommendation-rank";
+        rank.textContent = index === 0 ? "Best match" : "Also consider";
+        card.appendChild(rank);
 
         var category = document.createElement("p");
         category.className = "recommendation-eyebrow";
@@ -2621,11 +3282,22 @@
         heading.textContent = name;
         card.appendChild(heading);
 
+        var tags = document.createElement("div");
+        tags.className = "recommendation-tags";
+        appendMatchedObservationTags(tags, service.matchedObservationIds, map);
+        if (tags.childElementCount) {
+          card.appendChild(tags);
+        }
+
         var why = cleanText(service.why);
         if (why) {
           var whyText = document.createElement("p");
           whyText.className = "recommendation-why";
-          whyText.textContent = why;
+          var whyLabel = document.createElement("span");
+          whyLabel.className = "recommendation-why-label";
+          whyLabel.textContent = "Why this matches: ";
+          whyText.appendChild(whyLabel);
+          whyText.appendChild(document.createTextNode(why));
           card.appendChild(whyText);
         }
 
@@ -2655,7 +3327,7 @@
         container.appendChild(tag);
       }
 
-      function createProductCard(product) {
+      function createProductCard(product, index, map) {
         var name = cleanText(product && product.name);
         if (!name) {
           return null;
@@ -2663,6 +3335,12 @@
 
         var card = document.createElement("article");
         card.className = "recommendation-card product-card";
+
+        var relationship = cleanText(product.relationship);
+        var rank = document.createElement("p");
+        rank.className = "recommendation-rank";
+        rank.textContent = relationship === "Daily protection" ? "Daily essential" : (index === 0 ? "Targeted pick" : "Also consider");
+        card.appendChild(rank);
 
         var brand = document.createElement("p");
         brand.className = "recommendation-eyebrow";
@@ -2675,8 +3353,9 @@
 
         var tags = document.createElement("div");
         tags.className = "recommendation-tags";
+        appendMatchedObservationTags(tags, product.matchedObservationIds, map);
         appendRecommendationTag(tags, product.category, "");
-        appendRecommendationTag(tags, product.relationship, "relationship-tag");
+        appendRecommendationTag(tags, relationship, "relationship-tag");
         if (tags.childElementCount) {
           card.appendChild(tags);
         }
@@ -2685,7 +3364,11 @@
         if (why) {
           var whyText = document.createElement("p");
           whyText.className = "recommendation-why";
-          whyText.textContent = why;
+          var whyLabel = document.createElement("span");
+          whyLabel.className = "recommendation-why-label";
+          whyLabel.textContent = "Why this matches: ";
+          whyText.appendChild(whyLabel);
+          whyText.appendChild(document.createTextNode(why));
           card.appendChild(whyText);
         }
 
@@ -2700,22 +3383,22 @@
         return card;
       }
 
-      function renderRecommendations(recommendations) {
+      function renderRecommendations(recommendations, map) {
         clearNode(servicesList);
         clearNode(productsList);
 
         var services = recommendations && Array.isArray(recommendations.services) ? recommendations.services.slice(0, 3) : [];
-        var products = recommendations && Array.isArray(recommendations.products) ? recommendations.products.slice(0, 2) : [];
+        var products = recommendations && Array.isArray(recommendations.products) ? recommendations.products.slice(0, 3) : [];
 
-        services.forEach(function (service) {
-          var card = createServiceCard(service);
+        services.forEach(function (service, index) {
+          var card = createServiceCard(service, index, map);
           if (card) {
             servicesList.appendChild(card);
           }
         });
 
-        products.forEach(function (product) {
-          var card = createProductCard(product);
+        products.forEach(function (product, index) {
+          var card = createProductCard(product, index, map);
           if (card) {
             productsList.appendChild(card);
           }
@@ -2740,10 +3423,12 @@
 
         var resultArea = areaPlans[data.bodyArea] ? data.bodyArea : (state.requestBodyArea || bodyArea.value);
         var map = observationsById(data);
+        renderResultSummary(data, map);
         renderObservationGroup(data.strengths, map, strengthsList, strengthsSection, resultArea);
         renderObservationGroup(data.priorities, map, prioritiesList, prioritiesSection, resultArea);
+        renderProfile(data, resultArea);
         renderLimitations(data, resultArea);
-        renderRecommendations(data.appearanceRecommendations);
+        renderRecommendations(data.appearanceRecommendations, map);
 
         var count = Number(data.imageCount);
         var metaParts = [];
@@ -2848,6 +3533,7 @@
       }
 
       function returnToPhotos() {
+        document.body.classList.remove("has-results");
         resultsShell.hidden = true;
         announce("Returned to photo selection.");
         captureWorkspace.scrollIntoView({ block: "start" });
@@ -2920,7 +3606,7 @@
             data = {};
           }
 
-          stopLoading();
+          await stopLoading(response.ok && data.status === "complete");
 
           if (response.status === 422) {
             renderRetake(data);
@@ -2942,7 +3628,7 @@
             renderUnavailable(response.status);
           }
         } catch (networkError) {
-          stopLoading();
+          await stopLoading(false);
           renderUnavailable(503);
         }
       }
@@ -2984,6 +3670,7 @@
       closeCameraButton.addEventListener("click", closeCamera);
       returnFromRetakeButton.addEventListener("click", returnToPhotos);
       returnFromErrorButton.addEventListener("click", returnToPhotos);
+      analyzeAnotherButton.addEventListener("click", returnToPhotos);
       printButton.addEventListener("click", function () {
         window.print();
       });

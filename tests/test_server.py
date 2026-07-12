@@ -83,15 +83,15 @@ def medical_model_result() -> dict:
         "status": "medical_review",
         "quality": {
             "overall": "limited",
-            "issues": ["obstruction"],
-            "guidance": ["remove_obstructions"],
+            "issues": ["unsupported_image"],
+            "guidance": ["upload_a_clear_skin_photo"],
         },
         "observations": [
             {
                 "id": "visible_redness",
                 "label": "Visible redness",
                 "level": "visible",
-                "description": "A visibly red area falls outside this limited cosmetic review.",
+                "description": "An open or broken-looking area falls outside this cosmetic preview.",
                 "angles": ["single"],
             }
         ],
@@ -99,7 +99,7 @@ def medical_model_result() -> dict:
         "priorities": ["visible_redness"],
         "medicalReview": {
             "suggested": True,
-            "reason": "visible_concern_outside_cosmetic_scope",
+            "reason": "open_or_broken_skin",
         },
     }
 
@@ -478,6 +478,25 @@ class ServerContractTests(unittest.TestCase):
         with self.assertRaises(analysis_engine.SchemaValidationError):
             analysis_engine.validate_model_output(contradictory, ["single"], "face")
 
+    def test_complete_result_fills_unreturned_categories_as_unable_to_assess(self) -> None:
+        validated = analysis_engine.validate_model_output(
+            complete_model_result(), ["single"], "face"
+        )
+
+        by_id = {item["id"]: item for item in validated["observations"]}
+        self.assertEqual(set(by_id), set(analysis_engine.BODY_AREA_OBSERVATIONS["face"]))
+        self.assertEqual(by_id["visible_redness"]["level"], "visible")
+        self.assertEqual(by_id["surface_texture"]["level"], "subtle")
+        self.assertEqual(by_id["pore_visibility"]["level"], "unable_to_assess")
+        self.assertEqual(by_id["pore_visibility"]["angles"], [])
+        self.assertIn("could not be assessed from", by_id["pore_visibility"]["description"])
+
+    def test_medical_review_reason_is_limited_to_open_or_broken_skin(self) -> None:
+        self.assertEqual(
+            analysis_engine.MEDICAL_REASON_CODES,
+            ("none", "open_or_broken_skin"),
+        )
+
     def test_discussion_topics_are_omitted_for_unapproved_body_area_pairing(self) -> None:
         hands_result = {
             "status": "complete",
@@ -742,14 +761,18 @@ class ServerContractTests(unittest.TestCase):
             html = response.get_data(as_text=True)
             self.assertIn("Your skin is personal.", html)
             self.assertIn("Your next step should be too.", html)
-            self.assertIn("Visible strengths", html)
-            self.assertIn("Visible priorities", html)
-            self.assertIn("Matched studio services", html)
-            self.assertIn("Skincare shortlist", html)
-            self.assertIn("Your Von &amp; Co matches", html)
+            self.assertIn("full visible-skin profile", html)
+            self.assertIn("ranked Von &amp; Co services and skincare", html)
+            self.assertIn("Full visible profile", html)
+            self.assertIn("What looks strong", html)
+            self.assertIn("What stands out", html)
+            self.assertIn("Ranked service + skincare matches", html)
+            self.assertIn("Your closest Von &amp; Co matches", html)
             self.assertIn('aria-label="Your skin analysis may include"', html)
             self.assertNotIn("Start with what", html)
             self.assertIn('font-family: "Arsenica";', html)
+            self.assertIn("position: sticky;", html)
+            self.assertIn("Visit Von &amp; Co", html)
 
             cta_css = html[
                 html.index(".main-site-link {") : html.index(
@@ -771,6 +794,110 @@ class ServerContractTests(unittest.TestCase):
         finally:
             font_response.close()
 
+    def test_loader_labels_six_estimated_stages_until_the_response_arrives(self) -> None:
+        response = self.client.get("/")
+        try:
+            self.assertEqual(response.status_code, 200)
+            html = response.get_data(as_text=True)
+            self.assertEqual(
+                html.count('class="loading-step" data-loading-step='),
+                6,
+            )
+            self.assertIn("Estimated preview stages", html)
+            for stage_title in (
+                "Photo preparation",
+                "Image-quality check",
+                "Visible-feature review",
+                "Skin-profile organization",
+                "Von &amp; Co matching",
+                "Preview assembly",
+            ):
+                self.assertIn(stage_title, html)
+
+            self.assertIn('role="progressbar"', html)
+            self.assertIn('aria-label="Estimated preview progress"', html)
+            self.assertIn('aria-valuenow="0"', html)
+            self.assertIn("Estimated stage:", html)
+            self.assertIn("function setLoadingStage(activeIndex, complete)", html)
+            self.assertIn("function setLoadingProgress(percent, ariaText)", html)
+            self.assertIn("function updateLoadingProgress(seconds)", html)
+            self.assertIn('index < activeIndex ? "previous" : "pending"', html)
+            self.assertIn(
+                'marker.textContent = complete ? "\\u2713" : String(index + 1);',
+                html,
+            )
+
+            stop_loading = html[
+                html.index("async function stopLoading(success)") : html.index(
+                    "function showResultsShell",
+                    html.index("async function stopLoading(success)"),
+                )
+            ]
+            self.assertIn("if (success)", stop_loading)
+            self.assertIn(
+                "setLoadingStage(loadingSteps.length - 1, true);", stop_loading
+            )
+            self.assertIn(
+                'setLoadingProgress(100, "Your personalized preview is ready")',
+                stop_loading,
+            )
+            self.assertIn(
+                'await stopLoading(response.ok && data.status === "complete");',
+                html,
+            )
+            self.assertNotIn(
+                "setLoadingStage(loadingSteps.length - 1, true);",
+                html[: html.index("async function stopLoading(success)")],
+            )
+        finally:
+            response.close()
+
+    def test_complete_result_shows_summary_full_ordinal_profile_and_direct_action(self) -> None:
+        response = self.client.get("/")
+        try:
+            self.assertEqual(response.status_code, 200)
+            html = response.get_data(as_text=True)
+            self.assertIn('id="resultSummary"', html)
+            self.assertIn("Your quick read", html)
+            self.assertIn("function renderResultSummary(data, map)", html)
+            self.assertIn("Top visible focus", html)
+            self.assertIn("Visible strength", html)
+            self.assertIn("Profile coverage", html)
+            self.assertIn("Book your complimentary consultation", html)
+
+            self.assertIn('id="profileSection"', html)
+            self.assertIn('id="profileList"', html)
+            self.assertIn("Your category-by-category skin profile", html)
+            self.assertIn("See every category reviewed in your photos.", html)
+            self.assertIn("function renderProfile(data, resultArea)", html)
+            self.assertIn("function createProfileItem(observation, resultArea)", html)
+            self.assertIn(
+                'profileSection.open = window.matchMedia("(min-width: 761px)").matches;',
+                html,
+            )
+            for level in (
+                "not_observed",
+                "subtle",
+                "visible",
+                "prominent",
+                "unable_to_assess",
+            ):
+                self.assertIn(level + ":", html)
+            self.assertIn('evidenceNode.textContent = "Evidence: "', html)
+            self.assertIn("renderProfile(data, resultArea);", html)
+
+            self.assertIn('body.has-results .intro', html)
+            self.assertIn('body.has-results .workspace', html)
+            self.assertIn('document.body.classList.add("has-results");', html)
+            self.assertIn('document.body.classList.remove("has-results");', html)
+            self.assertIn("Analyze another photo or area", html)
+            self.assertIn(
+                'analyzeAnotherButton.addEventListener("click", returnToPhotos);',
+                html,
+            )
+        finally:
+            response.close()
+
     def test_recommendation_ui_uses_server_catalog_and_safe_dom_rendering(self) -> None:
         response = self.client.get("/")
         try:
@@ -779,13 +906,17 @@ class ServerContractTests(unittest.TestCase):
             self.assertIn('id="servicesSection"', html)
             self.assertIn('id="productsSection"', html)
             self.assertIn('id="recommendationsEmpty"', html)
-            self.assertIn("renderRecommendations(data.appearanceRecommendations);", html)
+            self.assertIn("renderRecommendations(data.appearanceRecommendations, map);", html)
             self.assertIn("function officialServiceUrl(value)", html)
             self.assertIn('url.pathname.indexOf("/services/") === 0', html)
             self.assertIn("services.slice(0, 3)", html)
-            self.assertIn("products.slice(0, 2)", html)
-            self.assertIn("Book your complimentary VISIA consultation", html)
+            self.assertIn("products.slice(0, 3)", html)
+            self.assertIn("Best match", html)
+            self.assertIn("Daily essential", html)
+            self.assertIn("Why this matches:", html)
+            self.assertIn("Book your complimentary consultation", html)
             self.assertNotIn("Topics to discuss with a provider", html)
+            self.assertNotIn("Book your complimentary VISIA consultation", html)
             self.assertNotIn("innerHTML", html)
         finally:
             response.close()
@@ -847,6 +978,15 @@ class ServerContractTests(unittest.TestCase):
         self.assertIn("front (left hand capture slot)", context)
         self.assertIn("left (right hand capture slot)", context)
         self.assertIn("right (both hands capture slot)", context)
+
+    def test_quality_context_accepts_clear_consumer_closeups(self) -> None:
+        image = analysis_engine.NormalizedImage(
+            "single", b"jpeg", "image/jpeg", 480, 640
+        )
+        face_context = analysis_engine._image_context([image], "face")
+        self.assertIn("normal close-up", face_context)
+        self.assertIn("Cropped hair, ears, shoulders, or neck", face_context)
+        self.assertIn("Do not require studio lighting", face_context)
 
     def test_rate_limit_returns_retry_after(self) -> None:
         with mock.patch.dict(

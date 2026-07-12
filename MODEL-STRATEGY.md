@@ -18,29 +18,60 @@ No other AI provider or model is used as a fallback. If Gemini is unavailable, t
 - Output: `application/json` constrained by the Gemini-compatible schema
 - Retry behavior: one bounded provider request; no cross-provider fallback
 - Post-response handling: strict application validation before any result is shown
+- Analysis version: `visible-surface-v1.3.0`
+- Prompt version: `visible-surface-prompt-v1.1.0`
+- Response schema: `visible-surface-response-schema-v1.1.0`
+- Recommendation catalog: `naples-appearance-recommendations-v2.1.0`
 
 ## Recommendation architecture
 
 Gemini does not receive Von & Co's service or product catalog and cannot choose a
-treatment or product. It returns only validated visible-feature IDs. After that
-response passes the locked schema, the server applies a versioned, deterministic
-catalog to create service and skincare matches from Von & Co's current provider
-guides.
+treatment or product. It returns only schema-valid observations from the locked
+visible-feature vocabulary, including neutral and unable-to-assess findings it can
+honestly judge. If a valid complete response omits a permitted category, the server
+adds that category only as `unable_to_assess`; it never invents a positive or
+negative finding or attaches photo-view evidence to the placeholder. After that
+response passes validation, the server applies a
+versioned, deterministic catalog to create service and skincare matches from Von
+& Co's current provider guides.
 
 - only `visible` or `prominent` priority IDs can produce a match;
 - the selected body area must be explicitly approved in the catalog;
-- retake and medical-review results suppress every service and product;
-- ambiguous photo-only lookalikes such as blemish-like spots, flaking, and
-  superficial vessels do not create a match themselves, but they do not suppress
-  independent supported matches from the same preview;
-- results are capped at three services and two products, deduplicated, and
-  returned with the appearance IDs that caused each match;
+- retake results and the narrowly defined open-or-broken-skin medical-review
+  state suppress every service and product; the model is not allowed to decide
+  whether a mole, spot, or lesion is medically concerning;
+- photo-only descriptions remain appearance language: for example,
+  `blemish_like_spots` is never converted into an acne diagnosis and
+  `visible_flaking` is never converted into a hydration measurement;
+- an exact appearance ID may create only the service or product matches explicitly
+  approved for that ID and selected body area in the frozen catalog;
+- results are capped at three services and three products, deduplicated, and
+  returned with the appearance IDs that caused each match. Face results use at
+  most two targeted products plus the catalog's daily SPF essential;
 - the application never turns a catalog match into eligibility, safety,
   diagnosis, expected outcome, or real-time inventory language.
 
 This separation keeps model interpretation and business-menu mapping independently
 testable. Updating the model does not silently change the menu, and updating the
 menu does not expand what the model is allowed to infer.
+
+## Consumer presentation contract
+
+The interface uses a visibly labeled six-stage estimated tracker while the single Gemini
+request is running. It is a transparent waiting experience, not backend telemetry:
+steps remain numbered as the interface advances, and every step becomes complete
+only after a valid response actually arrives.
+
+A completed result presents a concise quick read, visible strengths and priorities,
+the full returned ordinal profile (`not_observed`, `subtle`, `visible`,
+`prominent`, or `unable_to_assess`) with model-returned photo-view evidence, and then the ranked
+server-owned service and skincare matches. The consultation action sits beside the
+quick read, while limitations and the in-person-evaluation requirement remain
+visible in compact supporting copy. On mobile, service and product cards use
+horizontal, labeled swipe rows and the category-by-category profile remains
+available behind one disclosure control. The sticky branded header keeps the main
+Von & Co site reachable throughout the result, and a completed result includes a
+direct path back to analyze another photo or area.
 
 High thinking is the deliberate quality setting, but it is not the lowest-latency setting. Google documents `medium` as the default for Gemini 3.5 Flash and warns that `high` may take significantly longer before returning an answer. Any future move to `medium` should be based on the locked validation set rather than an assumption about speed.
 

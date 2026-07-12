@@ -5,7 +5,7 @@ validated visible-surface priorities. This module deterministically maps those
 priorities to current Von & Co services and products, with conservative area
 gates and stable ordering.
 
-Sources reviewed July 11, 2026:
+Sources reviewed July 11-12, 2026:
 * Von & Co Services Quick Reference, provider guide.
 * Von & Co Product Quick Reference, July 2, 2026 provider guide.
 * Von & Co Naples compliance service catalog.
@@ -17,10 +17,11 @@ from __future__ import annotations
 from typing import Any, Mapping, Sequence
 
 
-CATALOG_VERSION = "naples-appearance-recommendations-v2.0.2"
+CATALOG_VERSION = "naples-appearance-recommendations-v2.1.0"
 
 ALL_AREAS = frozenset({"face", "neck_chest", "hands", "back", "legs"})
 FACE_ONLY = frozenset({"face"})
+FACE_AND_NECK = frozenset({"face", "neck_chest"})
 
 # Immutable evidence identifiers make each catalog entry independently auditable.
 # The hashes are for the exact provider PDFs reviewed when this catalog version
@@ -65,6 +66,26 @@ SOURCE_EVIDENCE: dict[str, dict[str, str]] = {
         "title": "Von & Co Chemical Peels treatment page",
         "url": "https://www.vonandcoaesthetics.com/services/chemical-peels-in-naples/",
         "reviewed": "2026-07-11",
+    },
+    "von_hydrafacial_service_page": {
+        "title": "Von & Co HydraFacial treatment page",
+        "url": "https://www.vonandcoaesthetics.com/services/hydrafacial-in-naples/",
+        "reviewed": "2026-07-12",
+    },
+    "von_saltfacial_service_page": {
+        "title": "Von & Co SaltFacial treatment page",
+        "url": "https://www.vonandcoaesthetics.com/services/salt-facial-in-naples/",
+        "reviewed": "2026-07-12",
+    },
+    "von_deep_pore_service_page": {
+        "title": "Von & Co Deep Pore Cleansing Facial treatment page",
+        "url": "https://www.vonandcoaesthetics.com/services/deep-cleansing-facial-in-naples/",
+        "reviewed": "2026-07-12",
+    },
+    "von_sculptra_service_page": {
+        "title": "Von & Co Sculptra treatment page",
+        "url": "https://www.vonandcoaesthetics.com/services/sculptra-in-naples/",
+        "reviewed": "2026-07-12",
     },
 }
 
@@ -153,6 +174,61 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "areas": FACE_ONLY,
         "sourceRefs": (SERVICES_GUIDE_SOURCE, "von_peels_service_page"),
     },
+    "hydrafacial_clarifying": {
+        "name": "Clarifying HydraFacial",
+        "category": "Facial",
+        "summary": (
+            "An accessible option to explore when blemish-like spots or visible "
+            "pores are priorities in facial photos."
+        ),
+        "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/hydrafacial-in-naples/",
+        "areas": FACE_ONLY,
+        "sourceRefs": (SERVICES_GUIDE_SOURCE, "von_hydrafacial_service_page"),
+    },
+    "hydrafacial_customized": {
+        "name": "Customized HydraFacial",
+        "category": "Facial",
+        "summary": (
+            "A customizable cleansing and exfoliation option to explore for "
+            "visible surface texture or flaking."
+        ),
+        "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/hydrafacial-in-naples/",
+        "areas": FACE_AND_NECK,
+        "sourceRefs": (SERVICES_GUIDE_SOURCE, "von_hydrafacial_service_page"),
+    },
+    "saltfacial": {
+        "name": "SaltFacial",
+        "category": "Facial",
+        "summary": (
+            "Von & Co's provider guide positions SaltFacial as a gateway option "
+            "for visible texture, pores, and blemish-like appearance."
+        ),
+        "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/salt-facial-in-naples/",
+        "areas": FACE_ONLY,
+        "sourceRefs": (SERVICES_GUIDE_SOURCE, "von_saltfacial_service_page"),
+    },
+    "deep_pore_facial": {
+        "name": "Deep Pore Cleansing Facial",
+        "category": "Facial",
+        "summary": (
+            "An entry-level facial option to explore for visible pores or "
+            "blemish-like spots."
+        ),
+        "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/deep-cleansing-facial-in-naples/",
+        "areas": FACE_ONLY,
+        "sourceRefs": (SERVICES_GUIDE_SOURCE, "von_deep_pore_service_page"),
+    },
+    "sculptra": {
+        "name": "Sculptra",
+        "category": "Biostimulatory injectable",
+        "summary": (
+            "A provider-led option to explore when visible laxity is part of the "
+            "facial profile."
+        ),
+        "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/sculptra-in-naples/",
+        "areas": FACE_ONLY,
+        "sourceRefs": (SERVICES_GUIDE_SOURCE, "von_sculptra_service_page"),
+    },
 }
 
 
@@ -169,19 +245,27 @@ APPEARANCE_SERVICE_MAP: dict[str, tuple[str, ...]] = {
     ),
     "surface_texture": (
         "sciton_moxi_laser",
-        "rf_microneedling",
-        "sciton_halo_laser",
+        "hydrafacial_customized",
+        "saltfacial",
     ),
-    "pore_visibility": ("microneedling_prf", "sciton_halo_laser"),
-    "laxity_appearance": ("rf_microneedling", "sciton_halo_laser"),
-    "blemish_like_spots": (),
+    "pore_visibility": (
+        "hydrafacial_clarifying",
+        "deep_pore_facial",
+        "microneedling_prf",
+    ),
+    "laxity_appearance": ("rf_microneedling", "sculptra", "sciton_halo_laser"),
+    "blemish_like_spots": (
+        "hydrafacial_clarifying",
+        "deep_pore_facial",
+        "saltfacial",
+    ),
     "scar_like_texture": (
         "microneedling_prf",
         "rf_microneedling",
         "chemical_peels",
     ),
-    "superficial_vessels": (),
-    "visible_flaking": (),
+    "superficial_vessels": ("sciton_bbl_photofacial",),
+    "visible_flaking": ("hydrafacial_customized",),
 }
 
 PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
@@ -265,6 +349,30 @@ PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
         "areas": FACE_ONLY,
         "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
     },
+    "hydrinity_renewing_ha_serum": {
+        "name": "Renewing HA Serum",
+        "brand": "Hydrinity",
+        "category": "Moisture support",
+        "availability": "Carried by Von & Co; confirm current availability.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
+    "skinbetter_trio_moisture": {
+        "name": "Trio Moisture",
+        "brand": "SkinBetter Science",
+        "category": "Moisture support",
+        "availability": "Carried by Von & Co; confirm current availability.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
+    "colorscience_face_shield": {
+        "name": "Face Shield SPF 50",
+        "brand": "Colorescience",
+        "category": "Daily protection",
+        "availability": "Carried by Von & Co; confirm current availability.",
+        "areas": FACE_ONLY,
+        "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
+    },
 }
 
 
@@ -287,16 +395,25 @@ FACE_PRODUCT_MAP: dict[str, tuple[tuple[str, str], ...]] = {
         ("zo_complexion_renewal_pads", "Guide match"),
         ("skinbetter_peel_pads", "Alternative match"),
     ),
-    "pore_visibility": (),
+    "pore_visibility": (
+        ("zo_complexion_renewal_pads", "Targeted match"),
+    ),
     "laxity_appearance": (
         ("alastin_restorative_skin_complex", "Guide match"),
         ("zo_growth_factor_serum", "Alternative match"),
     ),
-    "blemish_like_spots": (),
+    "blemish_like_spots": (
+        ("zo_complexion_renewal_pads", "Targeted match"),
+    ),
     "scar_like_texture": (),
     "superficial_vessels": (),
-    "visible_flaking": (),
+    "visible_flaking": (
+        ("hydrinity_renewing_ha_serum", "Targeted match"),
+        ("skinbetter_trio_moisture", "Alternative match"),
+    ),
 }
+
+FACE_PROTECTION_PRODUCT_ID = "colorscience_face_shield"
 
 
 def _joined_labels(observation_ids: Sequence[str], labels: Mapping[str, str]) -> str:
@@ -368,7 +485,19 @@ def _product_candidates(
                 continue
             _add_match(selected, product_id, observation_id, relationship)
             if len(selected) >= 2:
-                return selected
+                break
+        if len(selected) >= 2:
+            break
+
+    if body_area == "face" and priorities:
+        protection = PRODUCT_CATALOG[FACE_PROTECTION_PRODUCT_ID]
+        if body_area in protection["areas"]:
+            _add_match(
+                selected,
+                FACE_PROTECTION_PRODUCT_ID,
+                priorities[0],
+                "Daily protection",
+            )
     return selected
 
 
@@ -394,7 +523,7 @@ def build_appearance_recommendations(
                 "category": service["category"],
                 "matchedObservationIds": matched_ids,
                 "why": (
-                    f"Matched to {_joined_labels(matched_ids, labels)} in your photos. "
+                    f"Your photos show {_joined_labels(matched_ids, labels)}. "
                     f"{service['summary']}"
                 ),
                 "learnMoreUrl": service["learnMoreUrl"],
@@ -406,6 +535,16 @@ def build_appearance_recommendations(
         product = PRODUCT_CATALOG[product_id]
         matched_ids = list(match["matchedObservationIds"])
         relationship = str(match["relationship"] or "Matched option")
+        why = (
+            "Von & Co's current product guide pairs daily SPF with every "
+            "treatment plan."
+            if relationship == "Daily protection"
+            else (
+                f"Your photos show {_joined_labels(matched_ids, labels)}. "
+                "Von & Co's current product guide includes this option for that "
+                "appearance concern."
+            )
+        )
         products.append(
             {
                 "id": product_id,
@@ -414,11 +553,7 @@ def build_appearance_recommendations(
                 "category": product["category"],
                 "relationship": relationship,
                 "matchedObservationIds": matched_ids,
-                "why": (
-                    f"Matched to {_joined_labels(matched_ids, labels)} in your photos. "
-                    "Von & Co's current product guide includes this option for that "
-                    "appearance concern."
-                ),
+                "why": why,
                 "availability": product["availability"],
             }
         )

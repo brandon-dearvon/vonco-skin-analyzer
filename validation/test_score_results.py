@@ -5,14 +5,14 @@ from score_results import score, weighted_kappa, wilson_interval
 
 def candidate_fields():
     return {
-        "analysisVersion": "visible-surface-v1.1.0",
-        "schemaVersion": "visible-surface-response-schema-v1.0.0",
-        "topicMappingVersion": "naples-service-map-v1.0.0",
+        "analysisVersion": "visible-surface-v1.3.0",
+        "schemaVersion": "visible-surface-response-schema-v1.1.0",
+        "topicMappingVersion": "naples-appearance-recommendations-v2.1.0",
         "promptHash": "locked-prompt-hash",
         "model": {
             "provider": "gemini",
             "name": "gemini-3.5-flash",
-            "promptVersion": "visible-surface-prompt-v1.0.0",
+            "promptVersion": "visible-surface-prompt-v1.1.0",
         },
     }
 

@@ -25,8 +25,8 @@ from recommendation_catalog import CATALOG_VERSION, build_appearance_recommendat
 
 LOGGER = logging.getLogger(__name__)
 
-ANALYSIS_VERSION = "visible-surface-v1.2.0"
-PROMPT_VERSION = "visible-surface-prompt-v1.0.0"
+ANALYSIS_VERSION = "visible-surface-v1.3.0"
+PROMPT_VERSION = "visible-surface-prompt-v1.1.0"
 SCHEMA_VERSION = "visible-surface-response-schema-v1.1.0"
 TOPIC_MAPPING_VERSION = CATALOG_VERSION
 
@@ -96,9 +96,7 @@ QUALITY_GUIDANCE = (
 )
 MEDICAL_REASON_CODES = (
     "none",
-    "visible_concern_outside_cosmetic_scope",
     "open_or_broken_skin",
-    "unable_to_assess_safely",
 )
 
 BODY_AREA_OBSERVATIONS: dict[str, tuple[str, ...]] = {
@@ -179,6 +177,30 @@ BODY_AREA_ANGLE_CONTEXT: dict[str, dict[str, str]] = {
         "left": "right leg capture slot",
         "right": "both legs capture slot",
     },
+}
+
+BODY_AREA_QUALITY_CONTEXT: dict[str, str] = {
+    "face": (
+        "Accept a normal close-up when the main facial skin from forehead through "
+        "chin is clear enough to review. Cropped hair, ears, shoulders, or neck do "
+        "not make an otherwise clear face photo unsuitable."
+    ),
+    "neck_chest": (
+        "Accept the photo when the neck and/or upper chest skin being previewed is "
+        "clear enough to review; a full torso view is not required."
+    ),
+    "hands": (
+        "Accept the photo when the intended hand skin is clear enough to review; "
+        "the arm and both hands do not need to be fully visible in a single upload."
+    ),
+    "back": (
+        "Accept the photo when the intended back or shoulder skin is clear enough "
+        "to review; the entire back does not need to fit in a single upload."
+    ),
+    "legs": (
+        "Accept the photo when the intended leg skin is clear enough to review; "
+        "the entire leg and both legs do not need to fit in a single upload."
+    ),
 }
 
 FINAL_RESULT_KEYS = {
@@ -292,14 +314,20 @@ Safety and scope:
 - Do not mention treatments, products, providers, scores, percentages, grades, skin age, or an overall score.
 - Do not compare the person with population norms or claim clinical-device equivalence.
 - Do not identify the person or infer age. Adult access is confirmed separately by the application.
-- If the pixels directly show an open, broken, bleeding-like, or clearly out-of-scope area, use medical_review without naming a diagnosis. Do not infer symptoms, timing, or change from a still image.
+- Do not decide whether a mole, spot, or lesion is medically concerning and do not use medical_review based on its appearance; the application provides a standing in-person-evaluation disclaimer. Use medical_review only when pixels directly show open, broken, or actively bleeding-like skin that makes a cosmetic preview inappropriate. Do not name a diagnosis or infer symptoms, timing, or change from a still image.
 - If the upload is not skin, is too unclear, appears heavily filtered, omits a required angle, or cannot support an honest review, use retake and return no observations, strengths, or priorities.
 
 Output discipline:
 - Return only JSON conforming exactly to the supplied schema.
 - Use only the supplied IDs, labels, levels, quality codes, guidance codes, angles, and medical reason codes.
 - A label must exactly match its observation ID's canonical label.
-- Include an observation only when supported by the images. Do not force findings.
+- Return an observation for every allowed appearance ID that can be honestly
+  judged from the submitted views. Use not_observed only when the feature is
+  clearly not seen, subtle, visible, or prominent when supported, and
+  unable_to_assess when angle or photo limits prevent a judgment.
+- Do not omit a category simply because it is not a priority. The complete
+  profile should preserve supported strengths and neutral findings as well.
+- Do not invent a finding to fill the profile.
 - strengths and priorities are ordered observation IDs, zero to two each. Do not force either list.
 - strengths may reference only not_observed or subtle observations.
 - priorities may reference only visible or prominent observations.
@@ -454,16 +482,22 @@ def _validate_visible_text(text: str, path: str) -> None:
 def _deterministic_description(
     observation_id: str, level: str, angles: Sequence[str]
 ) -> str:
+    if level == "unable_to_assess" and not angles:
+        return (
+            f"{OBSERVATION_LABELS[observation_id]} could not be assessed from "
+            "the submitted photos."
+        )
     view_word = "view" if len(angles) == 1 else "views"
+    label = OBSERVATION_LABELS[observation_id]
     if level == "not_observed":
-        return f"This feature was not observed in the submitted {view_word}."
+        return f"{label} did not stand out in the submitted {view_word}."
     if level == "subtle":
-        return f"This feature appears subtle in the submitted {view_word}."
+        return f"{label} appears subtle in the submitted {view_word}."
     if level == "visible":
-        return f"This feature can be seen in the submitted {view_word}."
+        return f"{label} is noticeable in the submitted {view_word}."
     if level == "prominent":
-        return f"This feature appears prominent in the submitted {view_word}."
-    return f"This feature could not be assessed reliably in the submitted {view_word}."
+        return f"{label} is especially noticeable in the submitted {view_word}."
+    return f"{label} could not be assessed reliably in the submitted {view_word}."
 
 
 def _validate_image_angle_sequence(image_angles: Sequence[str]) -> tuple[str, ...]:
@@ -582,6 +616,22 @@ def validate_model_output(
     else:
         if medical["suggested"] or quality["overall"] == "retake":
             raise SchemaValidationError("complete fields are inconsistent")
+        for observation_id in allowed_observation_ids:
+            if observation_id in seen_ids:
+                continue
+            observations.append(
+                {
+                    "id": observation_id,
+                    "label": OBSERVATION_LABELS[observation_id],
+                    "level": "unable_to_assess",
+                    "description": _deterministic_description(
+                        observation_id,
+                        "unable_to_assess",
+                        (),
+                    ),
+                    "angles": [],
+                }
+            )
 
     return {
         "status": status,
@@ -612,7 +662,7 @@ def _validate_appearance_recommendations(
     products = recommendations["products"]
     if not isinstance(services, list) or len(services) > 3:
         raise SchemaValidationError("appearanceRecommendations.services is invalid")
-    if not isinstance(products, list) or len(products) > 2:
+    if not isinstance(products, list) or len(products) > 3:
         raise SchemaValidationError("appearanceRecommendations.products is invalid")
 
     for index, service in enumerate(services):
@@ -756,7 +806,10 @@ def validate_final_result(payload: Any) -> dict[str, Any]:
         angles = _require_string_list(
             observation["angles"], f"observations[{index}].angles", allowed=IMAGE_ANGLES
         )
-        if not angles or not set(angles).issubset(permitted_angles):
+        if (
+            (not angles and observation["level"] != "unable_to_assess")
+            or not set(angles).issubset(permitted_angles)
+        ):
             raise SchemaValidationError("public observation angles are invalid")
         if description != _deterministic_description(
             observation_id, observation["level"], angles
@@ -1026,9 +1079,12 @@ def _image_context(images: Sequence[NormalizedImage], body_area: str) -> str:
     allowed_ids = BODY_AREA_OBSERVATIONS.get(body_area)
     if not allowed_ids:
         raise SchemaValidationError("body area is unsupported")
+    quality_context = BODY_AREA_QUALITY_CONTEXT[body_area]
     return (
         f"Review {len(images)} normalized image(s) of the selected area '{body_area}'. "
         f"Image angle labels, in upload order: {labels}. Use only those angle labels. "
+        f"{quality_context} Do not require studio lighting, a blank background, or "
+        "perfectly centered composition when visible skin detail is still usable. "
         f"For this area, the only permitted observation IDs are: {', '.join(allowed_ids)}."
     )
 
