@@ -7,7 +7,6 @@ Images are normalized in memory and are never written to disk.
 
 from __future__ import annotations
 
-import base64
 import copy
 import hashlib
 import json
@@ -28,12 +27,12 @@ PROMPT_VERSION = "visible-surface-prompt-v1.0.0"
 SCHEMA_VERSION = "visible-surface-response-schema-v1.0.0"
 TOPIC_MAPPING_VERSION = "naples-service-map-v1.0.0"
 
-DEFAULT_PROVIDER_ORDER = ("openai", "gemini", "anthropic")
+DEFAULT_PROVIDER_ORDER = ("gemini",)
 DEFAULT_MODELS = {
-    "openai": "gpt-5.6-terra",
-    "gemini": "gemini-2.5-flash",
-    "anthropic": "claude-sonnet-4-5-20250929",
+    "gemini": "gemini-3.5-flash",
 }
+GEMINI_THINKING_LEVEL = "high"
+GEMINI_MAX_OUTPUT_TOKENS = 8192
 
 DISCLAIMER = (
     "This AI preview is limited to visible surface features in the submitted "
@@ -375,11 +374,9 @@ def model_output_schema(body_area: str) -> dict[str, Any]:
 def gemini_output_schema(body_area: str) -> dict[str, Any]:
     """Return the strictest schema Gemini can compile for this response.
 
-    Gemini 2.5 accepts the enums, object constraints, and short two-item
-    strength/priority bounds. It rejects the nested observations array bound
-    because that produces too many grammar states. The application still
-    validates the observation count against the original schema after the
-    provider responds.
+    The reduced provider grammar keeps the nested observations array from
+    becoming too complex. The application always validates the original,
+    stricter schema after Gemini responds.
     """
 
     schema = model_output_schema(body_area)
@@ -906,33 +903,17 @@ def normalize_image(file_object: Any, angle: str) -> NormalizedImage:
 
 
 def _provider_order() -> tuple[str, ...]:
-    configured = os.getenv("AI_PROVIDER_ORDER") or os.getenv("ANALYZER_PROVIDER_ORDER")
-    if not configured:
-        return DEFAULT_PROVIDER_ORDER
-    parsed: list[str] = []
-    for item in configured.split(","):
-        provider = item.strip().lower()
-        if provider in DEFAULT_PROVIDER_ORDER and provider not in parsed:
-            parsed.append(provider)
-    return tuple(parsed) if parsed else DEFAULT_PROVIDER_ORDER
+    return DEFAULT_PROVIDER_ORDER
 
 
 def _provider_key(provider: str) -> str | None:
-    if provider == "openai":
-        return os.getenv("OPENAI_API_KEY")
     if provider == "gemini":
         return os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
-    if provider == "anthropic":
-        return os.getenv("ANTHROPIC_API_KEY")
     return None
 
 
 def model_name(provider: str) -> str:
-    env_name = {
-        "openai": "OPENAI_MODEL",
-        "gemini": "GEMINI_MODEL",
-        "anthropic": "ANTHROPIC_MODEL",
-    }[provider]
+    env_name = {"gemini": "GEMINI_MODEL"}[provider]
     return os.getenv(env_name, DEFAULT_MODELS[provider]).strip() or DEFAULT_MODELS[provider]
 
 
@@ -942,6 +923,7 @@ def provider_status() -> list[dict[str, Any]]:
             "provider": provider,
             "available": bool(_provider_key(provider)),
             "model": model_name(provider),
+            "thinkingLevel": GEMINI_THINKING_LEVEL,
         }
         for provider in _provider_order()
     ]
@@ -956,13 +938,8 @@ def provider_timeout_seconds() -> float:
         configured = float(os.getenv("PROVIDER_TIMEOUT_SECONDS", "35"))
     except ValueError:
         configured = 35.0
-    # Three sequential providers must remain inside Gunicorn's 120-second limit.
+    # Bound the single Gemini request well inside Gunicorn's 120-second limit.
     return min(38.0, max(5.0, configured))
-
-
-def _data_url(image: NormalizedImage) -> str:
-    encoded = base64.b64encode(image.data).decode("ascii")
-    return f"data:{image.media_type};base64,{encoded}"
 
 
 def _angle_context(body_area: str, angle: str) -> str:
@@ -997,57 +974,6 @@ def _parse_json_text(value: str) -> Any:
     return json.loads(text.strip())
 
 
-def _call_openai(
-    images: Sequence[NormalizedImage], body_area: str, api_key: str, model: str
-) -> Any:
-    from openai import OpenAI
-
-    content: list[dict[str, Any]] = [
-        {"type": "input_text", "text": _image_context(images, body_area)}
-    ]
-    for image in images:
-        content.append(
-            {
-                "type": "input_text",
-                "text": (
-                    f"Angle slot: {image.angle}. Capture meaning: "
-                    f"{_angle_context(body_area, image.angle)}."
-                ),
-            }
-        )
-        content.append(
-            {
-                "type": "input_image",
-                "image_url": _data_url(image),
-                "detail": "original",
-            }
-        )
-    client = OpenAI(
-        api_key=api_key,
-        timeout=provider_timeout_seconds(),
-        max_retries=0,
-    )
-    response = client.responses.create(
-        model=model,
-        instructions=SYSTEM_PROMPT,
-        input=[{"role": "user", "content": content}],
-        store=False,
-        max_output_tokens=2400,
-        text={
-            "format": {
-                "type": "json_schema",
-                "name": "visible_surface_analysis",
-                "schema": model_output_schema(body_area),
-                "strict": True,
-            }
-        },
-    )
-    output_text = getattr(response, "output_text", None)
-    if not isinstance(output_text, str) or not output_text.strip():
-        raise ProviderUnavailable("OpenAI returned no structured output")
-    return _parse_json_text(output_text)
-
-
 def _call_gemini(
     images: Sequence[NormalizedImage], body_area: str, api_key: str, model: str
 ) -> Any:
@@ -1078,8 +1004,10 @@ def _call_gemini(
         contents=[types.Content(role="user", parts=parts)],
         config=types.GenerateContentConfig(
             system_instruction=SYSTEM_PROMPT,
-            temperature=0,
-            max_output_tokens=2400,
+            thinking_config=types.ThinkingConfig(
+                thinking_level=GEMINI_THINKING_LEVEL
+            ),
+            max_output_tokens=GEMINI_MAX_OUTPUT_TOKENS,
             response_mime_type="application/json",
             response_json_schema=gemini_output_schema(body_area),
         ),
@@ -1090,68 +1018,10 @@ def _call_gemini(
     return _parse_json_text(output_text)
 
 
-def _call_anthropic(
-    images: Sequence[NormalizedImage], body_area: str, api_key: str, model: str
-) -> Any:
-    from anthropic import Anthropic, transform_schema
-
-    content: list[dict[str, Any]] = [
-        {"type": "text", "text": _image_context(images, body_area)}
-    ]
-    for image in images:
-        content.append(
-            {
-                "type": "text",
-                "text": (
-                    f"Angle slot: {image.angle}. Capture meaning: "
-                    f"{_angle_context(body_area, image.angle)}."
-                ),
-            }
-        )
-        content.append(
-            {
-                "type": "image",
-                "source": {
-                    "type": "base64",
-                    "media_type": image.media_type,
-                    "data": base64.b64encode(image.data).decode("ascii"),
-                },
-            }
-        )
-    response = Anthropic(
-        api_key=api_key,
-        timeout=provider_timeout_seconds(),
-        max_retries=0,
-    ).messages.create(
-        model=model,
-        max_tokens=2400,
-        output_config={
-            "format": {
-                "type": "json_schema",
-                # Anthropic's SDK removes unsupported grammar constraints and
-                # retains them as descriptions. The original schema is still
-                # enforced by validate_model_output after the response.
-                "schema": transform_schema(model_output_schema(body_area)),
-            }
-        },
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": content}],
-    )
-    blocks = getattr(response, "content", None)
-    if not blocks:
-        raise ProviderUnavailable("Anthropic returned no structured output")
-    output_text = getattr(blocks[0], "text", None)
-    if not isinstance(output_text, str) or not output_text.strip():
-        raise ProviderUnavailable("Anthropic returned no structured output")
-    return _parse_json_text(output_text)
-
-
 PROVIDER_CALLS: Mapping[
     str, Callable[[Sequence[NormalizedImage], str, str, str], Any]
 ] = {
-    "openai": _call_openai,
     "gemini": _call_gemini,
-    "anthropic": _call_anthropic,
 }
 
 

@@ -18,7 +18,7 @@ if not exist .env (
     if exist env.txt (
         copy env.txt .env >nul
         echo   Created .env from env.txt
-        echo   Edit .env to add your ANTHROPIC_API_KEY for AI features
+        echo   Edit .env to add your GOOGLE_API_KEY for AI features
         echo.
     )
 )

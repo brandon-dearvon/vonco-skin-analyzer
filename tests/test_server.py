@@ -51,14 +51,6 @@ def mpo_image_bytes(size: tuple[int, int] = (640, 480)) -> bytes:
     return output.getvalue()
 
 
-def schema_contains_key(value, key: str) -> bool:
-    if isinstance(value, dict):
-        return key in value or any(schema_contains_key(item, key) for item in value.values())
-    if isinstance(value, list):
-        return any(schema_contains_key(item, key) for item in value)
-    return False
-
-
 def complete_model_result(angles: list[str] | None = None) -> dict:
     angles = angles or ["single"]
     return {
@@ -132,12 +124,12 @@ class ServerContractTests(unittest.TestCase):
         self.environment = mock.patch.dict(
             os.environ,
             {
-                "OPENAI_API_KEY": "test-openai-key",
-                "GOOGLE_API_KEY": "",
+                "OPENAI_API_KEY": "ignored-legacy-openai-key",
+                "GOOGLE_API_KEY": "test-google-key",
                 "GEMINI_API_KEY": "",
-                "ANTHROPIC_API_KEY": "",
+                "ANTHROPIC_API_KEY": "ignored-legacy-anthropic-key",
                 "AI_PROVIDER_ORDER": "openai,gemini,anthropic",
-                "OPENAI_MODEL": "gpt-5.6-terra",
+                "GEMINI_MODEL": "gemini-3.5-flash",
                 "ALLOWED_ORIGINS": "https://allowed.example",
                 "RATE_LIMIT": "100",
                 "RATE_WINDOW": "3600",
@@ -186,7 +178,7 @@ class ServerContractTests(unittest.TestCase):
             "age_confirmed": "true",
         }
         with mock.patch.dict(
-            analysis_engine.PROVIDER_CALLS, {"openai": fake_provider}, clear=False
+            analysis_engine.PROVIDER_CALLS, {"gemini": fake_provider}, clear=False
         ):
             response = self.client.post(
                 "/api/analyze", data=data, content_type="multipart/form-data"
@@ -200,8 +192,8 @@ class ServerContractTests(unittest.TestCase):
         self.assertEqual(
             result["model"],
             {
-                "provider": "openai",
-                "name": "gpt-5.6-terra",
+                "provider": "gemini",
+                "name": "gemini-3.5-flash",
                 "promptVersion": analysis_engine.PROMPT_VERSION,
             },
         )
@@ -209,104 +201,28 @@ class ServerContractTests(unittest.TestCase):
         self.assertEqual(observed["angles"], ["front", "left", "right"])
         self.assertEqual(observed["body_area"], "face")
 
-    def test_openai_request_uses_three_original_detail_images_and_strict_schema(self) -> None:
-        captured = {}
-
-        class FakeResponses:
-            def create(self, **kwargs):
-                captured.update(kwargs)
-                return SimpleNamespace(
-                    output_text=json.dumps(
-                        complete_model_result(["front", "left", "right"])
-                    )
-                )
-
-        class FakeOpenAI:
-            def __init__(self, **kwargs):
-                captured["client_kwargs"] = kwargs
-                self.responses = FakeResponses()
-
-        normalized = [
-            analysis_engine.NormalizedImage(angle, b"jpeg", "image/jpeg", 640, 640)
-            for angle in ("front", "left", "right")
-        ]
-        with mock.patch.dict(sys.modules, {"openai": SimpleNamespace(OpenAI=FakeOpenAI)}):
-            result = analysis_engine._call_openai(
-                normalized, "face", "test-key", "gpt-5.6-terra"
-            )
-        image_parts = [
-            item
-            for item in captured["input"][0]["content"]
-            if item["type"] == "input_image"
-        ]
-        self.assertEqual(len(image_parts), 3)
-        self.assertTrue(all(item["detail"] == "original" for item in image_parts))
-        self.assertIs(captured["store"], False)
-        self.assertTrue(captured["text"]["format"]["strict"])
-        self.assertEqual(captured["client_kwargs"]["max_retries"], 0)
-        self.assertLessEqual(captured["client_kwargs"]["timeout"], 38)
-        self.assertNotIn("temperature", captured)
-        self.assertEqual(result["status"], "complete")
-
-    def test_anthropic_request_omits_sampling_parameters(self) -> None:
-        from anthropic import transform_schema
-
-        captured = {}
-
-        def fake_transform_schema(schema):
-            captured["schema_before_transform"] = schema
-            captured["schema_after_transform"] = transform_schema(schema)
-            return captured["schema_after_transform"]
-
-        class FakeMessages:
-            def create(self, **kwargs):
-                captured.update(kwargs)
-                return SimpleNamespace(
-                    content=[SimpleNamespace(text=json.dumps(complete_model_result()))]
-                )
-
-        class FakeAnthropic:
-            def __init__(self, **kwargs):
-                captured["client_kwargs"] = kwargs
-                self.messages = FakeMessages()
-
-        normalized = [
-            analysis_engine.NormalizedImage("single", b"jpeg", "image/jpeg", 640, 640)
-        ]
-        with mock.patch.dict(
-            sys.modules,
-            {
-                "anthropic": SimpleNamespace(
-                    Anthropic=FakeAnthropic,
-                    transform_schema=fake_transform_schema,
-                )
-            },
-        ):
-            result = analysis_engine._call_anthropic(
-                normalized, "face", "test-key", "claude-sonnet-5"
-            )
-        self.assertNotIn("temperature", captured)
-        self.assertNotIn("top_p", captured)
+    def test_legacy_provider_configuration_cannot_enable_removed_providers(self) -> None:
+        statuses = analysis_engine.provider_status()
         self.assertEqual(
-            captured["output_config"],
-            {
-                "format": {
-                    "type": "json_schema",
-                    "schema": captured["schema_after_transform"],
+            statuses,
+            [
+                {
+                    "provider": "gemini",
+                    "available": True,
+                    "model": "gemini-3.5-flash",
+                    "thinkingLevel": "high",
                 }
-            },
+            ],
         )
-        self.assertEqual(
-            captured["schema_before_transform"],
-            analysis_engine.model_output_schema("face"),
-        )
-        self.assertTrue(schema_contains_key(captured["schema_before_transform"], "maxItems"))
-        self.assertFalse(schema_contains_key(captured["schema_after_transform"], "maxItems"))
-        self.assertEqual(captured["client_kwargs"]["max_retries"], 0)
-        self.assertLessEqual(captured["client_kwargs"]["timeout"], 38)
-        self.assertEqual(result["status"], "complete")
+        self.assertEqual(analysis_engine._provider_order(), ("gemini",))
+        self.assertEqual(set(analysis_engine.PROVIDER_CALLS), {"gemini"})
 
-    def test_relaxed_provider_schema_still_fails_closed_and_falls_back(self) -> None:
+        health = self.client.get("/api/health").get_json()
+        self.assertEqual(health["providers"], statuses)
+        self.assertTrue(health["providerAvailable"])
+        self.assertNotIn("openaiStore", health["privacy"])
+
+    def test_invalid_gemini_schema_fails_closed_without_fallback(self) -> None:
         invalid = complete_model_result()
         invalid["observations"] = invalid["observations"] * 6
         calls = []
@@ -315,32 +231,25 @@ class ServerContractTests(unittest.TestCase):
             calls.append("gemini")
             return invalid
 
-        def valid_anthropic(*_):
-            calls.append("anthropic")
-            return complete_model_result()
-
         normalized = [
             analysis_engine.NormalizedImage("single", b"jpeg", "image/jpeg", 640, 640)
         ]
         with mock.patch.dict(
             os.environ,
             {
-                "OPENAI_API_KEY": "",
                 "GOOGLE_API_KEY": "test-google-key",
-                "ANTHROPIC_API_KEY": "test-anthropic-key",
                 "AI_PROVIDER_ORDER": "gemini,anthropic",
             },
             clear=False,
         ), mock.patch.dict(
             analysis_engine.PROVIDER_CALLS,
-            {"gemini": invalid_gemini, "anthropic": valid_anthropic},
+            {"gemini": invalid_gemini},
             clear=False,
         ):
-            result = analysis_engine.analyze(normalized, "face")
+            with self.assertRaises(analysis_engine.ProviderUnavailable):
+                analysis_engine.analyze(normalized, "face")
 
-        self.assertEqual(calls, ["gemini", "anthropic"])
-        self.assertEqual(result["model"]["provider"], "anthropic")
-        self.assertLessEqual(len(result["priorities"]), 2)
+        self.assertEqual(calls, ["gemini"])
 
     def test_gemini_uses_system_instruction_and_strict_response_schema(self) -> None:
         captured = {}
@@ -384,6 +293,11 @@ class ServerContractTests(unittest.TestCase):
                 captured["config"] = kwargs
                 return SimpleNamespace(**kwargs)
 
+            @staticmethod
+            def ThinkingConfig(**kwargs):
+                captured["thinking_config"] = kwargs
+                return SimpleNamespace(**kwargs)
+
         fake_genai = SimpleNamespace(Client=FakeClient, types=FakeTypes)
         normalized = [
             analysis_engine.NormalizedImage("single", b"jpeg", "image/jpeg", 640, 640)
@@ -396,10 +310,16 @@ class ServerContractTests(unittest.TestCase):
             },
         ):
             result = analysis_engine._call_gemini(
-                normalized, "face", "test-key", "gemini-2.5-flash"
+                normalized, "face", "test-key", "gemini-3.5-flash"
             )
 
         self.assertEqual(captured["config"]["system_instruction"], analysis_engine.SYSTEM_PROMPT)
+        self.assertNotIn("temperature", captured["config"])
+        self.assertEqual(captured["config"]["max_output_tokens"], 8192)
+        self.assertEqual(captured["thinking_config"], {"thinking_level": "high"})
+        self.assertEqual(captured["config"]["response_mime_type"], "application/json")
+        self.assertEqual(captured["request"]["model"], "gemini-3.5-flash")
+        self.assertEqual(captured["client_kwargs"]["http_options"].retry_options.attempts, 1)
         self.assertEqual(
             captured["config"]["response_json_schema"],
             analysis_engine.gemini_output_schema("face"),
@@ -432,7 +352,7 @@ class ServerContractTests(unittest.TestCase):
         with mock.patch.dict(
             analysis_engine.PROVIDER_CALLS,
             {
-                "openai": lambda *_: complete_model_result(
+                "gemini": lambda *_: complete_model_result(
                     ["front", "left", "right"]
                 )
             },
@@ -444,14 +364,14 @@ class ServerContractTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json()["imageCount"], 3)
 
-    def test_no_provider_keys_fails_closed_without_demo_result(self) -> None:
+    def test_missing_gemini_key_fails_closed_even_with_legacy_keys(self) -> None:
         with mock.patch.dict(
             os.environ,
             {
-                "OPENAI_API_KEY": "",
+                "OPENAI_API_KEY": "ignored-legacy-openai-key",
                 "GOOGLE_API_KEY": "",
                 "GEMINI_API_KEY": "",
-                "ANTHROPIC_API_KEY": "",
+                "ANTHROPIC_API_KEY": "ignored-legacy-anthropic-key",
             },
             clear=False,
         ):
@@ -466,7 +386,7 @@ class ServerContractTests(unittest.TestCase):
         invalid["overallScore"] = 91
         with mock.patch.dict(
             analysis_engine.PROVIDER_CALLS,
-            {"openai": lambda *_: invalid},
+            {"gemini": lambda *_: invalid},
             clear=False,
         ):
             response = self._post_single()
@@ -485,7 +405,7 @@ class ServerContractTests(unittest.TestCase):
         invalid["priorities"] = ["pore_visibility"]
         with mock.patch.dict(
             analysis_engine.PROVIDER_CALLS,
-            {"openai": lambda *_: invalid},
+            {"gemini": lambda *_: invalid},
             clear=False,
         ):
             response = self._post_single(body_area="hands")
@@ -525,7 +445,7 @@ class ServerContractTests(unittest.TestCase):
         }
         with mock.patch.dict(
             analysis_engine.PROVIDER_CALLS,
-            {"openai": lambda *_: hands_result},
+            {"gemini": lambda *_: hands_result},
             clear=False,
         ):
             response = self._post_single(body_area="hands")
@@ -539,7 +459,7 @@ class ServerContractTests(unittest.TestCase):
     def test_medical_review_suppresses_cosmetic_topics(self) -> None:
         with mock.patch.dict(
             analysis_engine.PROVIDER_CALLS,
-            {"openai": lambda *_: medical_model_result()},
+            {"gemini": lambda *_: medical_model_result()},
             clear=False,
         ):
             response = self._post_single()
@@ -556,7 +476,7 @@ class ServerContractTests(unittest.TestCase):
     def test_model_requested_retake_returns_canonical_422(self) -> None:
         with mock.patch.dict(
             analysis_engine.PROVIDER_CALLS,
-            {"openai": lambda *_: retake_model_result()},
+            {"gemini": lambda *_: retake_model_result()},
             clear=False,
         ):
             response = self._post_single()
@@ -572,7 +492,7 @@ class ServerContractTests(unittest.TestCase):
         invalid["observations"][0]["description"] = "This appears to be dermatitis."
         with mock.patch.dict(
             analysis_engine.PROVIDER_CALLS,
-            {"openai": lambda *_: invalid},
+            {"gemini": lambda *_: invalid},
             clear=False,
         ):
             response = self._post_single()
@@ -626,7 +546,7 @@ class ServerContractTests(unittest.TestCase):
         fixed = complete_model_result()
         with mock.patch.dict(
             analysis_engine.PROVIDER_CALLS,
-            {"openai": lambda *_: deepcopy(fixed)},
+            {"gemini": lambda *_: deepcopy(fixed)},
             clear=False,
         ):
             first = self._post_single().get_json()
@@ -690,7 +610,7 @@ class ServerContractTests(unittest.TestCase):
             return complete_model_result(["single"])
 
         with mock.patch.dict(
-            analysis_engine.PROVIDER_CALLS, {"openai": fake_provider}, clear=False
+            analysis_engine.PROVIDER_CALLS, {"gemini": fake_provider}, clear=False
         ):
             response = self.client.post(
                 "/api/analyze",
@@ -720,7 +640,11 @@ class ServerContractTests(unittest.TestCase):
         response = self.client.get("/privacy")
         try:
             self.assertEqual(response.status_code, 200)
-            self.assertIn("privacy", response.get_data(as_text=True).lower())
+            html = response.get_data(as_text=True)
+            self.assertIn("privacy", html.lower())
+            self.assertIn("Google Gemini", html)
+            self.assertNotIn("OpenAI", html)
+            self.assertNotIn("Anthropic", html)
         finally:
             response.close()
 
@@ -734,7 +658,7 @@ class ServerContractTests(unittest.TestCase):
             submit_button = html.index('id="analyzeButton"')
             self.assertLess(submit_start, consent)
             self.assertLess(consent, submit_button)
-            self.assertIn("Von &amp; Co and one or more AI providers", html)
+            self.assertIn("Von &amp; Co and Google Gemini", html)
             self.assertIn('class="footer-fine-print"', html)
             self.assertIn("Photo-based cosmetic preview only.", html)
             self.assertIn(".server-disclaimer:not([hidden])", html)
@@ -818,7 +742,7 @@ class ServerContractTests(unittest.TestCase):
         client = limited_app.test_client()
         with mock.patch.dict(
             analysis_engine.PROVIDER_CALLS,
-            {"openai": lambda *_: complete_model_result()},
+            {"gemini": lambda *_: complete_model_result()},
             clear=False,
         ):
             first = client.post(

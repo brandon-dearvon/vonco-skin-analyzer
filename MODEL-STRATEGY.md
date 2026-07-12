@@ -1,58 +1,50 @@
 # Model Strategy for the Visible Skin Preview
 
-## Recommendation
+## Production decision
 
-Use `gpt-5.6-terra` as the primary three-image analysis model after the new OpenAI key is configured. Send the front, left, and right images together with `detail: "original"`, `store: false`, and a strict JSON Schema. Terra supports image input and Structured Outputs while costing half as much as Sol at the published standard rates.
+Use one provider and one model: Google Gemini `gemini-3.5-flash`.
 
-Use `gpt-5.6-sol` only as an evaluated escalation path. An escalation should be triggered by an objective application condition, such as valid images followed by an unable-to-assess result, not by an uncalibrated model confidence score. If Sol still cannot assess the images, the application must abstain.
+Gemini 3.5 Flash is Google's stable, generally available production model that supports image input, structured JSON output, and controllable thinking. The analyzer sets `thinking_level` to `high`, the model's maximum reasoning level, while retaining the locked visible-surface schema and the application's stricter post-response validation.
 
-Use `claude-sonnet-5` as the preferred cross-provider fallback after its key and data controls are configured. Keep the existing Gemini path available during migration so production remains operational before the new keys are active.
+No other AI provider or model is used as a fallback. If Gemini is unavailable, times out, or returns a response that violates the schema or safety contract, the request fails closed and the guest receives the existing unavailable state. The application never substitutes a demo or fabricated result.
 
-An optional inexpensive image-quality gate may use `gemini-3.1-flash-lite` after deterministic local resolution, exposure, and file checks. Its job would be limited to framing, obstruction, angle completeness, and same-subject consistency. It must not generate the cosmetic observations or treatment discussion topics.
+## Request configuration
 
-Do not use `gpt-image-2` or any other image-generation model for analysis. Image-generation capability is unrelated to clinical or cosmetic assessment accuracy.
+- Model: `gemini-3.5-flash`
+- Thinking level: `high`
+- Temperature: provider default; Gemini 3.x documentation advises against lowering it
+- Maximum output tokens: `8192`
+- Image input: one or three normalized JPEG images in a single request
+- Output: `application/json` constrained by the Gemini-compatible schema
+- Retry behavior: one bounded provider request; no cross-provider fallback
+- Post-response handling: strict application validation before any result is shown
 
-## Proposed production order after key setup
+High thinking is the deliberate quality setting, but it is not the lowest-latency setting. Google documents `medium` as the default for Gemini 3.5 Flash and warns that `high` may take significantly longer before returning an answer. Any future move to `medium` should be based on the locked validation set rather than an assumption about speed.
 
-1. Local deterministic capture checks.
-2. `gpt-5.6-terra` for the locked visible-feature schema.
-3. Optional `gpt-5.6-sol` escalation only if validation shows a measurable gain.
-4. `claude-sonnet-5` as an outage fallback.
-5. Honest unavailable or retake state if all configured providers fail.
+## Cost and stability
 
-Do not combine model outputs into a numerical average or call model agreement clinical validation. Provider ratings on a representative, locked image set remain the validation reference.
+Google's published paid-tier price for Gemini 3.5 Flash is $1.50 per million input tokens and $9.00 per million output tokens, including thinking tokens. The stable Flash model is preferred over the preview-only Gemini 3.1 Pro model for this consumer production workflow.
 
 ## Versioning and privacy requirements
 
-- Set exact model IDs in environment variables. Avoid `latest` aliases that may change without a code release.
-- Record provider, model ID, prompt version, and schema version with every result.
-- Use `store: false` wherever the provider supports it.
-- Do not advertise zero provider retention until Von & Co has verified and documented the account-level ZDR configuration.
-- Do not place API keys in source control, local documentation, chat, or a browser console. Store them only in the Render environment settings.
+- Keep the exact model ID in `GEMINI_MODEL`; do not use a moving `latest` alias.
+- Record the provider, model ID, prompt version, and schema version with every completed result.
+- Keep the local capture checks and fail-closed response validation unchanged.
+- Do not advertise zero provider retention until Von & Co has verified and documented the Google account's applicable data controls.
+- Store `GOOGLE_API_KEY` only in the Render environment. Never place a live key in source control, documentation, chat, or browser-console code.
 
-## Suggested environment configuration
+## Environment configuration
 
 ```text
-AI_PROVIDER_ORDER=openai,anthropic,gemini
-OPENAI_MODEL=gpt-5.6-terra
-OPENAI_ESCALATION_MODEL=gpt-5.6-sol
-ANTHROPIC_MODEL=claude-sonnet-5
-GEMINI_QUALITY_MODEL=gemini-3.1-flash-lite
+GOOGLE_API_KEY=
+GEMINI_MODEL=gemini-3.5-flash
+PROVIDER_TIMEOUT_SECONDS=35
 ```
 
-The application must continue to skip any provider whose key is absent, so these settings can be introduced without downtime.
+## Official Google sources
 
-## Official sources
-
-- [OpenAI GPT-5.6 Terra](https://developers.openai.com/api/docs/models/gpt-5.6-terra)
-- [OpenAI GPT-5.6 Sol](https://developers.openai.com/api/docs/models/gpt-5.6-sol)
-- [OpenAI image inputs and multiple-image support](https://developers.openai.com/api/docs/guides/images-vision)
-- [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs)
-- [OpenAI pricing](https://developers.openai.com/api/docs/pricing)
-- [OpenAI data controls](https://developers.openai.com/api/docs/guides/your-data)
-- [Anthropic model overview](https://platform.claude.com/docs/en/about-claude/models/overview)
-- [Anthropic vision](https://platform.claude.com/docs/en/build-with-claude/vision)
-- [Anthropic API data retention](https://platform.claude.com/docs/en/manage-claude/api-and-data-retention)
-- [Google Gemini 3.1 Flash-Lite](https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-lite)
-- [Google Gemini media resolution](https://ai.google.dev/gemini-api/docs/media-resolution)
-- [Google Gemini zero data retention](https://ai.google.dev/gemini-api/docs/zdr)
+- [Gemini 3.5 Flash model card](https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash)
+- [Gemini thinking controls](https://ai.google.dev/gemini-api/docs/generate-content/thinking)
+- [Gemini image understanding](https://ai.google.dev/gemini-api/docs/generate-content/image-understanding)
+- [Gemini structured outputs](https://ai.google.dev/gemini-api/docs/generate-content/structured-output)
+- [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing)

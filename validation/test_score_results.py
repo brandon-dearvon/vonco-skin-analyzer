@@ -10,8 +10,8 @@ def candidate_fields():
         "topicMappingVersion": "naples-service-map-v1.0.0",
         "promptHash": "locked-prompt-hash",
         "model": {
-            "provider": "openai",
-            "name": "gpt-5.6-terra",
+            "provider": "gemini",
+            "name": "gemini-3.5-flash",
             "promptVersion": "visible-surface-prompt-v1.0.0",
         },
     }

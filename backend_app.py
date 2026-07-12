@@ -261,7 +261,6 @@ def create_app() -> Flask:
                 "privacy": {
                     "applicationImageStorage": False,
                     "applicationPiiStorage": False,
-                    "openaiStore": False,
                     "externalProviderProcessing": True,
                     "providerAccountRetentionMayApply": True,
                     "captureQualityChecks": (
