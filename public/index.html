@@ -228,7 +228,7 @@
 
     .setup-grid {
       display: grid;
-      grid-template-columns: minmax(220px, 0.72fr) minmax(0, 1.28fr);
+      grid-template-columns: minmax(220px, 340px);
       gap: 20px;
       align-items: stretch;
       padding-bottom: 24px;
@@ -276,12 +276,12 @@
     }
 
     .consent-row {
-      min-height: 100%;
+      min-height: 48px;
       display: grid;
-      grid-template-columns: 24px 1fr;
-      gap: 12px;
-      align-items: start;
-      padding: 15px 16px;
+      grid-template-columns: 20px 1fr;
+      gap: 10px;
+      align-items: center;
+      padding: 11px 14px;
       background: #f7f7f4;
       border: 1px solid rgba(81, 104, 98, 0.2);
       border-radius: var(--radius-sm);
@@ -289,17 +289,17 @@
     }
 
     .consent-row input {
-      width: 22px;
-      height: 22px;
-      margin: 1px 0 0;
+      width: 20px;
+      height: 20px;
+      margin: 0;
       accent-color: var(--evergreen);
       cursor: pointer;
     }
 
     .consent-row span {
       color: var(--charcoal);
-      font-size: 0.91rem;
-      line-height: 1.45;
+      font-size: 0.82rem;
+      line-height: 1.4;
     }
 
     .capture-section {
@@ -557,11 +557,9 @@
       border-top: 1px solid rgba(81, 104, 98, 0.16);
     }
 
-    .submit-note {
-      max-width: 520px;
-      margin: 0;
-      color: var(--charcoal-soft);
-      font-size: 0.82rem;
+    .submit-row .consent-row {
+      flex: 1 1 420px;
+      max-width: 640px;
     }
 
     .loading-panel,
@@ -632,23 +630,12 @@
       font-size: 0.82rem;
     }
 
-    .limitation-alert,
     .medical-panel,
     .retake-panel,
     .unavailable-panel {
       margin-top: 18px;
       padding: 16px 18px;
       border-radius: var(--radius-sm);
-    }
-
-    .limitation-alert {
-      background: #f4f5f0;
-      color: var(--charcoal);
-      border-left: 5px solid var(--evergreen);
-    }
-
-    .limitation-alert strong {
-      color: var(--evergreen-dark);
     }
 
     .result-section {
@@ -713,11 +700,13 @@
     }
 
     .server-disclaimer {
-      margin: 24px 0 0;
-      padding-top: 17px;
+      display: none;
+      margin: 22px 0 0;
+      padding-top: 14px;
       color: var(--charcoal-soft);
       border-top: 1px solid rgba(81, 104, 98, 0.16);
-      font-size: 0.78rem;
+      font-size: 0.75rem;
+      line-height: 1.5;
     }
 
     .result-actions {
@@ -742,10 +731,6 @@
     .retake-panel p,
     .unavailable-panel p {
       margin: 8px 0 0;
-    }
-
-    .medical-detail {
-      font-weight: 500;
     }
 
     .retake-panel {
@@ -781,6 +766,11 @@
     .footer-inner {
       width: min(1040px, 100%);
       margin: 0 auto;
+      display: grid;
+      gap: 18px;
+    }
+
+    .footer-main {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -805,6 +795,28 @@
 
     .footer-links a {
       color: var(--white);
+    }
+
+    .footer-fine-print {
+      padding-top: 15px;
+      color: var(--von-white);
+      border-top: 1px solid rgba(255, 255, 255, 0.24);
+      font-size: 0.75rem;
+      line-height: 1.5;
+    }
+
+    .footer-fine-print p {
+      max-width: 900px;
+      margin: 0;
+    }
+
+    .footer-fine-print p + p {
+      margin-top: 6px;
+    }
+
+    .footer-fine-print a {
+      color: inherit;
+      font-weight: 600;
     }
 
     .dialog-backdrop {
@@ -1012,12 +1024,13 @@
         display: block;
       }
 
-      .submit-note {
-        margin-bottom: 12px;
-      }
-
       .submit-row .button {
         width: 100%;
+      }
+
+      .submit-row .consent-row {
+        max-width: none;
+        margin-bottom: 12px;
       }
 
       .observation-list,
@@ -1026,7 +1039,7 @@
         grid-template-columns: 1fr;
       }
 
-      .footer-inner {
+      .footer-main {
         display: block;
         text-align: center;
       }
@@ -1037,6 +1050,10 @@
 
       .footer-links {
         justify-content: center;
+      }
+
+      .footer-fine-print {
+        text-align: left;
       }
     }
 
@@ -1113,6 +1130,10 @@
       .topic-card {
         break-inside: avoid;
       }
+
+      .server-disclaimer:not([hidden]) {
+        display: block;
+      }
     }
   </style>
 </head>
@@ -1132,7 +1153,7 @@
     <section class="intro" aria-labelledby="pageTitle">
       <p class="eyebrow">Visible skin preview</p>
       <h1 id="pageTitle">A clearer look at what your photos can show</h1>
-      <p class="intro-copy">Choose an area, then capture three guided views or upload one or three photos. You will receive a brief, non-diagnostic summary of visible surface features.</p>
+      <p class="intro-copy">Choose an area, then capture three guided views or upload one or three photos. You will receive a brief summary of visible surface features.</p>
     </section>
 
     <section class="workspace" id="captureWorkspace" aria-labelledby="captureTitle">
@@ -1150,10 +1171,6 @@
           </div>
         </div>
 
-        <label class="consent-row" for="photoConsent">
-          <input id="photoConsent" type="checkbox">
-          <span>I confirm I am 18 or older and consent to Von &amp; Co and its configured AI provider processing these photos to create this preview. I have read the <a href="/privacy" target="_blank" rel="noopener noreferrer">privacy notice</a>.</span>
-        </label>
       </div>
 
       <div class="capture-section">
@@ -1230,7 +1247,10 @@
         <p class="inline-error" id="captureError" role="alert" hidden></p>
 
         <div class="submit-row">
-          <p class="submit-note">One request processes the selected photos together. No sample result is substituted if the preview is unavailable.</p>
+          <label class="consent-row" for="photoConsent">
+            <input id="photoConsent" type="checkbox">
+            <span>I am 18 or older and agree that Von &amp; Co and one or more AI providers may process these photos to create my preview. <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy details</a></span>
+          </label>
           <button class="button button-primary" id="analyzeButton" type="button" disabled>Create my preview</button>
         </div>
       </div>
@@ -1249,10 +1269,6 @@
       <h2 class="results-heading" id="resultsHeading" tabindex="-1">Your visible skin preview</h2>
       <p class="result-meta" id="resultMeta"></p>
 
-      <div class="limitation-alert" id="limitationAlert" role="alert">
-        <strong>Important limitation:</strong> this AI preview describes visible surface features in photos. It cannot diagnose or rule out disease, assess what is under the skin, or determine treatment suitability. Seek medical care for any new, changing, painful, bleeding, or otherwise concerning area.
-      </div>
-
       <div id="completeResults" hidden>
         <section class="result-section" id="strengthsSection" aria-labelledby="strengthsHeading">
           <h3 id="strengthsHeading">Visible strengths</h3>
@@ -1265,7 +1281,7 @@
         </section>
 
         <section class="result-section" id="limitationsSection" aria-labelledby="limitationsHeading" hidden>
-          <h3 id="limitationsHeading">What could not be assessed</h3>
+          <h3 id="limitationsHeading">Details we could not review</h3>
           <div class="observation-list" id="limitationsList"></div>
           <ul class="retake-list" id="qualityLimitationsList"></ul>
         </section>
@@ -1275,8 +1291,6 @@
           <div class="topic-list" id="topicsList"></div>
         </section>
 
-        <p class="server-disclaimer" id="serverDisclaimer" hidden></p>
-
         <div class="result-actions">
           <a class="button button-primary" href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" rel="noopener noreferrer">Book complimentary VISIA consultation</a>
           <button class="button button-secondary" id="printButton" type="button">Print or save</button>
@@ -1284,9 +1298,8 @@
       </div>
 
       <div class="medical-panel" id="medicalPanel" role="alert" hidden>
-        <h3>Professional medical review is the right next step</h3>
-        <p>This tool cannot diagnose or rule out skin disease. A medical-review result does not provide aesthetic discussion topics or medical reassurance. Please contact a qualified healthcare professional for evaluation.</p>
-        <p class="medical-detail" id="medicalDetail" hidden></p>
+        <h3>What to do next</h3>
+        <p>This preview cannot diagnose or rule out a medical condition. A qualified healthcare professional should evaluate this area before any cosmetic treatment.</p>
       </div>
 
       <div class="retake-panel" id="retakePanel" hidden>
@@ -1298,21 +1311,29 @@
 
       <div class="unavailable-panel" id="unavailablePanel" role="alert" hidden>
         <h3>The preview is unavailable right now</h3>
-        <p id="unavailableMessage">We could not complete the request, and no sample result was shown. Please try again later.</p>
+        <p id="unavailableMessage">We could not complete the request. Please try again later.</p>
         <button class="button button-secondary panel-button" id="returnFromErrorButton" type="button">Return to photos</button>
       </div>
+
+      <p class="server-disclaimer" id="serverDisclaimer" hidden></p>
     </section>
   </main>
 
   <footer class="site-footer">
     <div class="footer-inner">
-      <a class="brand-link" href="https://www.vonandcoaesthetics.com/" target="_blank" rel="noopener noreferrer" aria-label="Visit the Von &amp; Co main website">
-        <img class="footer-logo" src="/logo_white_hd.png" alt="Von &amp; Co Medical Aesthetics Studio" width="1549" height="848" loading="lazy" decoding="async">
-      </a>
-      <div class="footer-links">
-        <a href="https://www.vonandcoaesthetics.com/" target="_blank" rel="noopener noreferrer">Main website</a>
-        <a href="/privacy">Privacy notice</a>
-        <a href="tel:2397994866">239.799.4866</a>
+      <div class="footer-main">
+        <a class="brand-link" href="https://www.vonandcoaesthetics.com/" target="_blank" rel="noopener noreferrer" aria-label="Visit the Von &amp; Co main website">
+          <img class="footer-logo" src="/logo_white_hd.png" alt="Von &amp; Co Medical Aesthetics Studio" width="1549" height="848" loading="lazy" decoding="async">
+        </a>
+        <div class="footer-links">
+          <a href="https://www.vonandcoaesthetics.com/" target="_blank" rel="noopener noreferrer">Main website</a>
+          <a href="/privacy">Privacy notice</a>
+          <a href="tel:2397994866">239.799.4866</a>
+        </div>
+      </div>
+      <div class="footer-fine-print" aria-label="Preview details">
+        <p><strong>Photo-based cosmetic preview only.</strong> It cannot diagnose or rule out a medical condition, assess beneath the skin, or tell whether treatment is right for you. Please seek medical care for any new, changing, painful, bleeding, or otherwise concerning area.</p>
+        <p>Photos are processed by Von &amp; Co and one or more AI providers to create this preview. The app does not intentionally save photos or results. <a href="/privacy">Full privacy details</a></p>
       </div>
     </div>
   </footer>
@@ -1463,7 +1484,6 @@
       var topicsList = document.getElementById("topicsList");
       var serverDisclaimer = document.getElementById("serverDisclaimer");
       var medicalPanel = document.getElementById("medicalPanel");
-      var medicalDetail = document.getElementById("medicalDetail");
       var retakePanel = document.getElementById("retakePanel");
       var retakeMessage = document.getElementById("retakeMessage");
       var retakeList = document.getElementById("retakeList");
@@ -1972,8 +1992,6 @@
         topicsSection.hidden = false;
         serverDisclaimer.hidden = true;
         serverDisclaimer.textContent = "";
-        medicalDetail.hidden = true;
-        medicalDetail.textContent = "";
         resultMeta.textContent = "";
         clearNode(strengthsList);
         clearNode(prioritiesList);
@@ -2135,7 +2153,7 @@
           });
         }
         if (quality && quality.overall === "limited" && messages.length === 0) {
-          addMessage("Photo quality limited some visible details, so this preview intentionally leaves those features unassessed.");
+          addMessage("Some details could not be reviewed because of photo quality.");
         }
 
         messages.slice(0, 3).forEach(function (message) {
@@ -2176,6 +2194,14 @@
         topicsSection.hidden = topicsList.childElementCount === 0;
       }
 
+      function renderServerDisclaimer(data) {
+        var disclaimer = cleanText(data && data.disclaimer);
+        if (disclaimer) {
+          serverDisclaimer.textContent = disclaimer;
+          serverDisclaimer.hidden = false;
+        }
+      }
+
       function renderComplete(data) {
         resetResultPanels();
         completeResults.hidden = false;
@@ -2188,7 +2214,6 @@
         renderTopics(data.discussionTopics);
 
         var count = Number(data.imageCount);
-        var version = cleanText(data.analysisVersion);
         var metaParts = [];
         if (count === 1 || count === 3) {
           metaParts.push(count + (count === 1 ? " photo reviewed" : " photos reviewed"));
@@ -2196,46 +2221,21 @@
         if (areaNames[resultArea]) {
           metaParts.push(areaNames[resultArea]);
         }
-        if (version) {
-          metaParts.push("Preview version " + version);
-        }
         resultMeta.textContent = metaParts.join(" | ");
-
-        var disclaimer = cleanText(data.disclaimer);
-        if (disclaimer) {
-          serverDisclaimer.textContent = disclaimer;
-          serverDisclaimer.hidden = false;
-        }
+        renderServerDisclaimer(data);
 
         showResultsShell("Your visible skin preview");
         announce("Your visible skin preview is ready.");
       }
 
-      function medicalReviewText(value) {
-        if (typeof value === "string") {
-          return cleanText(value);
-        }
-
-        if (value && typeof value === "object") {
-          return cleanText(value.message) || cleanText(value.reason) || cleanText(value.guidance);
-        }
-
-        return "";
-      }
-
       function renderMedicalReview(data) {
         resetResultPanels();
         medicalPanel.hidden = false;
-        resultMeta.textContent = cleanText(data.analysisVersion) ? "Preview version " + data.analysisVersion : "";
-
-        var detail = medicalReviewText(data.medicalReview);
-        if (detail) {
-          medicalDetail.textContent = detail;
-          medicalDetail.hidden = false;
-        }
-
-        showResultsShell("Professional medical review is appropriate");
-        announce("This preview requires professional medical review and cannot diagnose or rule out disease.");
+        var resultArea = areaPlans[data.bodyArea] ? data.bodyArea : (state.requestBodyArea || bodyArea.value);
+        resultMeta.textContent = areaNames[resultArea] || "";
+        renderServerDisclaimer(data);
+        showResultsShell("An in-person review is recommended");
+        announce("Please have this area reviewed by a qualified healthcare professional.");
       }
 
       function retakeMessages(data) {
@@ -2281,6 +2281,7 @@
       function renderRetake(data) {
         resetResultPanels();
         retakePanel.hidden = false;
+        renderServerDisclaimer(data);
 
         var messages = retakeMessages(data || {});
         if (messages.length) {
@@ -2303,15 +2304,15 @@
         unavailablePanel.hidden = false;
 
         if (statusCode === 429) {
-          unavailableMessage.textContent = "This device has reached the current preview limit. No sample result was shown. Please try again later.";
+          unavailableMessage.textContent = "This device has reached the current preview limit. Please try again later.";
         } else if (statusCode >= 500) {
-          unavailableMessage.textContent = "The preview service is temporarily unavailable. No sample result was shown. Please try again later.";
+          unavailableMessage.textContent = "The preview service is temporarily unavailable. Please try again later.";
         } else {
-          unavailableMessage.textContent = "We could not complete the preview. No sample result was shown. Please review your photos and try again later.";
+          unavailableMessage.textContent = "We could not complete the preview. Please review your photos and try again later.";
         }
 
         showResultsShell("The preview is unavailable right now");
-        announce("The preview is unavailable. No sample result was shown.");
+        announce("The preview is unavailable right now.");
       }
 
       function returnToPhotos() {
@@ -2331,7 +2332,7 @@
         showCaptureError("");
 
         if (!photoConsent.checked) {
-          showCaptureError("Confirm that you are 18 or older and consent to AI photo processing before continuing.");
+          showCaptureError("Confirm that you are 18 or older and agree to AI photo processing before continuing.");
           photoConsent.focus();
           return;
         }

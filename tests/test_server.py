@@ -586,6 +586,31 @@ class ServerContractTests(unittest.TestCase):
         finally:
             response.close()
 
+    def test_guest_disclaimer_hierarchy_is_compact_and_actionable(self) -> None:
+        response = self.client.get("/")
+        try:
+            self.assertEqual(response.status_code, 200)
+            html = response.get_data(as_text=True)
+            submit_start = html.index('<div class="submit-row">')
+            consent = html.index('id="photoConsent"')
+            submit_button = html.index('id="analyzeButton"')
+            self.assertLess(submit_start, consent)
+            self.assertLess(consent, submit_button)
+            self.assertIn("Von &amp; Co and one or more AI providers", html)
+            self.assertIn('class="footer-fine-print"', html)
+            self.assertIn("Photo-based cosmetic preview only.", html)
+            self.assertIn(".server-disclaimer:not([hidden])", html)
+            retake_block = html[
+                html.index("function renderRetake(data)") : html.index(
+                    "function renderUnavailable", html.index("function renderRetake(data)")
+                )
+            ]
+            self.assertIn("renderServerDisclaimer(data);", retake_block)
+            self.assertNotIn("Important limitation:", html)
+            self.assertNotIn("No sample result was shown", html)
+        finally:
+            response.close()
+
     def test_embedded_icc_profile_is_converted_then_stripped(self) -> None:
         image = Image.open(io.BytesIO(image_bytes()))
         profile = ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB")).tobytes()
