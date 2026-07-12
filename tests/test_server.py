@@ -922,9 +922,18 @@ class ServerContractTests(unittest.TestCase):
                 )
             ]
             self.assertIn('font-family: "Fira Sans", "Trebuchet MS", sans-serif;', cta_css)
-            self.assertIn("font-size: 15px;", cta_css)
-            self.assertIn("letter-spacing: 1.5px;", cta_css)
-            self.assertIn("line-height: 16px;", cta_css)
+            self.assertIn("min-height: 44px;", cta_css)
+            self.assertIn("font-size: 13px;", cta_css)
+            self.assertIn("letter-spacing: 1.1px;", cta_css)
+            self.assertIn("line-height: 14px;", cta_css)
+            self.assertIn("border-radius: 8px;", cta_css)
+            self.assertNotIn("main-site-arrow", html)
+            self.assertNotIn("&#8599;", html)
+
+            cta_tag_start = html.index('<a class="main-site-link"')
+            cta_tag = html[cta_tag_start : html.index(">", cta_tag_start) + 1]
+            self.assertNotIn("target=", cta_tag)
+            self.assertNotIn("opens in a new tab", cta_tag)
         finally:
             response.close()
 
