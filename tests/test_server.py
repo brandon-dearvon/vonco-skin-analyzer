@@ -201,6 +201,58 @@ class ServerContractTests(unittest.TestCase):
         self.assertEqual(observed["angles"], ["front", "left", "right"])
         self.assertEqual(observed["body_area"], "face")
 
+    def test_three_image_intake_rejects_duplicate_or_misordered_angles(self) -> None:
+        provider_calls = []
+
+        def unexpected_provider(*_):
+            provider_calls.append(True)
+            return complete_model_result(["front", "left", "right"])
+
+        for labels in (
+            ["front", "front", "right"],
+            ["left", "front", "right"],
+        ):
+            with self.subTest(labels=labels), mock.patch.dict(
+                analysis_engine.PROVIDER_CALLS,
+                {"gemini": unexpected_provider},
+                clear=False,
+            ):
+                response = self.client.post(
+                    "/api/analyze",
+                    data={
+                        "images": [
+                            (io.BytesIO(image_bytes()), "first.jpg"),
+                            (io.BytesIO(image_bytes()), "second.jpg"),
+                            (io.BytesIO(image_bytes()), "third.jpg"),
+                        ],
+                        "angle_labels": json.dumps(labels),
+                        "body_area": "face",
+                        "age_confirmed": "true",
+                    },
+                    content_type="multipart/form-data",
+                )
+                self.assertEqual(response.status_code, 400)
+
+        self.assertEqual(provider_calls, [])
+
+    def test_internal_analysis_requires_canonical_image_angle_sequence(self) -> None:
+        invalid_sequences = (
+            ["front", "front", "right"],
+            ["left", "front", "right"],
+            ["front", "left"],
+        )
+        for angles in invalid_sequences:
+            images = [
+                analysis_engine.NormalizedImage(
+                    angle, b"jpeg", "image/jpeg", 640, 640
+                )
+                for angle in angles
+            ]
+            with self.subTest(angles=angles), self.assertRaises(
+                analysis_engine.SchemaValidationError
+            ):
+                analysis_engine.analyze(images, "face")
+
     def test_legacy_provider_configuration_cannot_enable_removed_providers(self) -> None:
         statuses = analysis_engine.provider_status()
         self.assertEqual(
@@ -452,9 +504,12 @@ class ServerContractTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json()["discussionTopics"], [])
 
-    def test_approved_moxi_discussion_topic_is_preserved(self) -> None:
+    def test_pigment_topics_follow_current_provider_guide(self) -> None:
         topics = analysis_engine._discussion_topics(["pigment_variation"], "face")
-        self.assertEqual([topic["id"] for topic in topics], ["sciton_moxi_laser"])
+        self.assertEqual(
+            [topic["id"] for topic in topics],
+            ["sciton_bbl_photofacial", "sciton_halo_laser"],
+        )
 
     def test_medical_review_suppresses_cosmetic_topics(self) -> None:
         with mock.patch.dict(
@@ -678,12 +733,14 @@ class ServerContractTests(unittest.TestCase):
         try:
             self.assertEqual(response.status_code, 200)
             html = response.get_data(as_text=True)
-            self.assertIn("See what stands out.", html)
-            self.assertIn("Know what to discuss next.", html)
+            self.assertIn("Your skin is personal.", html)
+            self.assertIn("Your next step should be too.", html)
             self.assertIn("Visible strengths", html)
             self.assertIn("Visible priorities", html)
-            self.assertIn("Personalized discussion topics", html)
-            self.assertIn('aria-label="Your skin preview may include"', html)
+            self.assertIn("Matched studio services", html)
+            self.assertIn("Skincare shortlist", html)
+            self.assertIn("Your Von &amp; Co matches", html)
+            self.assertIn('aria-label="Your skin analysis may include"', html)
             self.assertNotIn("Start with what", html)
             self.assertIn('font-family: "Arsenica";', html)
 
@@ -706,6 +763,25 @@ class ServerContractTests(unittest.TestCase):
             self.assertGreater(len(font_response.data), 100_000)
         finally:
             font_response.close()
+
+    def test_recommendation_ui_uses_server_catalog_and_safe_dom_rendering(self) -> None:
+        response = self.client.get("/")
+        try:
+            self.assertEqual(response.status_code, 200)
+            html = response.get_data(as_text=True)
+            self.assertIn('id="servicesSection"', html)
+            self.assertIn('id="productsSection"', html)
+            self.assertIn('id="recommendationsEmpty"', html)
+            self.assertIn("renderRecommendations(data.appearanceRecommendations);", html)
+            self.assertIn("function officialServiceUrl(value)", html)
+            self.assertIn('url.pathname.indexOf("/services/") === 0', html)
+            self.assertIn("services.slice(0, 3)", html)
+            self.assertIn("products.slice(0, 2)", html)
+            self.assertIn("Book your complimentary VISIA consultation", html)
+            self.assertNotIn("Topics to discuss with a provider", html)
+            self.assertNotIn("innerHTML", html)
+        finally:
+            response.close()
 
     def test_embedded_icc_profile_is_converted_then_stripped(self) -> None:
         image = Image.open(io.BytesIO(image_bytes()))

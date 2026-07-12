@@ -14,9 +14,9 @@ Each JSONL row must contain:
     "lighting": "standardized-or-consumer"
   },
   "candidate": {
-    "analysisVersion": "visible-surface-v1.1.0",
-    "schemaVersion": "visible-surface-response-schema-v1.0.0",
-    "topicMappingVersion": "naples-service-map-v1.0.0",
+    "analysisVersion": "visible-surface-v1.2.0",
+    "schemaVersion": "visible-surface-response-schema-v1.1.0",
+    "topicMappingVersion": "naples-appearance-recommendations-v2.0.0",
     "promptHash": "recorded-prompt-hash",
     "model": {
       "provider": "gemini",

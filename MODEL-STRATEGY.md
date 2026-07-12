@@ -19,6 +19,28 @@ No other AI provider or model is used as a fallback. If Gemini is unavailable, t
 - Retry behavior: one bounded provider request; no cross-provider fallback
 - Post-response handling: strict application validation before any result is shown
 
+## Recommendation architecture
+
+Gemini does not receive Von & Co's service or product catalog and cannot choose a
+treatment or product. It returns only validated visible-feature IDs. After that
+response passes the locked schema, the server applies a versioned, deterministic
+catalog to create service and skincare matches from Von & Co's current provider
+guides.
+
+- only `visible` or `prominent` priority IDs can produce a match;
+- the selected body area must be explicitly approved in the catalog;
+- retake and medical-review results suppress every service and product;
+- ambiguous photo-only lookalikes such as blemish-like spots, flaking, and
+  superficial vessels deliberately produce no automatic match;
+- results are capped at three services and two products, deduplicated, and
+  returned with the appearance IDs that caused each match;
+- the application never turns a catalog match into eligibility, safety,
+  diagnosis, expected outcome, or real-time inventory language.
+
+This separation keeps model interpretation and business-menu mapping independently
+testable. Updating the model does not silently change the menu, and updating the
+menu does not expand what the model is allowed to infer.
+
 High thinking is the deliberate quality setting, but it is not the lowest-latency setting. Google documents `medium` as the default for Gemini 3.5 Flash and warns that `high` may take significantly longer before returning an answer. Any future move to `medium` should be based on the locked validation set rather than an assumption about speed.
 
 ## Cost and stability
@@ -29,6 +51,7 @@ Google's published paid-tier price for Gemini 3.5 Flash is $1.50 per million inp
 
 - Keep the exact model ID in `GEMINI_MODEL`; do not use a moving `latest` alias.
 - Record the provider, model ID, prompt version, and schema version with every completed result.
+- Record the recommendation-catalog version with every completed result.
 - Keep the local capture checks and fail-closed response validation unchanged.
 - Do not advertise zero provider retention until Von & Co has verified and documented the Google account's applicable data controls.
 - Store `GOOGLE_API_KEY` only in the Render environment. Never place a live key in source control, documentation, chat, or browser-console code.

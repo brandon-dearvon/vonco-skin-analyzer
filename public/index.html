@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Upload one or three photos for a complimentary Von &amp; Co preview of visible skin strengths, priorities, and consultation topics.">
-  <title>Complimentary Skin Preview | Von &amp; Co Aesthetics</title>
+  <meta name="description" content="Upload one or three photos for a complimentary analysis of visible skin features, with Von &amp; Co service and skincare matches.">
+  <title>Personalized Skin Analysis | Von &amp; Co Aesthetics</title>
   <link rel="icon" type="image/png" href="/favicon_evergreen.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -740,15 +740,13 @@
       font-size: 1.5rem;
     }
 
-    .observation-list,
-    .topic-list {
+    .observation-list {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
     }
 
-    .observation-card,
-    .topic-card {
+    .observation-card {
       min-width: 0;
       padding: 17px;
       background: #f8f8f6;
@@ -763,8 +761,7 @@
       gap: 12px;
     }
 
-    .observation-card h4,
-    .topic-card h4 {
+    .observation-card h4 {
       margin: 0;
       font-size: 1.12rem;
     }
@@ -780,8 +777,7 @@
       letter-spacing: 0.03em;
     }
 
-    .observation-card p,
-    .topic-card p {
+    .observation-card p {
       margin: 8px 0 0;
       color: var(--charcoal);
       font-size: 0.91rem;
@@ -792,8 +788,163 @@
       font-size: 0.78rem !important;
     }
 
+    .plan-section {
+      margin-top: 34px;
+      padding-top: 32px;
+      border-top: 1px solid rgba(81, 104, 98, 0.22);
+    }
+
+    .plan-kicker,
+    .recommendation-eyebrow {
+      margin: 0 0 7px;
+      color: var(--evergreen-dark);
+      font-family: "Fira Sans", "Trebuchet MS", sans-serif;
+      font-size: 0.76rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      line-height: 1.3;
+      text-transform: uppercase;
+    }
+
+    .plan-heading {
+      margin: 0;
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+    }
+
+    .plan-intro {
+      max-width: 740px;
+      margin: 9px 0 0;
+      color: var(--charcoal-soft);
+      font-size: 0.96rem;
+    }
+
+    .recommendation-group {
+      margin-top: 25px;
+    }
+
+    .recommendation-group h4 {
+      margin: 0;
+      font-size: 1.4rem;
+    }
+
+    .recommendation-group-copy {
+      max-width: 680px;
+      margin: 5px 0 0;
+      color: var(--charcoal-soft);
+      font-size: 0.86rem;
+    }
+
+    .recommendation-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 13px;
+    }
+
+    .service-list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .product-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .recommendation-card {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 19px;
+      overflow-wrap: anywhere;
+      background: linear-gradient(145deg, #ffffff 0%, #f7f6f3 100%);
+      border: 1px solid rgba(81, 104, 98, 0.18);
+      border-top: 3px solid var(--sand);
+      border-radius: var(--radius-md);
+    }
+
+    .product-card {
+      border-top-color: var(--mint);
+    }
+
+    .recommendation-card h5 {
+      margin: 0;
+      color: var(--evergreen-dark);
+      font-family: "Arsenica", Georgia, "Times New Roman", serif;
+      font-size: 1.24rem;
+      font-weight: 400;
+      line-height: 1.16;
+    }
+
+    .recommendation-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .recommendation-tag {
+      max-width: 100%;
+      padding: 4px 8px;
+      color: #3d4e49;
+      background: rgba(192, 200, 169, 0.48);
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    .recommendation-tag.relationship-tag {
+      background: rgba(193, 168, 144, 0.24);
+      color: #604d3b;
+    }
+
+    .recommendation-why {
+      margin: 11px 0 0;
+      color: var(--charcoal);
+      font-size: 0.88rem;
+      line-height: 1.52;
+    }
+
+    .recommendation-availability {
+      margin: auto 0 0;
+      padding-top: 13px;
+      color: var(--charcoal-soft);
+      border-top: 1px solid rgba(81, 104, 98, 0.14);
+      font-size: 0.75rem;
+      line-height: 1.45;
+    }
+
+    .recommendation-link {
+      align-self: flex-start;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: auto;
+      padding-top: 15px;
+      color: var(--evergreen-dark);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      line-height: 1.3;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 4px;
+      text-transform: uppercase;
+    }
+
+    .recommendation-link:hover {
+      color: var(--peach-dark);
+    }
+
+    .recommendation-empty {
+      margin: 16px 0 0;
+      padding: 17px 18px;
+      color: var(--charcoal-soft);
+      background: #f8f8f6;
+      border: 1px solid rgba(81, 104, 98, 0.16);
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+    }
+
     .server-disclaimer {
-      display: none;
+      display: block;
       margin: 22px 0 0;
       padding-top: 14px;
       color: var(--charcoal-soft);
@@ -1074,6 +1225,14 @@
         width: 100%;
         min-width: 0;
       }
+
+      .service-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .service-list .recommendation-card:last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+      }
     }
 
     @media (max-width: 760px) {
@@ -1223,9 +1382,18 @@
       }
 
       .observation-list,
-      .topic-list,
       .upload-preview-grid {
         grid-template-columns: 1fr;
+      }
+
+      .service-list,
+      .product-list {
+        grid-template-columns: 1fr;
+      }
+
+      .plan-section {
+        margin-top: 28px;
+        padding-top: 26px;
       }
 
       .footer-main {
@@ -1344,7 +1512,7 @@
       }
 
       .observation-card,
-      .topic-card {
+      .recommendation-card {
         break-inside: avoid;
       }
 
@@ -1371,13 +1539,14 @@
 
   <main id="previewWorkspace">
     <section class="intro" aria-labelledby="pageTitle">
-      <p class="eyebrow">Complimentary skin preview</p>
-      <h1 id="pageTitle">See what stands out. <span class="hero-mobile-line">Know what to discuss next.</span></h1>
-      <p class="intro-copy">Upload one or three clear photos for a personalized look at visible lines, redness, pigment, texture, pores, and more.</p>
-      <ul class="intro-benefits" aria-label="Your skin preview may include">
+      <p class="eyebrow">Complimentary photo-based skin analysis</p>
+      <h1 id="pageTitle">Your skin is personal. <span class="hero-mobile-line">Your next step should be too.</span></h1>
+      <p class="intro-copy">Upload one or three clear photos to see visible strengths and priorities, then explore Von &amp; Co services and skincare matched to what appears in your photos.</p>
+      <ul class="intro-benefits" aria-label="Your skin analysis may include">
         <li>Visible strengths</li>
         <li>Visible priorities</li>
-        <li>Personalized discussion topics</li>
+        <li>Matched studio services</li>
+        <li>Skincare shortlist</li>
       </ul>
     </section>
 
@@ -1511,13 +1680,28 @@
           <ul class="retake-list" id="qualityLimitationsList"></ul>
         </section>
 
-        <section class="result-section" id="topicsSection" aria-labelledby="topicsHeading">
-          <h3 id="topicsHeading">Topics to discuss with a provider</h3>
-          <div class="topic-list" id="topicsList"></div>
+        <section class="plan-section" id="planSection" aria-labelledby="planHeading">
+          <p class="plan-kicker">Matched to your photos</p>
+          <h3 class="plan-heading" id="planHeading">Your Von &amp; Co matches</h3>
+          <p class="plan-intro">Your visible priorities, translated into Von &amp; Co service and skincare options to explore.</p>
+
+          <section class="recommendation-group" id="servicesSection" aria-labelledby="servicesHeading" hidden>
+            <h4 id="servicesHeading">In-studio matches</h4>
+            <p class="recommendation-group-copy">Services connected to the appearance priorities visible in your photos.</p>
+            <div class="recommendation-list service-list" id="servicesList"></div>
+          </section>
+
+          <section class="recommendation-group" id="productsSection" aria-labelledby="productsHeading" hidden>
+            <h4 id="productsHeading">Your skincare shortlist</h4>
+            <p class="recommendation-group-copy">Products from Von &amp; Co's current guide matched to your visible priorities.</p>
+            <div class="recommendation-list product-list" id="productsList"></div>
+          </section>
+
+          <p class="recommendation-empty" id="recommendationsEmpty" hidden>No service or skincare match was added automatically for this photo area. Bring your preview to a complimentary consultation to explore options with a Von &amp; Co provider.</p>
         </section>
 
         <div class="result-actions">
-          <a class="button button-primary" href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" rel="noopener noreferrer">Book complimentary VISIA consultation</a>
+          <a class="button button-primary" href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" rel="noopener noreferrer">Book your complimentary VISIA consultation</a>
           <button class="button button-secondary" id="printButton" type="button">Print or save</button>
         </div>
       </div>
@@ -1701,12 +1885,16 @@
       var strengthsSection = document.getElementById("strengthsSection");
       var prioritiesSection = document.getElementById("prioritiesSection");
       var limitationsSection = document.getElementById("limitationsSection");
-      var topicsSection = document.getElementById("topicsSection");
+      var planSection = document.getElementById("planSection");
+      var servicesSection = document.getElementById("servicesSection");
+      var productsSection = document.getElementById("productsSection");
       var strengthsList = document.getElementById("strengthsList");
       var prioritiesList = document.getElementById("prioritiesList");
       var limitationsList = document.getElementById("limitationsList");
       var qualityLimitationsList = document.getElementById("qualityLimitationsList");
-      var topicsList = document.getElementById("topicsList");
+      var servicesList = document.getElementById("servicesList");
+      var productsList = document.getElementById("productsList");
+      var recommendationsEmpty = document.getElementById("recommendationsEmpty");
       var serverDisclaimer = document.getElementById("serverDisclaimer");
       var medicalPanel = document.getElementById("medicalPanel");
       var retakePanel = document.getElementById("retakePanel");
@@ -1786,6 +1974,27 @@
 
       function cleanText(value) {
         return typeof value === "string" ? value.trim() : "";
+      }
+
+      function officialServiceUrl(value) {
+        var candidate = cleanText(value);
+        if (!candidate) {
+          return "";
+        }
+
+        try {
+          var url = new URL(candidate);
+          var hostname = url.hostname.toLowerCase();
+          var approvedHost = hostname === "www.vonandcoaesthetics.com" || hostname === "vonandcoaesthetics.com";
+          var approvedPort = !url.port || url.port === "443";
+          var approvedPath = url.pathname.indexOf("/services/") === 0;
+          if (url.protocol !== "https:" || !approvedHost || !approvedPort || !approvedPath || url.username || url.password) {
+            return "";
+          }
+          return url.href;
+        } catch (error) {
+          return "";
+        }
       }
 
       function revokePhoto(photo) {
@@ -2214,7 +2423,10 @@
         strengthsSection.hidden = false;
         prioritiesSection.hidden = false;
         limitationsSection.hidden = true;
-        topicsSection.hidden = false;
+        planSection.hidden = false;
+        servicesSection.hidden = true;
+        productsSection.hidden = true;
+        recommendationsEmpty.hidden = true;
         serverDisclaimer.hidden = true;
         serverDisclaimer.textContent = "";
         resultMeta.textContent = "";
@@ -2222,7 +2434,8 @@
         clearNode(prioritiesList);
         clearNode(limitationsList);
         clearNode(qualityLimitationsList);
-        clearNode(topicsList);
+        clearNode(servicesList);
+        clearNode(productsList);
         clearNode(retakeList);
       }
 
@@ -2390,33 +2603,127 @@
         limitationsSection.hidden = limitationsList.childElementCount === 0 && qualityLimitationsList.childElementCount === 0;
       }
 
-      function renderTopics(topics) {
-        clearNode(topicsList);
-        var safeTopics = Array.isArray(topics) ? topics.slice(0, 2) : [];
+      function createServiceCard(service) {
+        var name = cleanText(service && service.name);
+        if (!name) {
+          return null;
+        }
 
-        safeTopics.forEach(function (topic) {
-          if (!topic || !cleanText(topic.name)) {
-            return;
+        var card = document.createElement("article");
+        card.className = "recommendation-card service-card";
+
+        var category = document.createElement("p");
+        category.className = "recommendation-eyebrow";
+        category.textContent = cleanText(service.category) || "In-studio service";
+        card.appendChild(category);
+
+        var heading = document.createElement("h5");
+        heading.textContent = name;
+        card.appendChild(heading);
+
+        var why = cleanText(service.why);
+        if (why) {
+          var whyText = document.createElement("p");
+          whyText.className = "recommendation-why";
+          whyText.textContent = why;
+          card.appendChild(whyText);
+        }
+
+        var learnMoreUrl = officialServiceUrl(service.learnMoreUrl);
+        if (learnMoreUrl) {
+          var learnMore = document.createElement("a");
+          learnMore.className = "recommendation-link";
+          learnMore.href = learnMoreUrl;
+          learnMore.target = "_blank";
+          learnMore.rel = "noopener noreferrer";
+          learnMore.textContent = "Explore this service";
+          learnMore.setAttribute("aria-label", "Explore " + name + " on the Von & Co Aesthetics website (opens in a new tab)");
+          card.appendChild(learnMore);
+        }
+
+        return card;
+      }
+
+      function appendRecommendationTag(container, value, extraClass) {
+        var text = cleanText(value);
+        if (!text) {
+          return;
+        }
+        var tag = document.createElement("span");
+        tag.className = "recommendation-tag" + (extraClass ? " " + extraClass : "");
+        tag.textContent = text;
+        container.appendChild(tag);
+      }
+
+      function createProductCard(product) {
+        var name = cleanText(product && product.name);
+        if (!name) {
+          return null;
+        }
+
+        var card = document.createElement("article");
+        card.className = "recommendation-card product-card";
+
+        var brand = document.createElement("p");
+        brand.className = "recommendation-eyebrow";
+        brand.textContent = cleanText(product.brand) || "Von & Co skincare";
+        card.appendChild(brand);
+
+        var heading = document.createElement("h5");
+        heading.textContent = name;
+        card.appendChild(heading);
+
+        var tags = document.createElement("div");
+        tags.className = "recommendation-tags";
+        appendRecommendationTag(tags, product.category, "");
+        appendRecommendationTag(tags, product.relationship, "relationship-tag");
+        if (tags.childElementCount) {
+          card.appendChild(tags);
+        }
+
+        var why = cleanText(product.why);
+        if (why) {
+          var whyText = document.createElement("p");
+          whyText.className = "recommendation-why";
+          whyText.textContent = why;
+          card.appendChild(whyText);
+        }
+
+        var availability = cleanText(product.availability);
+        if (availability) {
+          var availabilityText = document.createElement("p");
+          availabilityText.className = "recommendation-availability";
+          availabilityText.textContent = availability;
+          card.appendChild(availabilityText);
+        }
+
+        return card;
+      }
+
+      function renderRecommendations(recommendations) {
+        clearNode(servicesList);
+        clearNode(productsList);
+
+        var services = recommendations && Array.isArray(recommendations.services) ? recommendations.services.slice(0, 3) : [];
+        var products = recommendations && Array.isArray(recommendations.products) ? recommendations.products.slice(0, 2) : [];
+
+        services.forEach(function (service) {
+          var card = createServiceCard(service);
+          if (card) {
+            servicesList.appendChild(card);
           }
-
-          var card = document.createElement("article");
-          card.className = "topic-card";
-
-          var heading = document.createElement("h4");
-          heading.textContent = topic.name;
-          card.appendChild(heading);
-
-          var why = cleanText(topic.why);
-          if (why) {
-            var whyText = document.createElement("p");
-            whyText.textContent = why;
-            card.appendChild(whyText);
-          }
-
-          topicsList.appendChild(card);
         });
 
-        topicsSection.hidden = topicsList.childElementCount === 0;
+        products.forEach(function (product) {
+          var card = createProductCard(product);
+          if (card) {
+            productsList.appendChild(card);
+          }
+        });
+
+        servicesSection.hidden = servicesList.childElementCount === 0;
+        productsSection.hidden = productsList.childElementCount === 0;
+        recommendationsEmpty.hidden = servicesList.childElementCount > 0 || productsList.childElementCount > 0;
       }
 
       function renderServerDisclaimer(data) {
@@ -2436,7 +2743,7 @@
         renderObservationGroup(data.strengths, map, strengthsList, strengthsSection, resultArea);
         renderObservationGroup(data.priorities, map, prioritiesList, prioritiesSection, resultArea);
         renderLimitations(data, resultArea);
-        renderTopics(data.discussionTopics);
+        renderRecommendations(data.appearanceRecommendations);
 
         var count = Number(data.imageCount);
         var metaParts = [];
@@ -2449,8 +2756,8 @@
         resultMeta.textContent = metaParts.join(" | ");
         renderServerDisclaimer(data);
 
-        showResultsShell("Your visible skin preview");
-        announce("Your visible skin preview is ready.");
+        showResultsShell("Your visible skin analysis");
+        announce("Your visible skin analysis is ready.");
       }
 
       function renderMedicalReview(data) {

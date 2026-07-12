@@ -1,8 +1,9 @@
 """Versioned, schema-validated, fail-closed visible-surface image analysis.
 
-The model may describe only visible surface features. Treatment discussion topics,
-version metadata, and safety language are added and validated by this module.
-Images are normalized in memory and are never written to disk.
+The model may describe only visible surface features. Versioned service and
+product matches, metadata, and safety language are added and validated by the
+server after model output. Images are normalized in memory and never written to
+disk.
 """
 
 from __future__ import annotations
@@ -19,13 +20,15 @@ from typing import Any, Callable, Iterable, Mapping, Sequence
 
 from PIL import Image, ImageCms, ImageOps, ImageStat, UnidentifiedImageError
 
+from recommendation_catalog import CATALOG_VERSION, build_appearance_recommendations
+
 
 LOGGER = logging.getLogger(__name__)
 
-ANALYSIS_VERSION = "visible-surface-v1.1.0"
+ANALYSIS_VERSION = "visible-surface-v1.2.0"
 PROMPT_VERSION = "visible-surface-prompt-v1.0.0"
-SCHEMA_VERSION = "visible-surface-response-schema-v1.0.0"
-TOPIC_MAPPING_VERSION = "naples-service-map-v1.0.0"
+SCHEMA_VERSION = "visible-surface-response-schema-v1.1.0"
+TOPIC_MAPPING_VERSION = CATALOG_VERSION
 
 DEFAULT_PROVIDER_ORDER = ("gemini",)
 DEFAULT_MODELS = {
@@ -36,8 +39,11 @@ GEMINI_MAX_OUTPUT_TOKENS = 8192
 
 DISCLAIMER = (
     "This AI preview is limited to visible surface features in the submitted "
-    "images. It cannot diagnose or rule out disease, assess treatment safety or "
-    "eligibility, or replace an in-person evaluation by a qualified provider."
+    "images. Service and product matches are educational starting points from "
+    "Von & Co's current guides, not a diagnosis or a determination of product or "
+    "treatment suitability, safety, eligibility, or availability. It cannot "
+    "diagnose or rule out disease or replace an in-person evaluation by a "
+    "qualified provider."
 )
 
 OBSERVATION_LABELS: dict[str, str] = {
@@ -176,59 +182,6 @@ BODY_AREA_ANGLE_CONTEXT: dict[str, dict[str, str]] = {
     },
 }
 
-# Each entry is a current service listed by Von & Co in Naples. The model never
-# sees or selects this mapping. Only ordered, validated priority IDs reach it.
-DISCUSSION_TOPICS: dict[str, dict[str, str]] = {
-    "visible_lines": {
-        "id": "microneedling",
-        "name": "Microneedling",
-    },
-    "visible_redness": {
-        "id": "sciton_bbl_photofacial",
-        "name": "Sciton BBL Photofacial",
-    },
-    "pigment_variation": {
-        "id": "sciton_moxi_laser",
-        "name": "Sciton Moxi Laser",
-    },
-    "surface_texture": {
-        "id": "microneedling",
-        "name": "Microneedling",
-    },
-    "pore_visibility": {
-        "id": "microneedling",
-        "name": "Microneedling",
-    },
-    "laxity_appearance": {
-        "id": "rf_microneedling",
-        "name": "RF Microneedling",
-    },
-    "blemish_like_spots": {
-        "id": "hydrafacial",
-        "name": "Hydrafacial",
-    },
-    "scar_like_texture": {
-        "id": "microneedling",
-        "name": "Microneedling",
-    },
-    "superficial_vessels": {
-        "id": "sciton_bbl_photofacial",
-        "name": "Sciton BBL Photofacial",
-    },
-}
-
-# Deliberately conservative service-area pairings for the current menu. If a
-# selected area is absent, the preview omits the topic instead of extrapolating.
-DISCUSSION_TOPIC_AREAS: dict[str, frozenset[str]] = {
-    "sciton_bbl_photofacial": frozenset(
-        {"face", "neck_chest", "hands", "back", "legs"}
-    ),
-    "sciton_moxi_laser": frozenset({"face", "neck_chest"}),
-    "microneedling": frozenset({"face", "neck_chest"}),
-    "rf_microneedling": frozenset({"face", "neck_chest"}),
-    "hydrafacial": frozenset({"face"}),
-}
-
 FINAL_RESULT_KEYS = {
     "status",
     "bodyArea",
@@ -242,6 +195,7 @@ FINAL_RESULT_KEYS = {
     "observations",
     "strengths",
     "priorities",
+    "appearanceRecommendations",
     "discussionTopics",
     "medicalReview",
     "disclaimer",
@@ -513,11 +467,23 @@ def _deterministic_description(
     return f"This feature could not be assessed reliably in the submitted {view_word}."
 
 
+def _validate_image_angle_sequence(image_angles: Sequence[str]) -> tuple[str, ...]:
+    """Require the one-photo or ordered three-view intake contract exactly."""
+
+    angles = tuple(image_angles)
+    if angles not in {("single",), ("front", "left", "right")}:
+        raise SchemaValidationError(
+            "image angles must be one single view or ordered front, left, and right views"
+        )
+    return angles
+
+
 def validate_model_output(
     payload: Any, image_angles: Sequence[str], body_area: str = "face"
 ) -> dict[str, Any]:
     """Validate model JSON with exact keys, allowlists, and cross-field rules."""
 
+    canonical_image_angles = _validate_image_angle_sequence(image_angles)
     result = _require_exact_keys(
         payload,
         {"status", "quality", "observations", "strengths", "priorities", "medicalReview"},
@@ -546,7 +512,7 @@ def validate_model_output(
     observations_value = result["observations"]
     if not isinstance(observations_value, list) or len(observations_value) > len(allowed_observation_ids):
         raise SchemaValidationError("observations must be a bounded array")
-    allowed_angles = set(image_angles)
+    allowed_angles = set(canonical_image_angles)
     seen_ids: set[str] = set()
     observations: list[dict[str, Any]] = []
     levels_by_id: dict[str, str] = {}
@@ -633,6 +599,94 @@ def validate_model_output(
             "reason": medical["reason"],
         },
     }
+
+
+def _validate_appearance_recommendations(
+    value: Any, priorities: Sequence[str]
+) -> dict[str, Any]:
+    """Validate the public catalog projection before deterministic comparison."""
+
+    recommendations = _require_exact_keys(
+        value, {"services", "products"}, "appearanceRecommendations"
+    )
+    services = recommendations["services"]
+    products = recommendations["products"]
+    if not isinstance(services, list) or len(services) > 3:
+        raise SchemaValidationError("appearanceRecommendations.services is invalid")
+    if not isinstance(products, list) or len(products) > 2:
+        raise SchemaValidationError("appearanceRecommendations.products is invalid")
+
+    for index, service in enumerate(services):
+        path = f"appearanceRecommendations.services[{index}]"
+        item = _require_exact_keys(
+            service,
+            {
+                "id",
+                "name",
+                "category",
+                "matchedObservationIds",
+                "why",
+                "learnMoreUrl",
+            },
+            path,
+        )
+        _require_string(item["id"], f"{path}.id", max_length=80)
+        _require_string(item["name"], f"{path}.name", max_length=120)
+        _require_string(item["category"], f"{path}.category", max_length=80)
+        matched_ids = _require_string_list(
+            item["matchedObservationIds"],
+            f"{path}.matchedObservationIds",
+            allowed=priorities,
+            max_items=2,
+        )
+        if not matched_ids:
+            raise SchemaValidationError(f"{path} must cite a visible priority")
+        _require_string(item["why"], f"{path}.why", max_length=320)
+        learn_more_url = _require_string(
+            item["learnMoreUrl"], f"{path}.learnMoreUrl", max_length=240
+        )
+        if not learn_more_url.startswith(
+            "https://www.vonandcoaesthetics.com/services/"
+        ):
+            raise SchemaValidationError(f"{path}.learnMoreUrl is invalid")
+
+    for index, product in enumerate(products):
+        path = f"appearanceRecommendations.products[{index}]"
+        item = _require_exact_keys(
+            product,
+            {
+                "id",
+                "name",
+                "brand",
+                "category",
+                "relationship",
+                "matchedObservationIds",
+                "why",
+                "availability",
+            },
+            path,
+        )
+        _require_string(item["id"], f"{path}.id", max_length=80)
+        _require_string(item["name"], f"{path}.name", max_length=120)
+        _require_string(item["brand"], f"{path}.brand", max_length=80)
+        _require_string(item["category"], f"{path}.category", max_length=80)
+        _require_string(item["relationship"], f"{path}.relationship", max_length=80)
+        matched_ids = _require_string_list(
+            item["matchedObservationIds"],
+            f"{path}.matchedObservationIds",
+            allowed=priorities,
+            max_items=2,
+        )
+        if not matched_ids:
+            raise SchemaValidationError(f"{path} must cite a visible priority")
+        _require_string(item["why"], f"{path}.why", max_length=320)
+        _require_string(item["availability"], f"{path}.availability", max_length=240)
+
+    if len({item["id"] for item in services}) != len(services):
+        raise SchemaValidationError("appearanceRecommendations.services has duplicates")
+    if len({item["id"] for item in products}) != len(products):
+        raise SchemaValidationError("appearanceRecommendations.products has duplicates")
+    return recommendations
 
 
 def validate_final_result(payload: Any) -> dict[str, Any]:
@@ -723,6 +777,9 @@ def validate_final_result(payload: Any) -> dict[str, Any]:
         raise SchemaValidationError("public strength is unsupported")
     if any(levels_by_id.get(item) not in {"visible", "prominent"} for item in priorities):
         raise SchemaValidationError("public priority is unsupported")
+    recommendations = _validate_appearance_recommendations(
+        result["appearanceRecommendations"], priorities
+    )
     if not isinstance(result["discussionTopics"], list) or len(result["discussionTopics"]) > 2:
         raise SchemaValidationError("discussionTopics is invalid")
     for index, topic in enumerate(result["discussionTopics"]):
@@ -741,16 +798,30 @@ def validate_final_result(payload: Any) -> dict[str, Any]:
             raise SchemaValidationError("public retake includes unsupported findings")
         if result["discussionTopics"]:
             raise SchemaValidationError("retake must suppress cosmetic topics")
+        if recommendations != {"services": [], "products": []}:
+            raise SchemaValidationError("retake must suppress recommendations")
     elif quality["overall"] == "retake":
         raise SchemaValidationError("public quality and status are inconsistent")
     if result["status"] == "medical_review" and (
-        result["discussionTopics"] or observations_value or strengths or priorities
+        result["discussionTopics"]
+        or recommendations != {"services": [], "products": []}
+        or observations_value
+        or strengths
+        or priorities
     ):
-        raise SchemaValidationError("medical review must suppress cosmetic findings and topics")
-    if result["status"] == "complete" and result["discussionTopics"] != _discussion_topics(
-        priorities, result["bodyArea"]
-    ):
-        raise SchemaValidationError("discussion topics are not deterministic")
+        raise SchemaValidationError(
+            "medical review must suppress cosmetic findings and recommendations"
+        )
+    if result["status"] == "complete":
+        expected_recommendations = build_appearance_recommendations(
+            priorities, result["bodyArea"], OBSERVATION_LABELS
+        )
+        if recommendations != expected_recommendations:
+            raise SchemaValidationError("appearance recommendations are not deterministic")
+        if result["discussionTopics"] != _discussion_topics(
+            priorities, result["bodyArea"]
+        ):
+            raise SchemaValidationError("discussion topics are not deterministic")
     if result["disclaimer"] != DISCLAIMER:
         raise SchemaValidationError("disclaimer is invalid")
     return result
@@ -1030,6 +1101,7 @@ def analyze_with_providers(
 ) -> tuple[dict[str, Any], str, str]:
     """Try configured providers in order and accept only strictly valid output."""
 
+    _validate_image_angle_sequence([image.angle for image in images])
     configured_count = 0
     for provider in _provider_order():
         api_key = _provider_key(provider)
@@ -1054,32 +1126,19 @@ def analyze_with_providers(
 def _discussion_topics(
     priorities: Sequence[str], body_area: str
 ) -> list[dict[str, str]]:
-    topics: list[dict[str, str]] = []
-    seen_topic_ids: set[str] = set()
-    for observation_id in priorities:
-        mapping = DISCUSSION_TOPICS.get(observation_id)
-        approved_areas = DISCUSSION_TOPIC_AREAS.get(mapping["id"]) if mapping else None
-        if (
-            not mapping
-            or not approved_areas
-            or body_area not in approved_areas
-            or mapping["id"] in seen_topic_ids
-        ):
-            continue
-        seen_topic_ids.add(mapping["id"])
-        topics.append(
-            {
-                "id": mapping["id"],
-                "name": mapping["name"],
-                "why": (
-                    f"A provider can discuss whether this service is appropriate for "
-                    f"{OBSERVATION_LABELS[observation_id].lower()}."
-                ),
-            }
-        )
-        if len(topics) == 2:
-            break
-    return topics
+    """Return the legacy topic alias from the first two catalog matches."""
+
+    recommendations = build_appearance_recommendations(
+        priorities, body_area, OBSERVATION_LABELS
+    )
+    return [
+        {
+            "id": service["id"],
+            "name": service["name"],
+            "why": service["why"],
+        }
+        for service in recommendations["services"][:2]
+    ]
 
 
 def _medical_message(status: str) -> str:
@@ -1111,10 +1170,26 @@ def build_final_result(
     medical_suggested = bool(model_result["medicalReview"]["suggested"])
     if medical_suggested:
         status = "medical_review"
-    topics = [] if status in {"medical_review", "retake"} else _discussion_topics(
-        model_result["priorities"], body_area
-    )
     suppress_cosmetic_findings = status in {"medical_review", "retake"}
+    recommendations = (
+        {"services": [], "products": []}
+        if suppress_cosmetic_findings
+        else build_appearance_recommendations(
+            model_result["priorities"], body_area, OBSERVATION_LABELS
+        )
+    )
+    topics = (
+        []
+        if suppress_cosmetic_findings
+        else [
+            {
+                "id": service["id"],
+                "name": service["name"],
+                "why": service["why"],
+            }
+            for service in recommendations["services"][:2]
+        ]
+    )
     result: dict[str, Any] = {
         "status": status,
         "bodyArea": body_area,
@@ -1132,6 +1207,7 @@ def build_final_result(
         "observations": [] if suppress_cosmetic_findings else [dict(item) for item in model_result["observations"]],
         "strengths": [] if suppress_cosmetic_findings else list(model_result["strengths"]),
         "priorities": [] if suppress_cosmetic_findings else list(model_result["priorities"]),
+        "appearanceRecommendations": recommendations,
         "discussionTopics": topics,
         "medicalReview": {
             "suggested": status == "medical_review",
@@ -1170,6 +1246,7 @@ def build_local_retake(
         "observations": [],
         "strengths": [],
         "priorities": [],
+        "appearanceRecommendations": {"services": [], "products": []},
         "discussionTopics": [],
         "medicalReview": {
             "suggested": False,
@@ -1181,8 +1258,7 @@ def build_local_retake(
 
 
 def analyze(images: Sequence[NormalizedImage], body_area: str) -> dict[str, Any]:
-    if len(images) not in {1, 3}:
-        raise SchemaValidationError("analyzer image count must be 1 or 3")
+    _validate_image_angle_sequence([image.angle for image in images])
     model_result, provider, selected_model = analyze_with_providers(images, body_area)
     return build_final_result(
         model_result,
