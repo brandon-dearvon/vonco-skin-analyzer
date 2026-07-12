@@ -22,7 +22,7 @@ from PIL import Image, ImageCms, ImageOps, ImageStat, UnidentifiedImageError
 
 LOGGER = logging.getLogger(__name__)
 
-ANALYSIS_VERSION = "visible-surface-v1.0.0"
+ANALYSIS_VERSION = "visible-surface-v1.1.0"
 PROMPT_VERSION = "visible-surface-prompt-v1.0.0"
 SCHEMA_VERSION = "visible-surface-response-schema-v1.0.0"
 TOPIC_MAPPING_VERSION = "naples-service-map-v1.0.0"
