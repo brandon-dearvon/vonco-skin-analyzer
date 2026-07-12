@@ -146,6 +146,20 @@ class RecommendationCatalogTests(unittest.TestCase):
                 )
                 self.assertEqual(recommendations, {"services": [], "products": []})
 
+    def test_ambiguous_priority_holds_otherwise_supported_matches(self) -> None:
+        for hold_id in recommendation_catalog.RECOMMENDATION_HOLD_IDS:
+            with self.subTest(hold_id=hold_id):
+                recommendations = (
+                    recommendation_catalog.build_appearance_recommendations(
+                        ["visible_lines", hold_id],
+                        "face",
+                        analysis_engine.OBSERVATION_LABELS,
+                    )
+                )
+                self.assertEqual(
+                    recommendations, {"services": [], "products": []}
+                )
+
     def test_products_are_suppressed_outside_face(self) -> None:
         for body_area in ("neck_chest", "hands", "back", "legs"):
             with self.subTest(body_area=body_area):
@@ -313,6 +327,16 @@ class PublicRecommendationContractTests(unittest.TestCase):
         }
         with self.assertRaises(analysis_engine.SchemaValidationError):
             analysis_engine.validate_model_output(injected, ["single"], body_area="face")
+
+    def test_ambiguous_public_priority_holds_the_complete_shortlist(self) -> None:
+        for hold_id in recommendation_catalog.RECOMMENDATION_HOLD_IDS:
+            with self.subTest(hold_id=hold_id):
+                result = _public_result(["visible_lines", hold_id])
+                self.assertEqual(
+                    result["appearanceRecommendations"],
+                    {"services": [], "products": []},
+                )
+                self.assertEqual(result["discussionTopics"], [])
 
     def test_public_shape_versions_caps_and_compatibility_alias(self) -> None:
         result = _public_result(["visible_lines", "pigment_variation"])

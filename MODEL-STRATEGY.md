@@ -31,7 +31,8 @@ guides.
 - the selected body area must be explicitly approved in the catalog;
 - retake and medical-review results suppress every service and product;
 - ambiguous photo-only lookalikes such as blemish-like spots, flaking, and
-  superficial vessels deliberately produce no automatic match;
+  superficial vessels hold the entire automatic shortlist until a provider can
+  add the missing context;
 - results are capped at three services and two products, deduplicated, and
   returned with the appearance IDs that caused each match;
 - the application never turns a catalog match into eligibility, safety,
