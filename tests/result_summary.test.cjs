@@ -12,7 +12,9 @@ const observations = [
 ];
 
 const maintenancePayload = {
-  observations,
+  observations: observations.map((observation) => observation.id === "visible_redness"
+    ? { ...observation, level: "not_observed" }
+    : observation),
   strengths: ["pigment_variation", "laxity_appearance"],
   priorities: [],
   appearanceRecommendations: {
@@ -30,15 +32,17 @@ const maintenancePayload = {
 };
 
 const maintenance = summaryHelper.build(maintenancePayload);
-assert.deepEqual(maintenance.subtleLabels, ["Visible lines", "Visible surface texture"]);
-assert.equal(maintenance.heading, "No strong visible priority stands out.");
+assert.deepEqual(maintenance.subtleLabels, ["Lines", "Surface texture"]);
+assert.equal(maintenance.heading, "Your skin reads balanced overall.");
 assert.equal(
   maintenance.copy,
-  "Visible lines and Visible surface texture appeared subtle in these photos. Your full photo-based profile and all supported maintenance matches are below.",
+  "Lines and surface texture look soft and understated in these photos. The options below are thoughtful ways to maintain that balance.",
 );
-assert.equal(maintenance.secondaryInsightLabel, "Subtle finding");
-assert.equal(maintenance.secondaryInsightValue, "Visible lines");
-assert.match(maintenance.planIntro, /^Every source-supported maintenance match/);
+assert.equal(maintenance.primaryInsightValue, "Balanced overall");
+assert.equal(maintenance.secondaryInsightLabel, "Photo strength");
+assert.equal(maintenance.secondaryInsightValue, "Even-looking tone");
+assert.equal(maintenance.optionInsightValue, "3 in-studio + 3 skincare");
+assert.match(maintenance.planIntro, /^Thoughtful ways to maintain/);
 
 const mixedPayload = {
   observations,
@@ -51,13 +55,37 @@ const mixedPayload = {
 };
 
 const mixed = summaryHelper.build(mixedPayload);
-assert.equal(mixed.heading, "Visible redness stands out most.");
+assert.equal(mixed.heading, "Redness comes into focus.");
 assert.equal(
   mixed.copy,
-  "Visible surface texture and Visible lines appeared subtle in these photos. Your full photo-based profile and all supported Von & Co matches are below.",
+  "Redness is the most noticeable detail in these photos. Smooth-looking texture reads as a photo strength. Your Von & Co options are organized around a calmer, more even-looking tone.",
 );
-assert.doesNotMatch(mixed.copy, /maintenance/i);
-assert.match(mixed.planIntro, /^Every source-supported match/);
-assert.doesNotMatch(mixed.planIntro, /maintenance/i);
+assert.equal(mixed.primaryInsightValue, "Redness");
+assert.equal(mixed.secondaryInsightValue, "Smooth-looking texture");
+assert.equal(mixed.optionInsightValue, "1 in-studio + 1 skincare");
+assert.match(mixed.planIntro, /^Von & Co services and skincare/);
+assert.doesNotMatch(mixed.copy + mixed.planIntro, /did not stand out|not apparent|source-supported/i);
+
+const derivedPriority = summaryHelper.build({
+  observations,
+  strengths: ["pigment_variation"],
+  priorities: [],
+  appearanceRecommendations: { services: [], products: [] },
+});
+assert.equal(derivedPriority.heading, "Redness comes into focus.");
+assert.equal(derivedPriority.primaryInsightValue, "Redness");
+assert.deepEqual(derivedPriority.priorityIds, ["visible_redness"]);
+
+const severityOrdered = summaryHelper.build({
+  observations: observations.concat([
+    { id: "visible_flaking", label: "Visible flaking", level: "prominent" },
+  ]),
+  strengths: [],
+  priorities: ["visible_redness", "visible_flaking"],
+  appearanceRecommendations: { services: [], products: [] },
+});
+assert.deepEqual(severityOrdered.priorityIds, ["visible_flaking", "visible_redness"]);
+assert.equal(severityOrdered.heading, "Flaking and redness come into focus.");
+assert.equal(severityOrdered.primaryInsightValue, "Flaking");
 
 process.stdout.write("Result summary regression cases passed\n");

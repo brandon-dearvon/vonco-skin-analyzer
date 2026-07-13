@@ -17,7 +17,7 @@ from __future__ import annotations
 from typing import Any, Mapping, Sequence
 
 
-CATALOG_VERSION = "naples-appearance-recommendations-v3.0.0"
+CATALOG_VERSION = "naples-appearance-recommendations-v3.1.0"
 
 ALL_AREAS = frozenset({"face", "neck", "chest", "hands", "back", "legs"})
 FACE_ONLY = frozenset({"face"})
@@ -132,8 +132,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Botox",
         "category": "Neurotoxin",
         "summary": (
-            "Von & Co includes Botox among its provider-selected options for the "
-            "appearance of visible face or neck lines."
+            "A provider-selected neurotoxin option for softening the look of "
+            "visible face or neck lines."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/botox-in-naples/",
         "areas": FACE_AND_NECK,
@@ -143,8 +143,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Dysport",
         "category": "Neurotoxin",
         "summary": (
-            "Von & Co includes Dysport among its provider-selected options for the "
-            "appearance of visible face or neck lines."
+            "A provider-selected neurotoxin option for softening the look of "
+            "visible face or neck lines."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/dysport-in-naples/",
         "areas": FACE_AND_NECK,
@@ -154,8 +154,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Xeomin",
         "category": "Neurotoxin",
         "summary": (
-            "Von & Co includes Xeomin among its provider-selected options for the "
-            "appearance of visible face or neck lines."
+            "A provider-selected neurotoxin option for softening the look of "
+            "visible face or neck lines."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/xeomin-in-naples/",
         "areas": FACE_AND_NECK,
@@ -187,8 +187,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Elite HydraFacial",
         "category": "Facial",
         "summary": (
-            "The Elite HydraFacial includes the Customized steps for visible "
-            "pigment, pores, surface texture, or flaking, plus its expanded experience."
+            "An expanded cleansing, exfoliation, and hydration facial for fresher, "
+            "smoother-looking skin."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/hydrafacial-in-naples/",
         "areas": FACE_AND_NECK,
@@ -198,8 +198,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "SkinVive",
         "category": "Skin-quality injectable",
         "summary": (
-            "Von & Co uses SkinVive as a provider-led option for the appearance of "
-            "facial fine lines, texture, and hydration."
+            "A provider-led skin-quality injectable for smoother-looking texture "
+            "and softer facial fine lines."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/skinvive-in-naples/",
         "areas": FACE_ONLY,
@@ -209,8 +209,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Signature Cleansing Facial",
         "category": "Facial",
         "summary": (
-            "A customizable cleansing, exfoliation, and hydration option to explore "
-            "for supported facial surface concerns."
+            "A customizable cleansing, exfoliation, and hydration facial for fresh, "
+            "smooth-looking skin."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/facials-in-naples/",
         "areas": FACE_ONLY,
@@ -220,8 +220,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Anti-Aging Facial",
         "category": "Facial",
         "summary": (
-            "Von & Co's resurfacing and hydrating facial is an accessible option to "
-            "explore for supported visible lines and surface texture."
+            "A resurfacing and hydration facial for smoother-looking texture and "
+            "softer visible lines."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/facials-in-naples/",
         "areas": FACE_ONLY,
@@ -293,8 +293,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Sciton BBL Photofacial",
         "category": "Light treatment",
         "summary": (
-            "Von & Co uses BBL in face-and-body plans focused on the appearance "
-            "of redness, visible vessels, uneven pigment, and surface texture."
+            "A light treatment for a clearer, more even-looking tone across redness, "
+            "visible vessels, uneven pigment, and texture."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/bbl-treatment-in-naples/",
         "areas": ALL_AREAS,
@@ -304,8 +304,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Sciton Moxi Laser",
         "category": "Fractional laser",
         "summary": (
-            "Von & Co uses Moxi as a gentle fractional face-and-body option for "
-            "visible lines, pigment, pores, scar-like texture, and surface texture."
+            "A gentle fractional laser for smoother-looking texture, refined-looking "
+            "pores, and a more even-looking tone."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/moxi-laser-in-naples/",
         "areas": ALL_AREAS,
@@ -315,8 +315,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Microneedling",
         "category": "Collagen renewal",
         "summary": (
-            "Von & Co uses microneedling in facial plans focused on visible lines, "
-            "pigment, pores, scar-like texture, and surface texture."
+            "A collagen-renewal treatment for smoother-looking texture, refined-looking "
+            "pores, and softer visible lines."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/microneedling-in-naples/",
         "areas": FACE_ONLY,
@@ -326,8 +326,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Microneedling + PRF",
         "category": "Collagen renewal",
         "summary": (
-            "Von & Co's provider guide uses PRF to enhance microneedling plans for "
-            "visible lines, pigment, pores, scar-like texture, and surface texture."
+            "Microneedling enhanced with PRF for smoother-looking texture, "
+            "refined-looking pores, and softer visible lines."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/microneedling-in-naples/",
         "areas": FACE_ONLY,
@@ -337,8 +337,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "RF Microneedling",
         "category": "Collagen renewal",
         "summary": (
-            "Von & Co uses RF microneedling when visible laxity, lines, pigment, "
-            "pores, scar-like texture, or surface texture is a priority."
+            "A collagen-renewal treatment for firmer, smoother-looking skin and "
+            "refined-looking pores."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/rf-microneedling-in-naples/",
         "areas": FACE_AND_NECK,
@@ -351,8 +351,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Sciton Halo Laser",
         "category": "Hybrid fractional laser",
         "summary": (
-            "Von & Co uses Halo for facial plans focused on visible pigment, lines, "
-            "pores, surface texture, scar-like texture, and laxity."
+            "A hybrid fractional laser for smoother-looking texture, softer visible "
+            "lines, and a more even-looking tone."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/halo-laser-treatment-in-naples/",
         "areas": FACE_ONLY,
@@ -362,8 +362,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Chemical Peels",
         "category": "Resurfacing treatment",
         "summary": (
-            "Von & Co customizes peel options for visible lines, discoloration, "
-            "surface texture, blemish-like spots, and scar-like texture."
+            "Customizable resurfacing to refine discoloration, surface texture, "
+            "blemish-like spots, and visible lines."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/chemical-peels-in-naples/",
         "areas": FACE_ONLY,
@@ -373,8 +373,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Clarifying HydraFacial",
         "category": "Facial",
         "summary": (
-            "An accessible option to explore when blemish-like spots or visible "
-            "pores are priorities in facial photos."
+            "A cleansing and exfoliating facial for clearer-looking skin and "
+            "refined-looking pores."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/hydrafacial-in-naples/",
         "areas": FACE_AND_NECK,
@@ -384,8 +384,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Customized HydraFacial",
         "category": "Facial",
         "summary": (
-            "A customizable cleansing and exfoliation option to explore for "
-            "visible pigment, surface texture, pores, or flaking."
+            "A customizable cleansing, exfoliation, and hydration facial for "
+            "smoother, brighter-looking skin."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/hydrafacial-in-naples/",
         "areas": FACE_AND_NECK,
@@ -395,9 +395,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "SaltFacial",
         "category": "Facial",
         "summary": (
-            "Von & Co's provider guide positions SaltFacial as a gateway option "
-            "for visible lines, pigment, texture, pores, blemish-like spots, and "
-            "scar-like appearance."
+            "A three-step facial designed to refresh tone, texture, pores, and "
+            "visible surface details."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/salt-facial-in-naples/",
         "areas": FACE_ONLY,
@@ -407,8 +406,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Deep Pore Cleansing Facial",
         "category": "Facial",
         "summary": (
-            "An entry-level facial option to explore for visible pores or "
-            "blemish-like spots."
+            "A focused cleansing facial for clearer-looking skin and refined-looking "
+            "pores."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/deep-cleansing-facial-in-naples/",
         "areas": FACE_ONLY,
@@ -418,8 +417,8 @@ SERVICE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Sculptra",
         "category": "Biostimulatory injectable",
         "summary": (
-            "A provider-led option to explore when visible lines or laxity are part "
-            "of the selected area's profile."
+            "A provider-led biostimulatory option for firmer-looking skin and "
+            "softer visible lines."
         ),
         "learnMoreUrl": "https://www.vonandcoaesthetics.com/services/sculptra-in-naples/",
         "areas": FACE_CHEST_LEGS,
@@ -520,6 +519,10 @@ PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Thermal Spring Water",
         "brand": "Avène",
         "category": "Calm + clear",
+        "benefit": (
+            "Mineral-rich spring water that calms on contact and can be misted "
+            "on whenever skin feels warm or reactive."
+        ),
         "availability": "Carried by Von & Co; confirm current availability.",
         "areas": FACE_ONLY,
         "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
@@ -528,6 +531,10 @@ PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Alto Defense Serum",
         "brand": "SkinBetter Science",
         "category": "Calm + clear",
+        "benefit": (
+            "A fragrance-free antioxidant serum with 19 antioxidants in one pump "
+            "to support a calmer-looking routine."
+        ),
         "availability": "Carried by Von & Co; confirm current availability.",
         "areas": FACE_ONLY,
         "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
@@ -536,6 +543,10 @@ PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Even Tone",
         "brand": "SkinBetter Science",
         "category": "Tone + brightness",
+        "benefit": (
+            "A retinol-free, hydroquinone-free serum for a more even-looking tone "
+            "and visible dark spots."
+        ),
         "availability": "Carried by Von & Co; confirm current availability.",
         "areas": FACE_ONLY,
         "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
@@ -544,6 +555,10 @@ PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Melaclear Advanced",
         "brand": "ISDIN",
         "category": "Tone + brightness",
+        "benefit": (
+            "Tranexamic acid and niacinamide support a more even-looking tone by "
+            "addressing visible pigment at multiple steps."
+        ),
         "availability": "Carried by Von & Co; confirm current availability.",
         "areas": FACE_ONLY,
         "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
@@ -552,6 +567,10 @@ PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
         "name": "AlphaRet",
         "brand": "SkinBetter Science",
         "category": "Visible aging",
+        "benefit": (
+            "A starter retinoid that combines a retinoid and AHA to refine the look "
+            "of lines and texture with less peeling."
+        ),
         "availability": "Ask a Von & Co provider before adding this active to your routine.",
         "areas": FACE_ONLY,
         "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
@@ -560,6 +579,10 @@ PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Wrinkle + Texture Repair",
         "brand": "ZO Skin Health",
         "category": "Visible aging",
+        "benefit": (
+            "A 0.5% retinol treatment with ZCORE peptides for resilient skin that "
+            "already tolerates stronger retinoids."
+        ),
         "availability": "Ask a Von & Co provider before adding this active to your routine.",
         "areas": FACE_ONLY,
         "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
@@ -568,6 +591,10 @@ PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Restorative Skin Complex",
         "brand": "Alastin",
         "category": "Firmness support",
+        "benefit": (
+            "TriHex peptide technology supports collagen and elastin renewal for "
+            "firmer, smoother-looking skin on the face or body."
+        ),
         "availability": "Carried by Von & Co; confirm current availability.",
         "areas": FACE_CHEST_HANDS,
         "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
@@ -576,6 +603,10 @@ PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Growth Factor Serum",
         "brand": "ZO Skin Health",
         "category": "Firmness support",
+        "benefit": (
+            "A retinol-free growth factor serum that supports a collagen-focused "
+            "routine morning and night."
+        ),
         "availability": "Carried by Von & Co; confirm current availability.",
         "areas": FACE_ONLY,
         "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
@@ -584,6 +615,10 @@ PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Peel Pads",
         "brand": "SkinBetter Science",
         "category": "Texture support",
+        "benefit": (
+            "A gentler exfoliating-pad option for smoother-looking texture when a "
+            "stronger acid pad feels like too much."
+        ),
         "availability": "Ask a Von & Co provider before adding this active to your routine.",
         "areas": FACE_ONLY,
         "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
@@ -592,6 +627,10 @@ PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Complexion Renewal Pads",
         "brand": "ZO Skin Health",
         "category": "Texture support",
+        "benefit": (
+            "Glycolic and salicylic acids exfoliate to refine the look of pores, "
+            "blemish-like spots, and surface texture."
+        ),
         "availability": "Ask a Von & Co provider before adding this active to your routine.",
         "areas": FACE_ONLY,
         "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
@@ -600,6 +639,10 @@ PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Renewing HA Serum",
         "brand": "Hydrinity",
         "category": "Moisture support",
+        "benefit": (
+            "Multi-weight hyaluronic acid draws in moisture for a smoother, more "
+            "hydrated-looking surface."
+        ),
         "availability": "Carried by Von & Co; confirm current availability.",
         "areas": FACE_ONLY,
         "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
@@ -608,6 +651,10 @@ PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Trio Moisture",
         "brand": "SkinBetter Science",
         "category": "Moisture support",
+        "benefit": (
+            "Ceramides and lipids support the moisture barrier when skin looks dry "
+            "or feels depleted."
+        ),
         "availability": "Carried by Von & Co; confirm current availability.",
         "areas": FACE_ONLY,
         "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
@@ -616,6 +663,10 @@ PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Face Shield SPF 50",
         "brand": "Colorescience",
         "category": "Daily protection",
+        "benefit": (
+            "A 100% mineral SPF 50 that protects from UV and visible light, with "
+            "multiple finishes to suit different skin tones and preferences."
+        ),
         "availability": "Carried by Von & Co; confirm current availability.",
         "areas": FACE_ONLY,
         "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
@@ -688,6 +739,10 @@ PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
         "name": "10% Vitamin C",
         "brand": "ZO Skin Health",
         "category": "Tone + brightness",
+        "benefit": (
+            "L-ascorbic acid brightens and helps defend against free radicals as a "
+            "morning antioxidant step."
+        ),
         "availability": "Ask a Von & Co provider before adding this active to your routine.",
         "areas": FACE_ONLY,
         "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
@@ -696,6 +751,10 @@ PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
         "name": "Vivid Serum",
         "brand": "Hydrinity",
         "category": "Tone + brightness",
+        "benefit": (
+            "Hexylresorcinol and peptides brighten without retinol, making this a "
+            "gentler option for a more even-looking tone."
+        ),
         "availability": "Carried by Von & Co; confirm current availability.",
         "areas": FACE_ONLY,
         "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
@@ -768,6 +827,10 @@ PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
         "name": "AlphaRet Body",
         "brand": "SkinBetter Science",
         "category": "Body texture + firmness",
+        "benefit": (
+            "A retinoid body treatment for crepey-looking texture and visible "
+            "firmness concerns on the arms, chest, or hands."
+        ),
         "availability": "Ask a Von & Co provider before adding this active to your routine.",
         "areas": CHEST_AND_HANDS,
         "sourceRefs": (PRODUCTS_GUIDE_SOURCE,),
@@ -862,6 +925,14 @@ def _joined_labels(observation_ids: Sequence[str], labels: Mapping[str, str]) ->
     if len(values) == 1:
         return values[0]
     return f"{', '.join(values[:-1])} and {values[-1]}"
+
+
+def _guest_availability(value: str) -> str:
+    if value.startswith("Ask a Von & Co provider"):
+        return "A Von & Co provider can help decide whether this active belongs in your routine."
+    if value.startswith("Use only") or value.startswith("Use with"):
+        return "Use only within the pre- or post-procedure plan provided by Von & Co."
+    return "Available at Von & Co. Please confirm current studio availability."
 
 
 def _add_match(
@@ -960,10 +1031,7 @@ def build_appearance_recommendations(
                 "name": service["name"],
                 "category": service["category"],
                 "matchedObservationIds": matched_ids,
-                "why": (
-                    f"Your photos show {_joined_labels(matched_ids, labels)}. "
-                    f"{service['summary']}"
-                ),
+                "why": service["summary"],
                 "learnMoreUrl": service["learnMoreUrl"],
             }
         )
@@ -973,15 +1041,11 @@ def build_appearance_recommendations(
         product = PRODUCT_CATALOG[product_id]
         matched_ids = list(match["matchedObservationIds"])
         relationship = str(match["relationship"] or "Matched option")
+        benefit = str(product.get("benefit") or "").strip()
         why = (
-            "Von & Co's current product guide pairs daily SPF with every "
-            "treatment plan."
+            f"Von & Co includes daily SPF with every treatment plan. {benefit}"
             if relationship == "Daily protection"
-            else (
-                f"Your photos show {_joined_labels(matched_ids, labels)}. "
-                "Von & Co's current product guide includes this option for that "
-                "appearance concern."
-            )
+            else benefit
         )
         products.append(
             {
@@ -992,7 +1056,7 @@ def build_appearance_recommendations(
                 "relationship": relationship,
                 "matchedObservationIds": matched_ids,
                 "why": why,
-                "availability": product["availability"],
+                "availability": _guest_availability(product["availability"]),
             }
         )
 

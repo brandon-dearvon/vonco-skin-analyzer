@@ -30,7 +30,7 @@ from recommendation_catalog import (
 
 LOGGER = logging.getLogger(__name__)
 
-ANALYSIS_VERSION = "visible-surface-v1.4.2"
+ANALYSIS_VERSION = "visible-surface-v1.5.0"
 PROMPT_VERSION = "visible-surface-prompt-v1.1.0"
 SCHEMA_VERSION = "visible-surface-response-schema-v1.2.0"
 TOPIC_MAPPING_VERSION = CATALOG_VERSION
@@ -509,22 +509,82 @@ def _validate_visible_text(text: str, path: str) -> None:
 def _deterministic_description(
     observation_id: str, level: str, angles: Sequence[str]
 ) -> str:
-    if level == "unable_to_assess" and not angles:
-        return (
-            f"{OBSERVATION_LABELS[observation_id]} could not be assessed from "
-            "the submitted photos."
-        )
-    view_word = "view" if len(angles) == 1 else "views"
-    label = OBSERVATION_LABELS[observation_id]
-    if level == "not_observed":
-        return f"{label} did not stand out in the submitted {view_word}."
-    if level == "subtle":
-        return f"{label} appears subtle in the submitted {view_word}."
-    if level == "visible":
-        return f"{label} is noticeable in the submitted {view_word}."
-    if level == "prominent":
-        return f"{label} is especially noticeable in the submitted {view_word}."
-    return f"{label} could not be assessed reliably in the submitted {view_word}."
+    descriptions: dict[str, dict[str, str]] = {
+        "visible_lines": {
+            "not_observed": "Skin looks smooth and softly defined in these photos.",
+            "subtle": "Lines look soft and understated in these photos.",
+            "visible": "Lines are clearly visible in these photos.",
+            "prominent": "Lines are one of the clearest details in these photos.",
+            "unable_to_assess": "Lines need a clearer photo to review.",
+        },
+        "visible_redness": {
+            "not_observed": "Tone looks calm and even in these photos.",
+            "subtle": "Tone looks calm overall, with subtle redness in these photos.",
+            "visible": "Redness is clearly visible in these photos.",
+            "prominent": "Redness is one of the clearest details in these photos.",
+            "unable_to_assess": "Redness needs a clearer photo to review.",
+        },
+        "pigment_variation": {
+            "not_observed": "Tone looks even and consistent in these photos.",
+            "subtle": "Tone looks even overall, with subtle pigment variation in these photos.",
+            "visible": "Pigment variation is clearly visible in these photos.",
+            "prominent": "Pigment variation is one of the clearest details in these photos.",
+            "unable_to_assess": "Pigment variation needs a clearer photo to review.",
+        },
+        "surface_texture": {
+            "not_observed": "The skin surface looks smooth and even in these photos.",
+            "subtle": "Texture looks smooth overall, with subtle surface variation in these photos.",
+            "visible": "Surface texture is clearly visible in these photos.",
+            "prominent": "Surface texture is one of the clearest details in these photos.",
+            "unable_to_assess": "Surface texture needs a clearer photo to review.",
+        },
+        "pore_visibility": {
+            "not_observed": "Pores look refined and unobtrusive in these photos.",
+            "subtle": "Pores look refined overall, with subtle visibility in these photos.",
+            "visible": "Pores are clearly visible in these photos.",
+            "prominent": "Pore appearance is one of the clearest details in these photos.",
+            "unable_to_assess": "Pore appearance needs a clearer photo to review.",
+        },
+        "laxity_appearance": {
+            "not_observed": "The area looks firm and well supported in these photos.",
+            "subtle": "The area looks firm overall, with subtle laxity in these photos.",
+            "visible": "Laxity is clearly visible in these photos.",
+            "prominent": "Laxity is one of the clearest details in these photos.",
+            "unable_to_assess": "Laxity appearance needs a clearer photo to review.",
+        },
+        "blemish_like_spots": {
+            "not_observed": "The skin surface looks clear and even in these photos.",
+            "subtle": "The surface looks clear overall, with subtle blemish-like spots in these photos.",
+            "visible": "Blemish-like spots are clearly visible in these photos.",
+            "prominent": "Blemish-like spots are one of the clearest details in these photos.",
+            "unable_to_assess": "Blemish-like spots need a clearer photo to review.",
+        },
+        "scar_like_texture": {
+            "not_observed": "The skin surface looks smooth and consistent in these photos.",
+            "subtle": "The surface looks smooth overall, with subtle scar-like texture in these photos.",
+            "visible": "Scar-like texture is clearly visible in these photos.",
+            "prominent": "Scar-like texture is one of the clearest details in these photos.",
+            "unable_to_assess": "Scar-like texture needs a clearer photo to review.",
+        },
+        "superficial_vessels": {
+            "not_observed": "Tone looks even and visually calm in these photos.",
+            "subtle": "Tone looks even overall, with subtle superficial vessels in these photos.",
+            "visible": "Superficial vessels are clearly visible in these photos.",
+            "prominent": "Superficial vessels are one of the clearest details in these photos.",
+            "unable_to_assess": "Superficial vessels need a clearer photo to review.",
+        },
+        "visible_flaking": {
+            "not_observed": "The skin surface looks smooth and even in these photos.",
+            "subtle": "The surface looks smooth overall, with subtle flaking in these photos.",
+            "visible": "Flaking is clearly visible in these photos.",
+            "prominent": "Flaking is one of the clearest details in these photos.",
+            "unable_to_assess": "Flaking needs a clearer photo to review.",
+        },
+    }
+    description = descriptions.get(observation_id, {}).get(level)
+    if description:
+        return description
+    return f"{OBSERVATION_LABELS[observation_id]} needs a clearer photo to review."
 
 
 def _validate_image_angle_sequence(image_angles: Sequence[str]) -> tuple[str, ...]:

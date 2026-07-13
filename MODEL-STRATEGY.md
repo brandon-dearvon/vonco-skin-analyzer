@@ -22,10 +22,10 @@ No other AI provider or model is used as a fallback. If Gemini is unavailable, t
   second request occurs only after an exception or schema-invalid response;
   there is no cross-provider fallback
 - Post-response handling: strict application validation before any result is shown
-- Analysis version: `visible-surface-v1.4.2`
+- Analysis version: `visible-surface-v1.5.0`
 - Prompt version: `visible-surface-prompt-v1.1.0`
 - Response schema: `visible-surface-response-schema-v1.2.0`
-- Recommendation catalog: `naples-appearance-recommendations-v3.0.0`
+- Recommendation catalog: `naples-appearance-recommendations-v3.1.0`
 
 ## Recommendation architecture
 

@@ -310,9 +310,41 @@ class ExpectedRecommendationScenarioTests(unittest.TestCase):
                     matched_ids = item["matchedObservationIds"]
                     self.assertTrue(matched_ids)
                     self.assertTrue(set(matched_ids).issubset(visible_ids))
+                    why = item["why"]
+                    self.assertTrue(why)
+                    self.assertNotIn("Your photos show", why)
+                    self.assertNotIn("appearance concern", why)
+                    self.assertNotIn("current product guide includes", why)
+                    self.assertNotIn("source-supported", why)
+                    self.assertNotIn("—", why)
+                    self.assertNotIn("–", why)
+
+                for product in recommendations["products"]:
+                    self.assertIn(
+                        product["availability"],
+                        {
+                            "Available at Von & Co. Please confirm current studio availability.",
+                            "A Von & Co provider can help decide whether this active belongs in your routine.",
+                            "Use only within the pre- or post-procedure plan provided by Von & Co.",
+                        },
+                    )
 
                 self.assertEqual(len(service_ids), len(set(service_ids)))
                 self.assertEqual(len(product_ids), len(set(product_ids)))
+
+    def test_every_observation_level_uses_consumer_friendly_copy(self) -> None:
+        banned = ("did not stand out", "not apparent", "not visible", "especially noticeable")
+        for observation_id in analysis_engine.OBSERVATION_LABELS:
+            for level in analysis_engine.OBSERVATION_LEVELS:
+                with self.subTest(observation_id=observation_id, level=level):
+                    angles = [] if level == "unable_to_assess" else ["single"]
+                    copy = analysis_engine._deterministic_description(
+                        observation_id, level, angles
+                    )
+                    self.assertTrue(copy.endswith("."))
+                    self.assertFalse(any(fragment in copy.lower() for fragment in banned))
+                    self.assertNotIn("—", copy)
+                    self.assertNotIn("–", copy)
 
 
 if __name__ == "__main__":

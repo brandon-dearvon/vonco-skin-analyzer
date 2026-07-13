@@ -11,8 +11,32 @@
 }(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
 
-  var DEFAULT_PLAN_INTRO = "Every source-supported match from your visible appearance profile, with visible priorities first.";
-  var MAINTENANCE_PLAN_INTRO = "Every source-supported maintenance match from subtle findings in your visible appearance profile.";
+  var DEFAULT_PLAN_INTRO = "Von & Co services and skincare matched to your photo profile, with the clearest matches first.";
+  var MAINTENANCE_PLAN_INTRO = "Thoughtful ways to maintain what already looks balanced and refine the subtle details.";
+  var POSITIVE_STRENGTH_LABELS = {
+    visible_lines: "Soft-looking lines",
+    visible_redness: "Calm-looking tone",
+    pigment_variation: "Even-looking tone",
+    surface_texture: "Smooth-looking texture",
+    pore_visibility: "Refined-looking pores",
+    laxity_appearance: "Firm-looking skin",
+    blemish_like_spots: "Clear-looking skin",
+    scar_like_texture: "Smooth-looking surface",
+    superficial_vessels: "Even-looking tone",
+    visible_flaking: "Smooth-looking surface"
+  };
+  var FOCUS_GOALS = {
+    visible_lines: "softer-looking lines",
+    visible_redness: "a calmer, more even-looking tone",
+    pigment_variation: "a brighter, more even-looking tone",
+    surface_texture: "smoother-looking texture",
+    pore_visibility: "refined-looking pores",
+    laxity_appearance: "firmer-looking skin",
+    blemish_like_spots: "clearer-looking skin",
+    scar_like_texture: "smoother-looking texture",
+    superficial_vessels: "a clearer, more even-looking tone",
+    visible_flaking: "a smoother, more hydrated-looking surface"
+  };
 
   function cleanText(value) {
     return typeof value === "string" ? value.trim().slice(0, 180) : "";
@@ -34,6 +58,28 @@
     return values.slice(0, -1).join(", ") + " and " + values[values.length - 1];
   }
 
+  function consumerLabel(value) {
+    var text = cleanText(value).replace(/^Visible\s+/i, "");
+    return text ? text.charAt(0).toUpperCase() + text.slice(1) : "";
+  }
+
+  function lowerFirst(value) {
+    var text = cleanText(value);
+    return text ? text.charAt(0).toLowerCase() + text.slice(1) : "";
+  }
+
+  function uniqueText(values) {
+    return values.filter(function (value, index, list) {
+      return value && list.indexOf(value) === index;
+    });
+  }
+
+  function naturalList(values) {
+    return sentenceList(values.map(function (value, index) {
+      return index === 0 ? value : lowerFirst(value);
+    }));
+  }
+
   function build(data) {
     var safeData = data && typeof data === "object" ? data : {};
     var observations = Array.isArray(safeData.observations) ? safeData.observations : [];
@@ -50,11 +96,31 @@
     function labels(ids) {
       return uniqueIds(ids).map(function (id) {
         var observation = map.get(id);
-        return cleanText(observation && observation.label);
+        return consumerLabel(observation && observation.label);
       }).filter(Boolean).slice(0, 2);
     }
 
-    var priorityLabels = labels(safeData.priorities);
+    var statedPriorities = uniqueIds(safeData.priorities);
+    var priorityLevelRank = { prominent: 0, visible: 1 };
+    var priorityIds = observations.filter(function (observation) {
+      return observation && (observation.level === "visible" || observation.level === "prominent");
+    }).sort(function (left, right) {
+      var levelDifference = priorityLevelRank[left.level] - priorityLevelRank[right.level];
+      if (levelDifference) {
+        return levelDifference;
+      }
+      var leftStatedIndex = statedPriorities.indexOf(left.id);
+      var rightStatedIndex = statedPriorities.indexOf(right.id);
+      var leftRank = leftStatedIndex === -1 ? Number.MAX_SAFE_INTEGER : leftStatedIndex;
+      var rightRank = rightStatedIndex === -1 ? Number.MAX_SAFE_INTEGER : rightStatedIndex;
+      return leftRank - rightRank;
+    }).map(function (observation) {
+      return observation.id;
+    });
+    var priorityLabels = labels(priorityIds);
+    var focusGoals = uniqueText(priorityIds.slice(0, 2).map(function (id) {
+      return FOCUS_GOALS[id] || "";
+    }));
     var strengthIds = uniqueIds(safeData.strengths);
     var recommendations = safeData.appearanceRecommendations;
     var recommendationItems = recommendations
@@ -84,49 +150,81 @@
     }
 
     var subtleLabels = labels(subtleIds);
-    var notApparentLabels = labels(strengthIds.filter(function (id) {
+    var clearStrengthIds = strengthIds.filter(function (id) {
       var observation = map.get(id);
       return observation && observation.level === "not_observed";
-    }));
+    });
+    var positiveStrengths = uniqueText(clearStrengthIds.concat(strengthIds).map(function (id) {
+      return POSITIVE_STRENGTH_LABELS[id] || "";
+    })).slice(0, 2);
     var hasRecommendations = recommendationItems.length > 0;
-    var hasVisiblePriorityMatch = recommendationItems.some(function (item) {
+    var hasVisiblePriorityMatch = priorityLabels.length > 0 || recommendationItems.some(function (item) {
       return uniqueIds(item && item.matchedObservationIds).some(function (id) {
         var observation = map.get(id);
         return observation && (observation.level === "visible" || observation.level === "prominent");
       });
     });
+    var serviceCount = recommendations && Array.isArray(recommendations.services)
+      ? recommendations.services.length
+      : 0;
+    var productCount = recommendations && Array.isArray(recommendations.products)
+      ? recommendations.products.length
+      : 0;
+    var optionParts = [];
+    if (serviceCount) {
+      optionParts.push(serviceCount + " in-studio");
+    }
+    if (productCount) {
+      optionParts.push(productCount + " skincare");
+    }
+    var optionInsightValue = optionParts.length ? optionParts.join(" + ") : "Explore in person";
     var heading = priorityLabels.length
-      ? sentenceList(priorityLabels) + (priorityLabels.length === 1 ? " stands out most." : " stand out most.")
-      : "No strong visible priority stands out.";
+      ? naturalList(priorityLabels) + (priorityLabels.length === 1
+        ? " comes into focus."
+        : " come into focus.")
+      : "Your skin reads balanced overall.";
     var copy;
-    var strengthsHeading;
 
-    if (subtleLabels.length) {
-      copy = sentenceList(subtleLabels) + " appeared subtle in these photos. " + (hasRecommendations
-        ? (priorityLabels.length
-          ? "Your full photo-based profile and all supported Von & Co matches are below."
-          : "Your full photo-based profile and all supported maintenance matches are below.")
-        : "Your full photo-based profile is below.");
-      strengthsHeading = notApparentLabels.length
-        ? "What appears subtle or not apparent"
-        : "What appears subtle";
-    } else if (notApparentLabels.length) {
-      copy = sentenceList(notApparentLabels) + " did not stand out in these photos. Your full photo-based profile is below.";
-      strengthsHeading = "What was not apparent";
+    if (priorityLabels.length) {
+      copy = naturalList(priorityLabels) + (priorityLabels.length === 1
+        ? " is the most noticeable detail in these photos. "
+        : " are the most noticeable details in these photos. ");
+      if (positiveStrengths.length) {
+        copy += naturalList(positiveStrengths) + (positiveStrengths.length === 1
+          ? " reads as a photo strength. "
+          : " read as photo strengths. ");
+      } else {
+        copy += "The rest of your profile looks softer and more understated. ";
+      }
+      copy += hasRecommendations
+        ? (focusGoals.length
+          ? "Your Von & Co options are organized around " + naturalList(focusGoals) + "."
+          : "Your Von & Co options are organized around what your photos show most clearly.")
+        : "Your complete photo profile is below.";
+    } else if (subtleLabels.length) {
+      copy = naturalList(subtleLabels) + (subtleLabels.length === 1
+        ? " looks soft and understated in these photos. "
+        : " look soft and understated in these photos. ");
+      copy += hasRecommendations
+        ? "The options below are thoughtful ways to maintain that balance."
+        : "Your complete photo profile is below.";
+    } else if (positiveStrengths.length) {
+      copy = naturalList(positiveStrengths) + (positiveStrengths.length === 1
+        ? " reads as a strength in these photos. "
+        : " read as strengths in these photos. ") + "Your complete photo profile is below.";
     } else {
-      copy = "Your full photo-based profile shows what was visible, what appeared subtle, and what could not be assessed clearly. " + (hasRecommendations
-        ? "All supported Von & Co matches are below."
-        : "No automatic catalog match was added for this profile.");
-      strengthsHeading = "What appears subtle or not apparent";
+      copy = "The reviewed details look soft and balanced in these photos. Your complete photo profile is below.";
     }
 
     return {
       heading: heading,
       copy: copy,
-      strengthsHeading: strengthsHeading,
-      primaryInsightValue: priorityLabels[0] || "No single focus",
-      secondaryInsightLabel: subtleLabels.length ? "Subtle finding" : "Not apparent",
-      secondaryInsightValue: subtleLabels[0] || notApparentLabels[0] || "No single standout",
+      strengthsHeading: "What already looks strong",
+      primaryInsightValue: priorityLabels[0] || "Balanced overall",
+      secondaryInsightLabel: "Photo strength",
+      secondaryInsightValue: positiveStrengths[0] || (subtleLabels[0] ? "Soft-looking " + lowerFirst(subtleLabels[0]) : "Balanced overall"),
+      optionInsightValue: optionInsightValue,
+      priorityIds: priorityIds,
       subtleLabels: subtleLabels,
       planIntro: hasRecommendations && !hasVisiblePriorityMatch
         ? MAINTENANCE_PLAN_INTRO

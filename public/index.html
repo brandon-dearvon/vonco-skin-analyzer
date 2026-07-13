@@ -800,6 +800,17 @@
       scroll-margin-top: 112px;
     }
 
+    .results-heading:focus-visible {
+      outline: 2px solid var(--evergreen-dark);
+      outline-offset: 6px;
+      box-shadow: none;
+    }
+
+    .results-heading.is-programmatically-focused:focus {
+      outline: none;
+      box-shadow: none;
+    }
+
     .result-meta {
       margin: 7px 0 0;
       color: var(--charcoal-soft);
@@ -1920,11 +1931,11 @@
     <section class="intro" aria-labelledby="pageTitle">
       <p class="eyebrow">Complimentary photo-based skin analysis</p>
       <h1 id="pageTitle">Your skin is personal. <span class="hero-mobile-line">Your next step should be too.</span></h1>
-      <p class="intro-copy">Upload one or three clear photos for a full visible-skin profile, then see Von &amp; Co services and skincare matched to what stands out.</p>
+      <p class="intro-copy">Upload one or three clear photos for a full visible-skin profile, then see Von &amp; Co services and skincare thoughtfully matched to what your photos show.</p>
       <ul class="intro-benefits" aria-label="Your skin analysis may include">
         <li>Full visible profile</li>
         <li>What looks strong</li>
-        <li>What stands out</li>
+        <li>Your clearest focus</li>
         <li>Matched service + skincare options</li>
       </ul>
     </section>
@@ -2053,7 +2064,7 @@
         </li>
         <li class="loading-step" data-loading-step="3" data-state="pending">
           <span class="loading-step-marker" aria-hidden="true">4</span>
-          <span class="loading-step-copy"><span class="loading-step-title">Skin-profile organization</span><span class="loading-step-detail">Subtle findings and the clearest priorities are organized.</span></span>
+          <span class="loading-step-copy"><span class="loading-step-title">Skin-profile organization</span><span class="loading-step-detail">Your clearest focus and photo strengths are organized.</span></span>
         </li>
         <li class="loading-step" data-loading-step="4" data-state="pending">
           <span class="loading-step-marker" aria-hidden="true">5</span>
@@ -2072,66 +2083,66 @@
 
       <div id="completeResults" hidden>
         <section class="result-summary" id="resultSummary" aria-labelledby="resultSummaryHeading">
-          <p class="plan-kicker">Your quick read</p>
-          <h3 id="resultSummaryHeading">What stands out in your photos</h3>
+          <p class="plan-kicker">Your skin at a glance</p>
+          <h3 id="resultSummaryHeading">Your clearest photo focus</h3>
           <p class="result-summary-copy" id="resultSummaryCopy"></p>
           <div class="result-insights" id="resultInsights"></div>
           <a class="button result-summary-action" href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" rel="noopener noreferrer">Book your complimentary consultation</a>
         </section>
 
-        <section class="result-section" id="strengthsSection" aria-labelledby="strengthsHeading">
-          <h3 id="strengthsHeading">What appears subtle or not apparent</h3>
-          <div class="observation-list" id="strengthsList"></div>
-        </section>
-
         <section class="result-section" id="prioritiesSection" aria-labelledby="prioritiesHeading">
-          <h3 id="prioritiesHeading">Visible priorities</h3>
+          <h3 id="prioritiesHeading">What your photos bring into focus</h3>
           <div class="observation-list" id="prioritiesList"></div>
         </section>
 
-        <section class="result-section" id="limitationsSection" aria-labelledby="limitationsHeading" hidden>
-          <h3 id="limitationsHeading">Details we could not review</h3>
-          <div class="observation-list" id="limitationsList"></div>
-          <ul class="retake-list" id="qualityLimitationsList"></ul>
+        <section class="result-section" id="strengthsSection" aria-labelledby="strengthsHeading">
+          <h3 id="strengthsHeading">What already looks strong</h3>
+          <div class="observation-list" id="strengthsList"></div>
         </section>
 
         <section class="plan-section" id="planSection" aria-labelledby="planHeading">
-          <p class="plan-kicker">Matched to your photos</p>
-          <h3 class="plan-heading" id="planHeading">Your Von &amp; Co matches</h3>
-          <p class="plan-intro" id="planIntro">Every source-supported match from your visible appearance profile, with visible priorities first.</p>
+          <p class="plan-kicker">Chosen for your photo profile</p>
+          <h3 class="plan-heading" id="planHeading">Your Von &amp; Co options</h3>
+          <p class="plan-intro" id="planIntro">Von &amp; Co services and skincare matched to your photo profile, with the clearest matches first.</p>
           <nav class="recommendation-jump" id="recommendationJump" aria-label="Jump to recommendation group" hidden>
-            <a id="servicesJump" href="#servicesSection" hidden>In-studio matches</a>
-            <a id="productsJump" href="#productsSection" hidden>Skincare matches</a>
+            <a id="servicesJump" href="#servicesSection" hidden>In-studio options</a>
+            <a id="productsJump" href="#productsSection" hidden>Skincare options</a>
           </nav>
 
           <section class="recommendation-group" id="servicesSection" aria-labelledby="servicesHeading" hidden>
-            <h4 id="servicesHeading">In-studio matches</h4>
-            <p class="recommendation-group-copy">All supported service options, with visible priorities first and Von &amp; Co's provider guide deciding the order.</p>
+            <h4 id="servicesHeading">In-studio options</h4>
+            <p class="recommendation-group-copy">Von &amp; Co services linked to what your photos show, with the clearest matches first.</p>
             <div class="recommendation-list service-list" id="servicesList"></div>
             <button class="recommendation-more" id="servicesMoreButton" type="button" aria-controls="servicesList" aria-expanded="false" hidden></button>
           </section>
 
           <section class="recommendation-group" id="productsSection" aria-labelledby="productsHeading" hidden>
-            <h4 id="productsHeading">Skincare matches</h4>
-            <p class="recommendation-group-copy">All supported skincare options from Von &amp; Co's current product guide, including daily protection.</p>
+            <h4 id="productsHeading">Skincare options</h4>
+            <p class="recommendation-group-copy">Skincare options linked to your photo profile, plus the daily SPF included with every treatment plan.</p>
             <div class="recommendation-list product-list" id="productsList"></div>
             <button class="recommendation-more" id="productsMoreButton" type="button" aria-controls="productsList" aria-expanded="false" hidden></button>
           </section>
 
-          <p class="recommendation-empty" id="recommendationsEmpty" hidden>No service or skincare match was added automatically for this photo area. Bring your preview to a complimentary consultation to explore options with a Von &amp; Co provider.</p>
+          <p class="recommendation-empty" id="recommendationsEmpty" hidden>A Von &amp; Co provider can build recommendations around your goals during a complimentary consultation. No automatic option was added from this photo alone.</p>
         </section>
 
         <details class="result-section profile-disclosure" id="profileSection">
           <summary>
             <span>
-              <span class="profile-summary-title" id="profileHeading">Your category-by-category skin profile</span>
-              <span class="profile-summary-copy">See every category reviewed in your photos.</span>
+              <span class="profile-summary-title" id="profileHeading">Your complete photo profile</span>
+              <span class="profile-summary-copy">Review every category, from most noticeable to minimal.</span>
             </span>
             <span class="profile-summary-icon" aria-hidden="true">+</span>
           </summary>
           <p class="profile-intro">Each level describes how noticeable a feature appears in these photos. It is not a diagnosis or a health score.</p>
           <div class="profile-list" id="profileList"></div>
         </details>
+
+        <section class="result-section" id="limitationsSection" aria-labelledby="limitationsHeading" hidden>
+          <h3 id="limitationsHeading">Details that need a clearer view</h3>
+          <div class="observation-list" id="limitationsList"></div>
+          <ul class="retake-list" id="qualityLimitationsList"></ul>
+        </section>
 
         <div class="result-actions">
           <button class="button button-secondary" id="analyzeAnotherButton" type="button">Analyze another photo or area</button>
@@ -2269,11 +2280,32 @@
       ];
 
       var profileLevelCopy = {
-        not_observed: { label: "Not visible", filled: 1 },
+        not_observed: { label: "Minimal in photos", filled: 1 },
         subtle: { label: "Subtle", filled: 2 },
-        visible: { label: "Visible", filled: 3 },
-        prominent: { label: "Prominent", filled: 4 },
-        unable_to_assess: { label: "Not assessed", filled: 0 }
+        visible: { label: "Noticeable", filled: 3 },
+        prominent: { label: "Most noticeable", filled: 4 },
+        unable_to_assess: { label: "Needs a clearer view", filled: 0 }
+      };
+
+      var profileLevelOrder = {
+        prominent: 0,
+        visible: 1,
+        subtle: 2,
+        not_observed: 3,
+        unable_to_assess: 4
+      };
+
+      var positiveObservationLabels = {
+        visible_lines: "Soft-looking lines",
+        visible_redness: "Calm-looking tone",
+        pigment_variation: "Even-looking tone",
+        surface_texture: "Smooth-looking texture",
+        pore_visibility: "Refined-looking pores",
+        laxity_appearance: "Firm-looking skin",
+        blemish_like_spots: "Clear-looking skin",
+        scar_like_texture: "Smooth-looking surface",
+        superficial_vessels: "Even-looking tone",
+        visible_flaking: "Smooth-looking surface"
       };
 
       var MOBILE_MATCH_PREVIEW_COUNT = 4;
@@ -2455,6 +2487,11 @@
 
       function cleanText(value) {
         return typeof value === "string" ? value.trim() : "";
+      }
+
+      function consumerObservationLabel(value) {
+        var text = cleanText(value).replace(/^Visible\s+/i, "");
+        return text ? text.charAt(0).toUpperCase() + text.slice(1) : "";
       }
 
       function officialServiceUrl(value) {
@@ -2924,12 +2961,12 @@
         serverDisclaimer.hidden = true;
         serverDisclaimer.textContent = "";
         resultMeta.textContent = "";
-        resultSummaryHeading.textContent = "What stands out in your photos";
+        resultSummaryHeading.textContent = "Your clearest photo focus";
         resultSummaryCopy.textContent = "";
-        strengthsHeading.textContent = "What appears subtle or not apparent";
-        planIntro.textContent = "Every source-supported match from your visible appearance profile, with visible priorities first.";
-        servicesHeading.textContent = "In-studio matches";
-        productsHeading.textContent = "Skincare matches";
+        strengthsHeading.textContent = "What already looks strong";
+        planIntro.textContent = "Von & Co services and skincare matched to your photo profile, with the clearest matches first.";
+        servicesHeading.textContent = "In-studio options";
+        productsHeading.textContent = "Skincare options";
         clearNode(resultInsights);
         clearNode(strengthsList);
         clearNode(prioritiesList);
@@ -3037,11 +3074,12 @@
         resultsHeading.textContent = title;
         resultsShell.hidden = false;
         document.body.classList.add("has-results");
+        resultsHeading.classList.add("is-programmatically-focused");
         resultsHeading.focus();
         resultsShell.scrollIntoView({ block: "start" });
       }
 
-      function createObservationCard(observation, resultArea) {
+      function createObservationCard(observation, resultArea, presentation) {
         var card = document.createElement("article");
         card.className = "observation-card";
 
@@ -3049,14 +3087,23 @@
         header.className = "observation-header";
 
         var heading = document.createElement("h4");
-        heading.textContent = cleanText(observation.label) || "Visible observation";
+        var observationId = cleanText(observation.id);
+        heading.textContent = presentation === "strength"
+          ? (positiveObservationLabels[observationId] || consumerObservationLabel(observation.label) || "Photo strength")
+          : (consumerObservationLabel(observation.label) || "Photo detail");
         header.appendChild(heading);
 
         var level = cleanText(observation.level);
         if (level) {
           var levelTag = document.createElement("span");
           levelTag.className = "level-tag";
-          levelTag.textContent = level.replace(/_/g, " ");
+          if (presentation === "strength") {
+            levelTag.textContent = level === "not_observed" ? "Looks strong" : "Soft detail";
+          } else {
+            levelTag.textContent = profileLevelCopy[level]
+              ? profileLevelCopy[level].label
+              : level.replace(/_/g, " ");
+          }
           header.appendChild(levelTag);
         }
 
@@ -3098,7 +3145,7 @@
         return map;
       }
 
-      function renderObservationGroup(ids, map, container, section, resultArea) {
+      function renderObservationGroup(ids, map, container, section, resultArea, presentation) {
         clearNode(container);
         var uniqueIds = Array.isArray(ids) ? ids.filter(function (id, index, array) {
           return typeof id === "string" && array.indexOf(id) === index;
@@ -3107,7 +3154,7 @@
         uniqueIds.forEach(function (id) {
           var observation = map.get(id);
           if (observation) {
-            container.appendChild(createObservationCard(observation, resultArea));
+            container.appendChild(createObservationCard(observation, resultArea, presentation));
           }
         });
 
@@ -3132,28 +3179,22 @@
 
       function renderResultSummary(data) {
         clearNode(resultInsights);
-        var observations = Array.isArray(data.observations) ? data.observations : [];
-        var reviewedCount = observations.filter(function (observation) {
-          return observation && observation.level !== "unable_to_assess";
-        }).length;
         var summary = window.VonResultSummary.build(data);
 
         resultSummaryHeading.textContent = summary.heading;
         resultSummaryCopy.textContent = summary.copy;
         strengthsHeading.textContent = summary.strengthsHeading;
         planIntro.textContent = summary.planIntro;
-        appendResultInsight("Top visible focus", summary.primaryInsightValue);
+        appendResultInsight("Clearest focus", summary.primaryInsightValue);
         appendResultInsight(summary.secondaryInsightLabel, summary.secondaryInsightValue);
-        appendResultInsight(
-          "Profile coverage",
-          observations.length ? reviewedCount + " of " + observations.length + " categories reviewed" : "No categories reviewed"
-        );
+        appendResultInsight("Von & Co options", summary.optionInsightValue);
+        return summary;
       }
 
       function createProfileItem(observation, resultArea) {
         var level = cleanText(observation && observation.level);
         var levelInfo = profileLevelCopy[level];
-        var label = cleanText(observation && observation.label);
+        var label = consumerObservationLabel(observation && observation.label);
         if (!levelInfo || !label) {
           return null;
         }
@@ -3210,6 +3251,15 @@
         clearNode(profileList);
         var observations = Array.isArray(data.observations) ? data.observations.slice() : [];
         observations.sort(function (left, right) {
+          var leftLevel = Object.prototype.hasOwnProperty.call(profileLevelOrder, left.level)
+            ? profileLevelOrder[left.level]
+            : 5;
+          var rightLevel = Object.prototype.hasOwnProperty.call(profileLevelOrder, right.level)
+            ? profileLevelOrder[right.level]
+            : 5;
+          if (leftLevel !== rightLevel) {
+            return leftLevel - rightLevel;
+          }
           return profileOrder.indexOf(left.id) - profileOrder.indexOf(right.id);
         });
         observations.forEach(function (observation) {
@@ -3230,7 +3280,7 @@
           data.observations.filter(function (observation) {
             return observation && observation.level === "unable_to_assess";
           }).slice(0, 3).forEach(function (observation) {
-            limitationsList.appendChild(createObservationCard(observation, resultArea));
+            limitationsList.appendChild(createObservationCard(observation, resultArea, "limitation"));
           });
         }
 
@@ -3276,7 +3326,7 @@
         }) : [];
         uniqueIds.slice(0, 3).forEach(function (id) {
           var observation = map && map.get(id);
-          var label = cleanText(observation && observation.label);
+          var label = consumerObservationLabel(observation && observation.label);
           if (label) {
             appendRecommendationTag(container, label, "");
           }
@@ -3309,8 +3359,8 @@
         var rank = document.createElement("p");
         rank.className = "recommendation-rank";
         rank.textContent = recommendationUsesVisiblePriority(service, map)
-          ? (index === 0 ? "Priority match" : "Profile match")
-          : "Maintenance match";
+          ? (index === 0 ? "First to explore" : "Also worth exploring")
+          : "For maintaining balance";
         card.appendChild(rank);
 
         var category = document.createElement("p");
@@ -3333,11 +3383,7 @@
         if (why) {
           var whyText = document.createElement("p");
           whyText.className = "recommendation-why";
-          var whyLabel = document.createElement("span");
-          whyLabel.className = "recommendation-why-label";
-          whyLabel.textContent = "Why this matches: ";
-          whyText.appendChild(whyLabel);
-          whyText.appendChild(document.createTextNode(why));
+          whyText.textContent = why;
           card.appendChild(whyText);
         }
 
@@ -3382,8 +3428,8 @@
         rank.textContent = relationship === "Daily protection"
           ? "Daily essential"
           : (recommendationUsesVisiblePriority(product, map)
-            ? (index === 0 ? "Priority match" : "Profile match")
-            : "Maintenance pick");
+            ? (index === 0 ? "First at-home step" : "Another option")
+            : "For maintaining balance");
         card.appendChild(rank);
 
         var brand = document.createElement("p");
@@ -3399,7 +3445,6 @@
         tags.className = "recommendation-tags";
         appendMatchedObservationTags(tags, product.matchedObservationIds, map);
         appendRecommendationTag(tags, product.category, "");
-        appendRecommendationTag(tags, relationship, "relationship-tag");
         if (tags.childElementCount) {
           card.appendChild(tags);
         }
@@ -3408,11 +3453,7 @@
         if (why) {
           var whyText = document.createElement("p");
           whyText.className = "recommendation-why";
-          var whyLabel = document.createElement("span");
-          whyLabel.className = "recommendation-why-label";
-          whyLabel.textContent = "Why this matches: ";
-          whyText.appendChild(whyLabel);
-          whyText.appendChild(document.createTextNode(why));
+          whyText.textContent = why;
           card.appendChild(whyText);
         }
 
@@ -3477,15 +3518,15 @@
         var productCount = productsList.childElementCount;
         servicesSection.hidden = serviceCount === 0;
         productsSection.hidden = productCount === 0;
-        servicesHeading.textContent = "In-studio matches (" + serviceCount + ")";
-        productsHeading.textContent = "Skincare matches (" + productCount + ")";
+        servicesHeading.textContent = "In-studio options (" + serviceCount + ")";
+        productsHeading.textContent = "Skincare options (" + productCount + ")";
         servicesJump.textContent = "In-studio (" + serviceCount + ")";
         productsJump.textContent = "Skincare (" + productCount + ")";
         servicesJump.hidden = serviceCount === 0;
         productsJump.hidden = productCount === 0;
         recommendationJump.hidden = serviceCount === 0 && productCount === 0;
-        configureRecommendationDisclosure(servicesList, servicesMoreButton, "in-studio matches");
-        configureRecommendationDisclosure(productsList, productsMoreButton, "skincare matches");
+        configureRecommendationDisclosure(servicesList, servicesMoreButton, "in-studio options");
+        configureRecommendationDisclosure(productsList, productsMoreButton, "skincare options");
         recommendationsEmpty.hidden = serviceCount > 0 || productCount > 0;
       }
 
@@ -3503,9 +3544,9 @@
 
         var resultArea = areaPlans[data.bodyArea] ? data.bodyArea : (state.requestBodyArea || bodyArea.value);
         var map = observationsById(data);
-        renderResultSummary(data);
-        renderObservationGroup(data.strengths, map, strengthsList, strengthsSection, resultArea);
-        renderObservationGroup(data.priorities, map, prioritiesList, prioritiesSection, resultArea);
+        var summary = renderResultSummary(data);
+        renderObservationGroup(summary.priorityIds, map, prioritiesList, prioritiesSection, resultArea, "priority");
+        renderObservationGroup(data.strengths, map, strengthsList, strengthsSection, resultArea, "strength");
         renderProfile(data, resultArea);
         renderLimitations(data, resultArea);
         renderRecommendations(data.appearanceRecommendations, map);
@@ -3759,6 +3800,9 @@
       analyzeAnotherButton.addEventListener("click", returnToPhotos);
       printButton.addEventListener("click", function () {
         window.print();
+      });
+      resultsHeading.addEventListener("blur", function () {
+        resultsHeading.classList.remove("is-programmatically-focused");
       });
 
       window.addEventListener("pagehide", function () {
