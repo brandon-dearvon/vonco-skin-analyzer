@@ -1135,6 +1135,17 @@ class ServerContractTests(unittest.TestCase):
             cta_tag = html[cta_tag_start : html.index(">", cta_tag_start) + 1]
             self.assertNotIn("target=", cta_tag)
             self.assertNotIn("opens in a new tab", cta_tag)
+            self.assertEqual(
+                html.count("width: min(1040px, calc(100% - 40px));"),
+                2,
+            )
+
+            mobile_css_start = html.index("@media (max-width: 760px)")
+            mobile_css = html[
+                mobile_css_start : html.index("@media (max-width: 430px)", mobile_css_start)
+            ]
+            self.assertIn("width: min(100% - 32px, 680px);", mobile_css)
+            self.assertIn("width: calc(100% - 32px);", mobile_css)
         finally:
             response.close()
 
