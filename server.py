@@ -1,10 +1,9 @@
 """
 Von & Co Aesthetics Skin Analyzer Backend
-Flask server for AI-powered skin analysis using Claude vision API
+Flask server for AI-powered skin analysis using Google Gemini
 """
 
 import os
-import base64
 import json
 import random
 from pathlib import Path
@@ -17,7 +16,6 @@ import time
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
-from anthropic import Anthropic
 from google import genai
 from google.genai import types as genai_types
 
@@ -42,24 +40,19 @@ def add_no_cache_headers(response):
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
     return response
-API_KEY = os.getenv("ANTHROPIC_API_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GOOGLE_MODEL = "gemini-3.1-pro-preview"
 PORT = int(os.getenv("PORT", "5002"))
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 FORCE_DEMO_MODE = os.getenv("DEMO_MODE", "false").lower() == "true"
 
 # Determine mode
-LIVE_MODE = bool(API_KEY) and not FORCE_DEMO_MODE
+LIVE_MODE = bool(GOOGLE_API_KEY) and not FORCE_DEMO_MODE
 MODE = "live" if LIVE_MODE else "demo"
 
-# Initialize Anthropic client (only if in live mode)
-client = Anthropic() if LIVE_MODE else None
-
-# Initialize Google Gemini client for fast vision processing
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-gemini_client = None
-if GOOGLE_API_KEY:
-    gemini_client = genai.Client(api_key=GOOGLE_API_KEY)
-    print("[Gemini] Initialized google-genai client for gemini-2.5-flash vision pipeline")
+gemini_client = genai.Client(api_key=GOOGLE_API_KEY) if LIVE_MODE else None
+if gemini_client:
+    print(f"[Gemini] Initialized google-genai client for {GOOGLE_MODEL} with high thinking")
 
 # Rate limiting - protects against API cost abuse
 # Max 5 analyses per IP per hour
@@ -920,7 +913,7 @@ BODY_AREA_PROMPTS = {
 }
 
 def build_user_prompt(user_age=None, body_area="face"):
-    """Build the user prompt for the Claude vision API, including age and body area."""
+    """Build the user prompt for the Google Gemini vision API, including age and body area."""
     area_instruction = BODY_AREA_PROMPTS.get(body_area, BODY_AREA_PROMPTS["face"])
     base = f"Please analyze this skin image and provide a detailed assessment in the JSON format specified. {area_instruction}"
     if user_age and body_area == "face":
@@ -1078,20 +1071,20 @@ def analyze():
                     "reason": "Our skin analysis and treatment recommendations are designed for adults (18+). Medical aesthetic treatments are not appropriate for minors."
                 }), 422
         except ValueError:
-            pass  # Non-numeric age, let Claude handle it
+            pass  # Non-numeric age, let the AI handle it
 
     # Demo mode
     if not LIVE_MODE:
         analysis = generate_demo_analysis(body_area)
         return jsonify(analysis)
 
-    # Live mode - dual-model pipeline: Gemini vision → Claude analysis
+    # Live mode - Google Gemini vision and analysis
     try:
         t_start = time.time()
 
         # ── Normalize image bytes ──
         # Some JPEGs have unusual encoding (CMYK, progressive issues, EXIF
-        # rotation) that cause both Claude and Gemini to reject them.
+        # rotation) that can cause image-analysis APIs to reject them.
         # Re-encode through Pillow to produce clean RGB JPEG bytes.
         try:
             from PIL import Image as PILImage
@@ -1114,112 +1107,60 @@ def analyze():
         except Exception as img_err:
             print(f"  [Image] Could not re-encode ({img_err}), using original bytes")
 
-        # Encode image to base64
-        image_base64 = base64.standard_b64encode(image_bytes).decode("utf-8")
-
-        # ── SINGLE-MODEL PIPELINE: Gemini 2.5 Flash (vision + JSON analysis) ──
-        # One fast call does everything: see the image + produce structured JSON.
-        # Claude Sonnet is kept as fallback only if Gemini is unavailable/fails.
-
+        # ── SINGLE-MODEL PIPELINE: Gemini 3.1 Pro (vision + JSON analysis) ──
         image_part = genai_types.Part.from_bytes(data=image_bytes, mime_type=media_type)
         user_prompt = build_user_prompt(request.form.get("age"), body_area)
 
         analysis = None
 
-        # Try Gemini models in priority order: 2.5-flash (best, thinking model) → 2.0-flash (stable fallback)
-        GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash"]
+        for attempt in range(1, 3):
+            try:
+                # Google recommends its default temperature of 1.0 for Gemini 3.
+                gemini_response = gemini_client.models.generate_content(
+                    model=GOOGLE_MODEL,
+                    contents=[image_part, user_prompt],
+                    config=genai_types.GenerateContentConfig(
+                        system_instruction=SYSTEM_PROMPT,
+                        max_output_tokens=65536,
+                        response_mime_type="application/json",
+                        thinking_config=genai_types.ThinkingConfig(
+                            thinking_level=genai_types.ThinkingLevel.HIGH,
+                        ),
+                    )
+                )
+                response_text = gemini_response.text.strip()
+                if not response_text:
+                    raise ValueError("Google Gemini returned no text response")
 
-        if gemini_client:
-            for model_name in GEMINI_MODELS:
-                if analysis is not None:
-                    break
-                for attempt in range(1, 3):
-                    try:
-                        # Gemini 2.5 Flash is a "thinking" model — internal reasoning tokens
-                        # consume the max_output_tokens budget. Set 8192 to leave plenty of
-                        # room for both thinking and the ~3-5KB JSON response.
-                        gemini_response = gemini_client.models.generate_content(
-                            model=model_name,
-                            contents=[image_part, user_prompt],
-                            config=genai_types.GenerateContentConfig(
-                                system_instruction=SYSTEM_PROMPT,
-                                max_output_tokens=8192,
-                                temperature=0.3,
-                            )
-                        )
-                        response_text = gemini_response.text.strip()
-                        t_done = time.time()
-                        print(f"  [Pipeline] {model_name} vision+analysis completed in {t_done - t_start:.1f}s ({len(response_text)} chars) [attempt {attempt}]")
+                t_done = time.time()
+                print(f"  [Pipeline] {GOOGLE_MODEL} vision+analysis completed in {t_done - t_start:.1f}s ({len(response_text)} chars) [attempt {attempt}]")
 
-                        # Strip markdown fences if present
-                        if response_text.startswith("```json"):
-                            response_text = response_text[7:]
-                        if response_text.startswith("```"):
-                            response_text = response_text[3:]
-                        if response_text.endswith("```"):
-                            response_text = response_text[:-3]
-                        response_text = response_text.strip()
+                # Strip markdown fences if present
+                if response_text.startswith("```json"):
+                    response_text = response_text[7:]
+                if response_text.startswith("```"):
+                    response_text = response_text[3:]
+                if response_text.endswith("```"):
+                    response_text = response_text[:-3]
+                response_text = response_text.strip()
 
-                        analysis = json.loads(response_text)
-                        break  # success — exit attempt loop
-                    except json.JSONDecodeError as je:
-                        print(f"  [Pipeline] {model_name} attempt {attempt} returned invalid JSON: {je}")
-                        if attempt < 2:
-                            time.sleep(0.5)
-                    except Exception as gemini_err:
-                        print(f"  [Pipeline] {model_name} attempt {attempt} failed: {type(gemini_err).__name__}: {gemini_err}")
-                        if attempt < 2:
-                            time.sleep(0.5)
-                        else:
-                            print(f"  [Pipeline] {model_name} exhausted — trying next model")
-                            break  # exit attempt loop, try next model
-
-        # ── FALLBACK: Claude Sonnet vision (if Gemini unavailable or failed) ──
-        if analysis is None and client:
-            print("  [Pipeline] Gemini unavailable or failed — falling back to Claude Sonnet vision")
-            fallback_response = client.messages.create(
-                model="claude-sonnet-4-5-20250929",
-                max_tokens=2500,
-                system=SYSTEM_PROMPT,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "image",
-                                "source": {
-                                    "type": "base64",
-                                    "media_type": media_type,
-                                    "data": image_base64,
-                                },
-                            },
-                            {
-                                "type": "text",
-                                "text": user_prompt,
-                            }
-                        ],
-                    }
-                ],
-                timeout=60.0,
-            )
-            t_done = time.time()
-            print(f"  [Pipeline] Claude vision fallback completed in {t_done - t_start:.1f}s")
-            response_text = fallback_response.content[0].text.strip()
-            if response_text.startswith("```json"):
-                response_text = response_text[7:]
-            if response_text.startswith("```"):
-                response_text = response_text[3:]
-            if response_text.endswith("```"):
-                response_text = response_text[:-3]
-            response_text = response_text.strip()
-            analysis = json.loads(response_text)
+                analysis = json.loads(response_text)
+                break
+            except json.JSONDecodeError as je:
+                print(f"  [Pipeline] {GOOGLE_MODEL} attempt {attempt} returned invalid JSON: {je}")
+                if attempt < 2:
+                    time.sleep(0.5)
+            except Exception as gemini_err:
+                print(f"  [Pipeline] {GOOGLE_MODEL} attempt {attempt} failed: {type(gemini_err).__name__}: {gemini_err}")
+                if attempt < 2:
+                    time.sleep(0.5)
 
         if analysis is None:
-            raise Exception("Both Gemini and Claude failed to produce a valid analysis")
+            raise Exception("Google Gemini failed to produce a valid analysis")
 
         # Free image data from memory
         try:
-            del image_bytes, image_base64, image_part
+            del image_bytes, image_part
         except NameError:
             pass
         import gc; gc.collect()
@@ -1280,10 +1221,9 @@ def print_startup_banner():
     ╚══════════════════════════════════════════════════════════════╝
     
     Mode: {MODE.upper()}
-    {f"Anthropic Key: {'*' * 10}{API_KEY[-10:] if API_KEY else 'Not configured'}" if LIVE_MODE else "Demo Mode - No API Key"}
-    Gemini: {"Enabled (gemini-2.5-flash)" if gemini_client else "Not configured"}
-    Pipeline: {"Gemini Flash single-call (vision+analysis)" if gemini_client else "Claude Sonnet vision fallback"}
-    Claude Fallback: {"Available" if client else "Not configured"}
+    {f"Google Key: {'*' * 10}{GOOGLE_API_KEY[-10:]}" if LIVE_MODE else "Demo Mode - No Google API Key"}
+    Gemini: {f"Enabled ({GOOGLE_MODEL}, high thinking)" if LIVE_MODE else "Not configured"}
+    Pipeline: Google Gemini single-call (vision+analysis)
     Debug: {DEBUG}
     Port: {PORT}
     
