@@ -24,7 +24,7 @@ fi
 
 # Create .env from env.txt if neither exists
 if [ ! -f .env ] && [ ! -f env.txt ]; then
-    echo "  ⚠️  No config found. Edit env.txt to add your ANTHROPIC_API_KEY"
+    echo "  ⚠️  No config found. Edit env.txt to add your GOOGLE_API_KEY"
     echo ""
 fi
 
@@ -36,10 +36,13 @@ elif [ -f .env ]; then
 fi
 PORT=${PORT:-5002}
 
-# Install dependencies if needed
-if ! python3 -c "import flask" 2>/dev/null; then
+# Install dependencies if Flask or the pinned Google SDK capability is missing.
+if ! python3 -c "import flask; import importlib.metadata as m; from google.genai import types; assert m.version('google-genai') == '2.11.0'; assert types.ThinkingLevel.HIGH.value == 'HIGH'" 2>/dev/null; then
     echo "  📦 Installing dependencies..."
-    pip3 install -r requirements.txt
+    if ! pip3 install -r requirements.txt; then
+        echo "  ❌ Dependency installation failed. Review the error above and try again."
+        exit 1
+    fi
     echo ""
 fi
 

@@ -18,15 +18,19 @@ if not exist .env (
     if exist env.txt (
         copy env.txt .env >nul
         echo   Created .env from env.txt
-        echo   Edit .env to add your ANTHROPIC_API_KEY for AI features
+        echo   Edit .env to add your GOOGLE_API_KEY for AI features
         echo.
     )
 )
 
-python -c "import flask" >nul 2>&1
+python -c "import flask; import importlib.metadata as m; from google.genai import types; assert m.version('google-genai') == '2.11.0'; assert types.ThinkingLevel.HIGH.value == 'HIGH'" >nul 2>&1
 if errorlevel 1 (
     echo   Installing dependencies...
     pip install -r requirements.txt
+    if errorlevel 1 (
+        echo   Dependency installation failed. Review the error above and try again.
+        exit /b 1
+    )
     echo.
 )
 

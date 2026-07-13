@@ -9,7 +9,7 @@ worker_class = "gthread"
 threads = 4
 workers = 1
 
-# 120s timeout — critical for Gemini (10s) + Claude (15s) pipeline
+# Allow enough time for the configured Gemini Pro high-thinking request.
 timeout = 120
 
 # Recycle workers every 50 requests to prevent memory leaks

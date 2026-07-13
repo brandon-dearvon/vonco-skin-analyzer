@@ -57,7 +57,20 @@ ANALYSIS_RESPONSE_SCHEMA = {
             "type": "object",
             "properties": {
                 "overallScore": {"type": "integer", "minimum": 0, "maximum": 100},
-                "skinAge": {"type": ["string", "null"]},
+                "positiveHighlights": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 3,
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "title": {"type": "string"},
+                            "detail": {"type": "string"},
+                        },
+                        "required": ["title", "detail"],
+                        "additionalProperties": False,
+                    },
+                },
                 "concerns": {
                     "type": "object",
                     "additionalProperties": {
@@ -108,7 +121,7 @@ ANALYSIS_RESPONSE_SCHEMA = {
             },
             "required": [
                 "overallScore",
-                "skinAge",
+                "positiveHighlights",
                 "concerns",
                 "recommendations",
                 "productRecommendations",
@@ -174,16 +187,20 @@ If the person in the photo appears to be under 18 years old (a child, preteen, o
 {"rejected": true, "reason": "Our skin analysis is designed for adults (18+). Medical aesthetic treatments are not recommended for minors. If you're over 18 and we got it wrong, we apologize! Try a different photo and we'll take another look!"}
 This applies even if the user enters an adult age. Trust what you SEE in the photo, not the age they typed.
 
-STEP 5: Does the claimed age wildly mismatch what you see?
-If the user provides an age AND you can see a face, compare the entered age to the apparent age in the photo. If there is a dramatic mismatch, note it gently in the summary. Do NOT reject. Still analyze based on what the skin ACTUALLY looks like.
+STEP 5: Do not produce or compare an estimated skin age for an adult guest. The entered age is context only and must never appear as an apparent-age comparison in the result.
 
-STEP 6: Does the image show a concerning medical condition?
-If you see something that looks like it could be a suspicious mole, an open wound, a severe rash, or signs of a condition that warrants medical evaluation, include a gentle note in the summary field. Do NOT diagnose. Still provide the aesthetic analysis alongside this note.
+MEDICAL BOUNDARY: Do not identify, assess, flag, rule out, or comment on lesions or medical conditions. A fixed small-print referral disclaimer is added separately after the analysis.
 
 Do NOT attempt to analyze non-skin images. Do NOT make jokes about non-skin uploads. Just return the rejection JSON.
 === END IMAGE VALIDATION ===
 
 VOICE & TONE: Speak like a knowledgeable, warm aesthetics provider. Be specific about what you see. Use clinical language but keep it accessible. Make the guest feel understood and cared for, not judged. Frame everything positively. Focus on what can be improved and how great they will feel.
+
+POSITIVE-FIRST REQUIREMENT:
+- Begin every completed analysis with 2 or 3 specific positiveHighlights grounded in appealing qualities that are actually visible in the submitted photo.
+- State the appealing quality directly. Never phrase a positive as the absence of a concern, such as "redness does not stand out," "no wrinkles," or "minimal pores."
+- Each highlight needs a concise title and one natural sentence of detail.
+- The summary must open with a genuine positive observation before discussing areas the guest may want to refine.
 
 FORMATTING RULES: NEVER use em dashes (the long dash character). Use commas, periods, colons, or semicolons instead. NEVER use en dashes. Use "to" for ranges. This is a hard requirement for every string in your response.
 
@@ -278,7 +295,12 @@ Analyze the skin image and respond with ONLY valid JSON (no markdown, no code bl
 
 {
   "overallScore": <0-100 integer>,
-  "skinAge": "<estimated skin age, e.g. 'mid-30s' or '40-45'>",
+  "positiveHighlights": [
+    {
+      "title": "<concise name for a visible strength>",
+      "detail": "<specific, complimentary observation grounded in the photo>"
+    }
+  ],
   "concerns": {
     "wrinkles": {"score": <0-100>, "severity": "<none|mild|moderate|severe>", "description": "<warm, specific description of what you see>"},
     "redness": {"score": <0-100>, "severity": "<none|mild|moderate|severe>", "description": "<warm, specific description>"},
@@ -331,7 +353,7 @@ EXAMPLES OF REALISTIC CONCERN SPREADS:
 
 3. Be SPECIFIC about what you actually see. Don't use generic filler descriptions. Reference specific areas of the face/body, visible features, and real observations. Vague analysis = not credible.
 
-4. Skin age estimates should be realistic. A 2-5 year range in either direction is credible. If you can't estimate age from a non-face photo, set skinAge to null.
+4. The positiveHighlights must describe attractive qualities actually visible in the submitted image. Do not invent praise and do not describe only the absence of a concern.
 
 5. Treatment recommendations must match the actual severity. Don't recommend Halo (aggressive laser) for barely visible concerns. Match treatment intensity to severity.
 
@@ -409,8 +431,6 @@ Overall Skin Quality / Prejuvenation:
 
 def generate_demo_analysis(body_area="face"):
     """Generate realistic demo analysis with clinically accurate treatment matching per body area"""
-    skin_ages = ["late 20s", "early 30s", "mid-30s", "late 30s", "early 40s", "mid-40s"]
-
     # Pick a random skin profile to ensure score variety
     profile = random.choice(["excellent", "good", "average", "moderate", "significant"])
     profile_offsets = {"excellent": -20, "good": -10, "average": 0, "moderate": 15, "significant": 25}
@@ -584,6 +604,26 @@ def generate_demo_analysis(body_area="face"):
 
     # Sort concerns by score (highest = most visible = treat first)
     ranked = sorted(concerns.items(), key=lambda x: x[1]["score"], reverse=True)
+
+    positive_copy = {
+        "wrinkles": ("Graceful expression", "Your natural expression gives the area warmth and character."),
+        "redness": ("Balanced-looking tone", "The visible tone has a fresh, naturally balanced quality."),
+        "darkSpots": ("Clear-looking complexion", "The complexion has an appealing clarity worth preserving."),
+        "texture": ("Refined texture", "The visible surface appears smooth and polished."),
+        "pores": ("Smooth-looking finish", "The skin has a refined, even-looking finish."),
+        "laxity": ("Supported contours", "The visible contours retain a naturally supported look."),
+        "sunDamage": ("Luminous quality", "The visible skin has a bright, luminous quality."),
+        "unevenTone": ("Harmonious tone", "The overall tone looks harmonious and composed."),
+        "veins": ("Elegant definition", "The area has a naturally elegant definition."),
+        "dryness": ("Soft-looking surface", "The visible surface has a soft, comfortable-looking finish."),
+        "acne": ("Fresh foundation", "The surrounding skin has a fresh-looking foundation."),
+        "scarring": ("Even-looking surface", "The visible surface has areas of smooth, even texture."),
+        "hairRemoval": ("Well-kept appearance", "The area has a clean, well-kept appearance."),
+    }
+    positive_highlights = [
+        {"title": positive_copy[key][0], "detail": positive_copy[key][1]}
+        for key, _ in sorted(concerns.items(), key=lambda item: item[1]["score"])[:2]
+    ]
 
     # Area-specific treatment maps (using exact Von & Co treatment names)
     treatment_maps = {
@@ -776,15 +816,16 @@ def generate_demo_analysis(body_area="face"):
     }
     top_two = [concern_names_map.get(r[0], r[0]) for r in ranked[:2] if r[1]["score"] > 20]
     top_treatments = [r["treatment"] for r in recs[:2]]
+    positive_opening = positive_highlights[0]["detail"]
 
     if top_two and top_treatments:
-        summary = f"Your {area_label} shows some signs of {' and '.join(top_two)}. A combination of {' and '.join(top_treatments)} would help restore a smoother, more youthful appearance. We'd love to start with a complimentary VISIA consultation to map your skin in clinical detail."
+        summary = f"{positive_opening} Your {area_label} shows some signs of {' and '.join(top_two)}. A combination of {' and '.join(top_treatments)} would help restore a smoother, more youthful appearance. We'd love to start with a complimentary VISIA consultation to map your skin in clinical detail."
     else:
-        summary = f"Your {area_label} looks great overall! A targeted maintenance plan can help keep things looking their best. A complimentary VISIA consultation would give us even deeper insights."
+        summary = f"{positive_opening} A targeted maintenance plan can help keep things looking their best. A complimentary VISIA consultation would give us even deeper insights."
 
     return {
         "overallScore": base_score,
-        "skinAge": random.choice(skin_ages) if body_area == "face" else None,
+        "positiveHighlights": positive_highlights,
         "concerns": concerns,
         "recommendations": recs,
         "productRecommendations": product_recs,
@@ -856,7 +897,7 @@ def generate_report():
         analysis = data.get("analysis", {})
 
         overall = analysis.get("overallScore", "...")
-        skin_age = analysis.get("skinAge", "...")
+        positive_highlights = analysis.get("positiveHighlights", [])
         summary = analysis.get("summary", "")
         concerns = analysis.get("concerns", {})
         recs = analysis.get("recommendations", [])
@@ -892,12 +933,24 @@ def generate_report():
             treatment = rec.get("treatment", "")
             reason = rec.get("reason", "")
             rec_items += f"""
-            <div style="display:flex; gap:12px; margin-bottom:14px; align-items:flex-start;">
+            <div class="report-item" style="display:flex; gap:12px; margin-bottom:14px; align-items:flex-start;">
                 <div style="min-width:28px; height:28px; background:#516b62; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:0.85em;">{i}</div>
                 <div>
                     <div style="font-weight:600; color:#1d1d1b; margin-bottom:2px;">{treatment}</div>
                     <div style="color:#555; font-size:0.9em;">{reason}</div>
                 </div>
+            </div>"""
+
+        positive_items = ""
+        for highlight in positive_highlights[:3]:
+            if not isinstance(highlight, dict):
+                continue
+            title = highlight.get("title", "")
+            detail = highlight.get("detail", "")
+            positive_items += f"""
+            <div style="flex:1; min-width:190px; padding:14px 16px; background:#faf8f5; border-left:3px solid #c0c8a9; border-radius:0 8px 8px 0;">
+                <div style="font-family:Georgia,serif; color:#516862; margin-bottom:3px;">{title}</div>
+                <div style="color:#555; font-size:0.9em; line-height:1.5;">{detail}</div>
             </div>"""
 
         html = f"""<!DOCTYPE html>
@@ -907,22 +960,32 @@ def generate_report():
   * {{ margin:0; padding:0; box-sizing:border-box; }}
   body {{ font-family:'Fira Sans',sans-serif; color:#1d1d1b; background:#fff; }}
   .page {{ max-width:800px; margin:0 auto; padding:40px; }}
+  @media print {{
+    .report-section-title {{ break-after:avoid-page; page-break-after:avoid; }}
+    .report-item, tr {{ break-inside:avoid; page-break-inside:avoid; }}
+  }}
 </style>
 </head><body>
 <div class="page">
   <!-- Header -->
-  <div style="background:#516b62; padding:30px 35px; border-radius:12px 12px 0 0; text-align:center;">
-    <div style="font-family:'Cormorant Garamond',serif; font-size:1.8em; color:#fff; font-weight:500;">Von & Co Aesthetics</div>
-    <div style="color:#ebe4d5; font-size:0.9em; margin-top:4px; letter-spacing:1px;">PERSONALIZED SKIN ANALYSIS REPORT</div>
+  <div style="background:#fff; padding:24px 35px 20px; border:1px solid #ebe9e4; border-radius:12px 12px 0 0; text-align:center;">
+    <img src="/logo.png" alt="Von & Co Medical Aesthetics Studio" width="1549" height="848" style="display:block; width:190px; height:auto; margin:0 auto 10px;">
+    <div style="color:#516862; font-size:0.9em; letter-spacing:1px;">PERSONALIZED SKIN ANALYSIS REPORT</div>
   </div>
 
   <!-- Patient Info Bar -->
-  <div style="background:#ebe9e4; padding:16px 35px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+  <div style="background:#ebe9e4; padding:16px 35px;">
     <div><span style="color:#888; font-size:0.85em;">Prepared for </span><strong>{name}</strong></div>
-    <div style="display:flex; gap:24px;">
-      <div><span style="color:#888; font-size:0.85em;">Overall Score: </span><strong style="color:#516b62; font-size:1.1em;">{overall}/100</strong></div>
-      <div><span style="color:#888; font-size:0.85em;">Est. Skin Age: </span><strong style="color:#516b62;">{skin_age}</strong></div>
-    </div>
+  </div>
+
+  <!-- Positives first -->
+  <div style="margin:25px 0 20px;">
+    <div style="font-family:'Cormorant Garamond',serif; font-size:1.4em; color:#516862; margin-bottom:12px;">What Looks Especially Good</div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">{positive_items}</div>
+  </div>
+
+  <div style="padding:14px 18px; border:1px solid #ebe9e4; border-radius:8px; margin-bottom:20px;">
+    <span style="color:#888; font-size:0.85em;">Overall Score: </span><strong style="color:#516b62; font-size:1.1em;">{overall}/100</strong>
   </div>
 
   <!-- Summary -->
@@ -933,7 +996,7 @@ def generate_report():
 
   <!-- Concerns Table -->
   <div style="margin:0 0 30px;">
-    <div style="font-family:'Cormorant Garamond',serif; font-size:1.4em; color:#516b62; margin-bottom:14px; padding:0 0 8px; border-bottom:2px solid #ebe9e4;">Skin Analysis Results</div>
+    <div class="report-section-title" style="font-family:'Cormorant Garamond',serif; font-size:1.4em; color:#516b62; margin-bottom:14px; padding:0 0 8px; border-bottom:2px solid #ebe9e4;">Skin Analysis Results</div>
     <table style="width:100%; border-collapse:collapse;">
       <tr style="background:#f5f3f0;">
         <th style="padding:10px 12px; text-align:left; font-size:0.85em; text-transform:uppercase; letter-spacing:0.5px; color:#888;">Concern</th>
@@ -946,7 +1009,7 @@ def generate_report():
 
   <!-- Recommendations -->
   <div style="margin:0 0 30px;">
-    <div style="font-family:'Cormorant Garamond',serif; font-size:1.4em; color:#516b62; margin-bottom:14px; padding:0 0 8px; border-bottom:2px solid #ebe9e4;">Recommended Treatments</div>
+    <div class="report-section-title" style="font-family:'Cormorant Garamond',serif; font-size:1.4em; color:#516b62; margin-bottom:14px; padding:0 0 8px; border-bottom:2px solid #ebe9e4;">Recommended Treatments</div>
     {rec_items}
   </div>
 
@@ -971,7 +1034,7 @@ def generate_report():
   </div>
 
   <div style="text-align:center; margin-top:16px; font-size:0.75em; color:#aaa;">
-    This AI analysis is a preview of the personalized care at Von & Co Aesthetics and does not replace a professional consultation.
+    This AI analysis is a preview and does not replace a professional consultation. Any concerning lesion needs an in-person medical evaluation.
   </div>
 </div>
 </body></html>"""
@@ -993,12 +1056,8 @@ def build_user_prompt(user_age=None, body_area="face"):
     """Build the user prompt for the Google Gemini vision API, including age and body area."""
     area_instruction = BODY_AREA_PROMPTS.get(body_area, BODY_AREA_PROMPTS["face"])
     base = f"Please analyze this skin image and provide a detailed assessment in the JSON format specified. {area_instruction}"
-    if user_age and body_area == "face":
-        base += f" The patient is {user_age} years old. compare their estimated skin age to their actual age and reference this in your summary."
-    elif user_age:
-        base += f" The patient is {user_age} years old."
-    if body_area != "face":
-        base += " Set skinAge to null since this is not a facial analysis."
+    if user_age:
+        base += f" The guest entered age {user_age}. Use it only for adult eligibility and general context. Never return, infer, or compare an adult skin-age estimate."
     return base
 
 
@@ -1063,8 +1122,7 @@ def _apply_score_correction(analysis):
 
 
 def _sanitize_response(analysis):
-    """Sanitize em dashes and capitalize skinAge."""
-    import re
+    """Sanitize prohibited dash characters in model output."""
 
     def strip_em_dashes(obj):
         if isinstance(obj, str):
@@ -1075,23 +1133,18 @@ def _sanitize_response(analysis):
             return [strip_em_dashes(item) for item in obj]
         return obj
 
-    analysis = strip_em_dashes(analysis)
+    return strip_em_dashes(analysis)
 
-    if "skinAge" in analysis and isinstance(analysis["skinAge"], str):
-        def smart_title(s):
-            words = s.split()
-            skip = {"to", "and", "or"}
-            result = []
-            for i, w in enumerate(words):
-                if re.match(r'^\d', w):
-                    result.append(w)
-                elif w.lower() in skip and i > 0:
-                    result.append(w.lower())
-                else:
-                    result.append(w.capitalize())
-            return " ".join(result)
-        analysis["skinAge"] = smart_title(analysis["skinAge"])
 
+def _ensure_positive_first_summary(analysis):
+    """Mechanically ensure completed copy opens with a supplied visible strength."""
+    highlights = analysis.get("positiveHighlights", [])
+    summary = str(analysis.get("summary", "")).strip()
+    if not highlights or not isinstance(highlights[0], dict):
+        return analysis
+    opening = str(highlights[0].get("detail", "")).strip()
+    if opening and not summary.lower().startswith(opening.lower()):
+        analysis["summary"] = f"{opening} {summary}".strip()
     return analysis
 
 @app.route("/api/analyze", methods=["POST"])
@@ -1153,6 +1206,7 @@ def analyze():
     # Demo mode
     if not LIVE_MODE:
         analysis = generate_demo_analysis(body_area)
+        analysis["_isDemo"] = True
         return jsonify(analysis)
 
     # Live mode - Google Gemini vision and analysis
@@ -1252,6 +1306,7 @@ def analyze():
         # Apply score correction and sanitization
         _apply_score_correction(analysis)
         analysis = _sanitize_response(analysis)
+        analysis = _ensure_positive_first_summary(analysis)
 
         return jsonify(analysis)
 
@@ -1299,7 +1354,7 @@ def print_startup_banner():
     ╚══════════════════════════════════════════════════════════════╝
     
     Mode: {MODE.upper()}
-    {f"Google Key: {'*' * 10}{GOOGLE_API_KEY[-10:]}" if LIVE_MODE else "Demo Mode - No Google API Key"}
+    Google API: {"Configured" if LIVE_MODE else "Not configured"}
     Gemini: {f"Enabled ({GOOGLE_MODEL}, high thinking)" if LIVE_MODE else "Not configured"}
     Pipeline: Google Gemini single-call (vision+analysis)
     Debug: {DEBUG}
