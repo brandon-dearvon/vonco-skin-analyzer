@@ -73,13 +73,26 @@ async function runLiveUpload(browserType, engineName) {
     ).length,
     positiveText: document.getElementById('positiveLead')?.innerText || '',
     recommendationsText: document.getElementById('recommendationsSection')?.innerText || '',
+    planSummary: document.getElementById('resultsPlanSummary')?.textContent || '',
+    visibleFindings: [...document.querySelectorAll('#concernsGrid .concern-card')]
+      .filter(card => !card.hidden && getComputedStyle(card).display !== 'none').length,
+    hiddenFindings: document.querySelectorAll('#concernsGrid .concern-card[hidden]').length,
+    treatmentCards: document.querySelectorAll('#treatmentRecommendationCards .recommendation-card').length,
+    productCards: document.querySelectorAll('#productRecommendationCards .recommendation-card').length,
+    recoveryVisible: document.getElementById('analysisRecovery')?.classList.contains('show'),
   }));
 
   assert.ok(rendered.horizontalOverflow <= 1, `${engineName}: mobile result has no horizontal overflow`);
   assert.equal(rendered.demoBannerVisible, false, `${engineName}: live result has no demo banner`);
   assert.equal(rendered.removedElements, 0, `${engineName}: age and radar remain removed`);
   assert.match(rendered.positiveText, /What Looks Especially Good/i, `${engineName}: positive lead renders first`);
-  assert.match(rendered.recommendationsText, /Curated for You/i, `${engineName}: recommendations render`);
+  assert.match(rendered.recommendationsText, /Your Personalized Plan/i, `${engineName}: personalized plan renders`);
+  assert.match(rendered.planSummary, /treatment options? and .*at-home skincare/i, `${engineName}: result overview points to treatments and skincare`);
+  assert.equal(rendered.visibleFindings, 3, `${engineName}: mobile result opens with three priority findings`);
+  assert.equal(rendered.hiddenFindings, 5, `${engineName}: five additional face findings remain available behind disclosure`);
+  assert.equal(rendered.treatmentCards, pending.recommendations.length, `${engineName}: every treatment recommendation renders`);
+  assert.equal(rendered.productCards, pending.products.length, `${engineName}: every skincare recommendation renders`);
+  assert.equal(rendered.recoveryVisible, false, `${engineName}: successful live analysis does not show timeout recovery`);
   assert.deepEqual(pageErrors, [], `${engineName}: no page errors`);
 
   await page.screenshot({

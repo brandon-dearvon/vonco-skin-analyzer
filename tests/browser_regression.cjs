@@ -40,6 +40,8 @@ const fixture = {
 
 const cases = [
   { name: 'desktop', width: 1280, height: 900 },
+  { name: 'desktop-125-scale', width: 1024, height: 720 },
+  { name: 'desktop-150-scale', width: 853, height: 600 },
   { name: 'mobile', width: 390, height: 844 },
   { name: 'small-mobile', width: 320, height: 568 },
 ];
@@ -110,6 +112,11 @@ async function assertLandingContract(page, engineName, viewport) {
         '#skinAge, [id*="skinAge"], .skin-age, [class*="skin-age"], #radarChart, #radarContainer, .skin-radar',
       ).length,
       mainSiteHref: cta.href,
+      uploadBeforeCamera: Boolean(
+        document.getElementById('dropZone').compareDocumentPosition(document.getElementById('webcamBtn'))
+          & Node.DOCUMENT_POSITION_FOLLOWING
+      ),
+      uploadText: document.getElementById('dropZone').textContent.replace(/\s+/g, ' ').trim(),
     };
   });
 
@@ -134,6 +141,9 @@ async function assertLandingContract(page, engineName, viewport) {
   assert.ok(landing.horizontalOverflow <= 1, `${engineName}/${viewport.name}: landing overflow ${landing.horizontalOverflow}px`);
   assert.equal(landing.removedResultElements, 0, `${engineName}/${viewport.name}: removed age/radar elements are absent`);
   assert.equal(landing.mainSiteHref, 'https://www.vonandcoaesthetics.com/', `${engineName}/${viewport.name}: Learn More reaches the main site`);
+  assert.equal(landing.uploadBeforeCamera, true, `${engineName}/${viewport.name}: upload is the primary choice before camera capture`);
+  assert.match(landing.uploadText, /Upload one clear photo/i, `${engineName}/${viewport.name}: upload card names the one-photo path`);
+  assert.match(landing.uploadText, /No camera capture required\./i, `${engineName}/${viewport.name}: upload card makes camera capture optional`);
 }
 
 async function assertResultContract(page, engineName, viewport, uploadImageParts) {
@@ -182,6 +192,18 @@ async function assertResultContract(page, engineName, viewport, uploadImageParts
       baselineReportButton: document.getElementById('downloadReportBtn')?.textContent.includes('View My Treatment Plan'),
       baselineOfferPresent: document.getElementById('promoBanner')?.textContent.includes('15% Off Your First Visit'),
       baselineClubPresent: document.getElementById('clubUpsell')?.textContent.includes('The Club'),
+      planTeaserVisible: document.getElementById('resultsPlanTeaser')?.getBoundingClientRect().height > 0,
+      planCount: document.getElementById('resultsPlanCount')?.textContent.trim(),
+      planSummary: document.getElementById('resultsPlanSummary')?.textContent.trim(),
+      treatmentGroupTitle: document.querySelector('#treatmentRecommendationsGroup .recommendation-group-title')?.textContent.replace(/\s+/g, ' ').trim(),
+      productGroupTitle: document.querySelector('#productRecommendationsGroup .recommendation-group-title')?.textContent.replace(/\s+/g, ' ').trim(),
+      treatmentCardCount: document.querySelectorAll('#treatmentRecommendationCards .recommendation-card').length,
+      productCardCount: document.querySelectorAll('#productRecommendationCards .recommendation-card').length,
+      initiallyVisibleFindingCount: [...document.querySelectorAll('#concernsGrid .concern-card')]
+        .filter(card => !card.hidden && getComputedStyle(card).display !== 'none').length,
+      initiallyHiddenFindingCount: document.querySelectorAll('#concernsGrid .concern-card[hidden]').length,
+      findingsToggleVisible: !document.getElementById('findingsToggle')?.hidden,
+      findingsToggleExpanded: document.getElementById('findingsToggle')?.getAttribute('aria-expanded'),
       horizontalOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       horizontalOffenders,
       contentMargins,
@@ -202,6 +224,29 @@ async function assertResultContract(page, engineName, viewport, uploadImageParts
   assert.equal(result.baselineReportButton, true, `${engineName}/${viewport.name}: original treatment-plan action remains`);
   assert.equal(result.baselineOfferPresent, true, `${engineName}/${viewport.name}: original new-guest offer remains`);
   assert.equal(result.baselineClubPresent, true, `${engineName}/${viewport.name}: original Club block remains`);
+  assert.equal(result.planTeaserVisible, true, `${engineName}/${viewport.name}: recommendation teaser is visible in the result overview`);
+  assert.equal(result.planCount, '(4)', `${engineName}/${viewport.name}: plan guide shows the total recommendation count`);
+  assert.match(result.planSummary, /2 treatment options and 2 at-home skincare picks/i, `${engineName}/${viewport.name}: plan teaser separates treatment and skincare counts`);
+  assert.equal(result.treatmentGroupTitle, 'Treatment Options (2)', `${engineName}/${viewport.name}: treatment recommendations have a labeled count`);
+  assert.equal(result.productGroupTitle, 'At-Home Skincare (2)', `${engineName}/${viewport.name}: product recommendations have a labeled count`);
+  assert.equal(result.treatmentCardCount, 2, `${engineName}/${viewport.name}: treatment cards render in the treatment group`);
+  assert.equal(result.productCardCount, 2, `${engineName}/${viewport.name}: skincare cards render in the skincare group`);
+  assert.equal(result.initiallyVisibleFindingCount, 3, `${engineName}/${viewport.name}: only three findings show initially`);
+  assert.equal(result.initiallyHiddenFindingCount, 1, `${engineName}/${viewport.name}: remaining findings are preserved behind disclosure`);
+  assert.equal(result.findingsToggleVisible, true, `${engineName}/${viewport.name}: findings disclosure is available`);
+  assert.equal(result.findingsToggleExpanded, 'false', `${engineName}/${viewport.name}: findings disclosure starts collapsed`);
+
+  await page.locator('#findingsToggle').click();
+  const expandedFindings = await page.evaluate(() => ({
+    visibleCount: [...document.querySelectorAll('#concernsGrid .concern-card')]
+      .filter(card => !card.hidden && getComputedStyle(card).display !== 'none').length,
+    hiddenCount: document.querySelectorAll('#concernsGrid .concern-card[hidden]').length,
+    expanded: document.getElementById('findingsToggle').getAttribute('aria-expanded'),
+  }));
+  assert.equal(expandedFindings.visibleCount, 4, `${engineName}/${viewport.name}: expanding reveals every finding`);
+  assert.equal(expandedFindings.hiddenCount, 0, `${engineName}/${viewport.name}: no finding remains hidden after expansion`);
+  assert.equal(expandedFindings.expanded, 'true', `${engineName}/${viewport.name}: disclosure exposes its expanded state`);
+  await page.locator('#findingsToggle').click();
   assert.ok(result.horizontalOverflow <= 1, `${engineName}/${viewport.name}: result overflow ${result.horizontalOverflow}px`);
   assert.deepEqual(result.horizontalOffenders, [], `${engineName}/${viewport.name}: elements outside viewport: ${result.horizontalOffenders.join(' | ')}`);
   for (const [selector, left, right] of result.contentMargins) {
@@ -290,6 +335,9 @@ async function runCase(browserType, engineName, viewport) {
   await assertLandingContract(page, engineName, viewport);
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: path.join(artifactDir, `${engineName}-${viewport.name}-landing.png`) });
+  await page.locator('#dropZone').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(100);
+  await page.screenshot({ path: path.join(artifactDir, `${engineName}-${viewport.name}-upload.png`) });
 
   await page.locator('#fileInput').setInputFiles(brittanyPhoto);
   await page.waitForSelector('#analysisSection.show', { timeout: 10000 });
@@ -303,6 +351,9 @@ async function runCase(browserType, engineName, viewport) {
   await page.evaluate(() => window.scrollTo(0, document.getElementById('resultsSection').offsetTop - 50));
   await page.waitForTimeout(150);
   await page.screenshot({ path: path.join(artifactDir, `${engineName}-${viewport.name}-results.png`) });
+  await page.evaluate(() => document.getElementById('recommendationsSection').scrollIntoView({ block: 'start' }));
+  await page.waitForTimeout(150);
+  await page.screenshot({ path: path.join(artifactDir, `${engineName}-${viewport.name}-recommendations.png`) });
   await page.screenshot({ path: path.join(artifactDir, `${engineName}-${viewport.name}-full.png`), fullPage: true });
 
   if (viewport.name === 'desktop') await assertPrintableReport(page, context, engineName);
@@ -410,6 +461,161 @@ async function runRejectionContract(browserType, engineName) {
   await browser.close();
 }
 
+async function runServerTimeoutRecoveryContract(browserType, engineName) {
+  const browser = await browserType.launch(launchOptions(engineName));
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await context.newPage();
+  let analyzeRequests = 0;
+
+  await page.route('**/api/health', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ status: 'ok', mode: 'live' }),
+  }));
+  await page.route('**/api/analyze', route => {
+    analyzeRequests += 1;
+    if (analyzeRequests > 1) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(fixture),
+      });
+    }
+    return route.fulfill({
+      status: 504,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        error: 'The analysis did not finish within the expected time.',
+        code: 'analysis_timeout',
+        retryable: true,
+      }),
+    });
+  });
+
+  await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+  await page.locator('#fileInput').setInputFiles(brittanyPhoto);
+  await page.waitForSelector('#analysisRecovery.show', { timeout: 10000 });
+  const recovery = await page.evaluate(() => ({
+    title: document.getElementById('analysisRecoveryTitle')?.textContent,
+    message: document.getElementById('analysisRecoveryMessage')?.textContent,
+    analysisOpen: document.getElementById('analysisSection')?.classList.contains('show'),
+    leadGateOpen: document.getElementById('leadGateOverlay')?.classList.contains('show'),
+    resultsOpen: document.getElementById('resultsSection')?.classList.contains('show'),
+    recommendationsOpen: document.getElementById('recommendationsSection')?.classList.contains('show'),
+    demoVisible: Boolean(document.getElementById('demoBanner'))
+      && getComputedStyle(document.getElementById('demoBanner')).display !== 'none',
+    pendingData: pendingAnalysisData,
+    lastAnalysisPresent: Boolean(window.lastAnalysis),
+  }));
+  assert.equal(analyzeRequests, 1, `${engineName}: server timeout receives exactly one analysis POST`);
+  assert.equal(recovery.title, 'This is taking longer than expected', `${engineName}: server timeout opens the recovery state`);
+  assert.match(recovery.message, /try the same photo again or choose another one/i, `${engineName}: server timeout offers actionable recovery`);
+  assert.equal(recovery.analysisOpen, false, `${engineName}: server timeout closes the progress state`);
+  assert.equal(recovery.leadGateOpen, false, `${engineName}: server timeout never opens the lead gate`);
+  assert.equal(recovery.resultsOpen, false, `${engineName}: server timeout never shows results`);
+  assert.equal(recovery.recommendationsOpen, false, `${engineName}: server timeout never shows recommendations`);
+  assert.equal(recovery.demoVisible, false, `${engineName}: server timeout never falls back to demo data`);
+  assert.equal(recovery.pendingData, null, `${engineName}: server timeout creates no pending result`);
+  assert.equal(recovery.lastAnalysisPresent, false, `${engineName}: server timeout creates no reportable result`);
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: path.join(artifactDir, `${engineName}-timeout-recovery.png`) });
+  await page.locator('#retryAnalysisBtn').click();
+  await page.waitForSelector('#leadGateOverlay.show', { timeout: 10000 });
+  assert.equal(analyzeRequests, 2, `${engineName}: an explicit retry sends one new analysis POST`);
+  assert.equal(
+    await page.locator('#analysisRecovery').evaluate(element => element.classList.contains('show')),
+    false,
+    `${engineName}: an explicit retry closes the recovery state`,
+  );
+  await browser.close();
+}
+
+async function runClientAbortRecoveryContract(browserType, engineName) {
+  const browser = await browserType.launch(launchOptions(engineName));
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await context.newPage();
+  let analyzeRequests = 0;
+  await page.addInitScript(() => {
+    window.__ANALYSIS_TIMEOUT_MS__ = 60;
+  });
+
+  await page.route('**/api/health', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ status: 'ok', mode: 'live' }),
+  }));
+  await page.route('**/api/analyze', async route => {
+    analyzeRequests += 1;
+    await new Promise(resolve => setTimeout(resolve, 250));
+    try {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fixture) });
+    } catch (_) {
+      // The browser is expected to cancel this delayed response through AbortController.
+    }
+  });
+
+  await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+  await page.locator('#fileInput').setInputFiles(brittanyPhoto);
+  await page.waitForSelector('#analysisRecovery.show', { timeout: 10000 });
+  const recovery = await page.evaluate(() => ({
+    title: document.getElementById('analysisRecoveryTitle')?.textContent,
+    leadGateOpen: document.getElementById('leadGateOverlay')?.classList.contains('show'),
+    resultsOpen: document.getElementById('resultsSection')?.classList.contains('show'),
+    demoVisible: Boolean(document.getElementById('demoBanner'))
+      && getComputedStyle(document.getElementById('demoBanner')).display !== 'none',
+    pendingData: pendingAnalysisData,
+  }));
+  assert.equal(analyzeRequests, 1, `${engineName}: client deadline sends exactly one analysis POST`);
+  assert.equal(recovery.title, 'This is taking longer than expected', `${engineName}: AbortController opens the same recovery state`);
+  assert.equal(recovery.leadGateOpen, false, `${engineName}: client deadline never opens the lead gate`);
+  assert.equal(recovery.resultsOpen, false, `${engineName}: client deadline never shows results`);
+  assert.equal(recovery.demoVisible, false, `${engineName}: client deadline never falls back to demo data`);
+  assert.equal(recovery.pendingData, null, `${engineName}: client deadline creates no pending result`);
+  await browser.close();
+}
+
+async function runAcceleratedTimerContract(browserType, engineName) {
+  const browser = await browserType.launch(launchOptions(engineName));
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await context.newPage();
+  await page.addInitScript(() => {
+    const nativeSetInterval = window.setInterval.bind(window);
+    window.setInterval = (callback, delay, ...args) => nativeSetInterval(
+      callback,
+      delay === 1000 ? 1 : delay,
+      ...args,
+    );
+  });
+  await page.route('**/api/health', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ status: 'ok', mode: 'live' }),
+  }));
+
+  await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+  const elapsedHandle = await page.locator('#analysisElapsed').elementHandle();
+  assert.ok(elapsedHandle, `${engineName}: elapsed timer node exists before progress starts`);
+  await page.evaluate(() => {
+    document.getElementById('analysisSection').classList.add('show');
+    startAnalysisProgress();
+  });
+  await page.waitForFunction(() => parseInt(document.getElementById('analysisElapsed')?.textContent, 10) > 75, null, { timeout: 3000 });
+  const timer = await elapsedHandle.evaluate(node => ({
+    connected: node.isConnected,
+    sameNode: node === document.getElementById('analysisElapsed'),
+    visible: getComputedStyle(node).display !== 'none' && node.getBoundingClientRect().height > 0,
+    seconds: parseInt(node.textContent, 10),
+    status: document.getElementById('analysisTimerStatus')?.textContent,
+  }));
+  assert.equal(timer.connected, true, `${engineName}: elapsed timer node remains connected after simulated 75 seconds`);
+  assert.equal(timer.sameNode, true, `${engineName}: elapsed timer is not replaced after simulated 75 seconds`);
+  assert.equal(timer.visible, true, `${engineName}: elapsed timer remains visible after simulated 75 seconds`);
+  assert.ok(timer.seconds > 75, `${engineName}: visible timer advances past 75 seconds (${timer.seconds}s)`);
+  assert.match(timer.status, /still working on your personalized plan/i, `${engineName}: long-wait reassurance remains visible`);
+  await page.evaluate(() => stopAnalysisProgress(false));
+  await browser.close();
+}
+
 (async () => {
   assert.ok(fs.existsSync(brittanyPhoto), `Brittany photo must be present: ${brittanyPhoto}`);
   fs.mkdirSync(artifactDir, { recursive: true });
@@ -429,6 +635,12 @@ async function runRejectionContract(browserType, engineName) {
       process.stdout.write(`PASS ${engineName} demo disclosure contract\n`);
       await runRejectionContract(browserType, engineName);
       process.stdout.write(`PASS ${engineName} 422 rejection contract\n`);
+      await runServerTimeoutRecoveryContract(browserType, engineName);
+      process.stdout.write(`PASS ${engineName} 504 timeout recovery contract\n`);
+      await runClientAbortRecoveryContract(browserType, engineName);
+      process.stdout.write(`PASS ${engineName} client AbortController recovery contract\n`);
+      await runAcceleratedTimerContract(browserType, engineName);
+      process.stdout.write(`PASS ${engineName} accelerated 75-second timer contract\n`);
     }
   }
   process.stdout.write('ALL REQUESTED BROWSER CASES PASSED\n');

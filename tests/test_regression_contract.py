@@ -32,13 +32,15 @@ class RestoredOriginalContractTests(unittest.TestCase):
         self.assertNotIn('<svg', nav)
         self.assertNotIn('arrow', nav.lower())
 
-    def test_original_hero_and_upload_copy_remain(self) -> None:
+    def test_hero_and_primary_upload_copy_remain(self) -> None:
         for copy in (
             "Illuminating Results, Expertly Delivered",
             "See what your skin reveals.",
             "Your Skin Story Starts Here",
             "Powered by VISIA-Style Analysis",
-            "Your image is never stored. Results in about 30 seconds.",
+            "Your image is never stored. Most results are ready in under a minute.",
+            "Upload one clear photo",
+            "No camera capture required.",
         ):
             self.assertIn(copy, HTML)
 
@@ -72,7 +74,7 @@ class RestoredOriginalContractTests(unittest.TestCase):
         self.assertNotIn("filter:", logo_rule.group(1))
 
     def test_original_intake_modes_and_body_areas_remain(self) -> None:
-        for text in ("Tap to upload a photo", "Quick Snap", "Guided Capture"):
+        for text in ("Upload one clear photo", "Use Camera", "Quick Snap", "Guided Capture"):
             self.assertIn(text, HTML)
         for value in ("face", "neck_chest", "hands", "back", "legs"):
             self.assertIn(f'value="{value}"', HTML)
@@ -105,6 +107,29 @@ class RestoredOriginalContractTests(unittest.TestCase):
         self.assertIn('id="analysisProgressFill"', HTML)
         self.assertIn('id="analysisElapsed"', HTML)
 
+    def test_analysis_timeout_and_live_timer_are_bounded(self) -> None:
+        self.assertIn("HttpOptions(", SERVER)
+        self.assertIn('str(70_000)', SERVER)
+        self.assertIn("timeout=GOOGLE_TIMEOUT_MS", SERVER)
+        self.assertIn("HttpRetryOptions(attempts=1)", SERVER)
+        self.assertIn("except httpx.TimeoutException", SERVER)
+        self.assertIn('"code": "analysis_timeout"', SERVER)
+        self.assertIn('"retryable": True', SERVER)
+
+        analyze = HTML[
+            HTML.index("async function analyzeImage"):
+            HTML.index("function showRejectionMessage")
+        ]
+        self.assertIn("AbortController", analyze)
+        self.assertRegex(analyze, r"signal:\s*\w+\.signal")
+        self.assertIn("analysis_timeout", analyze)
+
+        progress = HTML[
+            HTML.index("function startAnalysisProgress"):
+            HTML.index("function stopAnalysisProgress")
+        ]
+        self.assertNotIn("elapsed.parentElement.innerHTML", progress)
+
     def test_original_result_and_recommendation_features_remain(self) -> None:
         for marker in (
             'id="overallScore"',
@@ -115,7 +140,11 @@ class RestoredOriginalContractTests(unittest.TestCase):
             'id="recommendationCards"',
             "productRecommendations",
             "suggestedCombo",
-            "Book Your Free Consultation",
+            'id="resultsPlanTeaser"',
+            'id="treatmentRecommendationCards"',
+            'id="productRecommendationCards"',
+            'id="findingsToggle"',
+            "See My Recommendations",
         ):
             self.assertIn(marker, HTML)
 
@@ -219,9 +248,14 @@ class RestoredOriginalContractTests(unittest.TestCase):
 
     def test_demo_and_rejection_results_cannot_masquerade_as_live(self) -> None:
         self.assertIn("demoMode = health.mode !== 'live'", HTML)
-        self.assertIn("if (json && json.rejected)", HTML)
+        self.assertIn("if (data.rejected)", HTML)
         self.assertIn("if (data._isDemo || demoMode)", HTML)
         self.assertIn('analysis["_isDemo"] = True', SERVER)
+        analyze = HTML[
+            HTML.index("async function analyzeImage"):
+            HTML.index("function showRejectionMessage")
+        ]
+        self.assertNotIn("using demo fallback", analyze.lower())
 
     def test_model_does_not_triage_lesions_and_startup_does_not_echo_key_data(self) -> None:
         self.assertIn("Do not identify, assess, flag, rule out, or comment on lesions", SERVER)

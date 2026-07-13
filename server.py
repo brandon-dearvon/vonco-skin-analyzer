@@ -13,6 +13,7 @@ from io import BytesIO
 from datetime import datetime
 from collections import defaultdict
 import time
+import httpx
 
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
@@ -43,6 +44,15 @@ def add_no_cache_headers(response):
     return response
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 GOOGLE_MODEL = "gemini-3.1-pro-preview"
+GOOGLE_TIMEOUT_MS = int(os.getenv("GOOGLE_TIMEOUT_MS", str(70_000)))
+
+
+def _google_http_options():
+    """Return one bounded, non-retrying HTTP contract for each model request."""
+    return genai_types.HttpOptions(
+        timeout=GOOGLE_TIMEOUT_MS,
+        retry_options=genai_types.HttpRetryOptions(attempts=1),
+    )
 ANALYSIS_RESPONSE_SCHEMA = {
     "anyOf": [
         {
@@ -1279,53 +1289,40 @@ def analyze():
         image_part = genai_types.Part.from_bytes(data=image_bytes, mime_type=media_type)
         user_prompt = build_user_prompt(request.form.get("age"), body_area)
 
-        analysis = None
+        # One bounded model request per guest action. The response schema already
+        # constrains the JSON, and avoiding nested retries prevents a single photo
+        # from multiplying latency and cost.
+        gemini_response = gemini_client.models.generate_content(
+            model=GOOGLE_MODEL,
+            contents=[image_part, user_prompt],
+            config=genai_types.GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT,
+                max_output_tokens=65536,
+                response_mime_type="application/json",
+                response_json_schema=_analysis_schema_for_area(body_area),
+                thinking_config=genai_types.ThinkingConfig(
+                    thinking_level=genai_types.ThinkingLevel.HIGH,
+                ),
+                http_options=_google_http_options(),
+            )
+        )
+        response_text = gemini_response.text.strip()
+        if not response_text:
+            raise ValueError("Google Gemini returned no text response")
 
-        for attempt in range(1, 3):
-            try:
-                # Google recommends its default temperature of 1.0 for Gemini 3.
-                gemini_response = gemini_client.models.generate_content(
-                    model=GOOGLE_MODEL,
-                    contents=[image_part, user_prompt],
-                    config=genai_types.GenerateContentConfig(
-                        system_instruction=SYSTEM_PROMPT,
-                        max_output_tokens=65536,
-                        response_mime_type="application/json",
-                        response_json_schema=_analysis_schema_for_area(body_area),
-                        thinking_config=genai_types.ThinkingConfig(
-                            thinking_level=genai_types.ThinkingLevel.HIGH,
-                        ),
-                    )
-                )
-                response_text = gemini_response.text.strip()
-                if not response_text:
-                    raise ValueError("Google Gemini returned no text response")
+        t_done = time.time()
+        print(f"  [Pipeline] {GOOGLE_MODEL} vision+analysis completed in {t_done - t_start:.1f}s ({len(response_text)} chars)")
 
-                t_done = time.time()
-                print(f"  [Pipeline] {GOOGLE_MODEL} vision+analysis completed in {t_done - t_start:.1f}s ({len(response_text)} chars) [attempt {attempt}]")
+        # Strip markdown fences if present
+        if response_text.startswith("```json"):
+            response_text = response_text[7:]
+        if response_text.startswith("```"):
+            response_text = response_text[3:]
+        if response_text.endswith("```"):
+            response_text = response_text[:-3]
+        response_text = response_text.strip()
 
-                # Strip markdown fences if present
-                if response_text.startswith("```json"):
-                    response_text = response_text[7:]
-                if response_text.startswith("```"):
-                    response_text = response_text[3:]
-                if response_text.endswith("```"):
-                    response_text = response_text[:-3]
-                response_text = response_text.strip()
-
-                analysis = json.loads(response_text)
-                break
-            except json.JSONDecodeError as je:
-                print(f"  [Pipeline] {GOOGLE_MODEL} attempt {attempt} returned invalid JSON: {je}")
-                if attempt < 2:
-                    time.sleep(0.5)
-            except Exception as gemini_err:
-                print(f"  [Pipeline] {GOOGLE_MODEL} attempt {attempt} failed: {type(gemini_err).__name__}: {gemini_err}")
-                if attempt < 2:
-                    time.sleep(0.5)
-
-        if analysis is None:
-            raise Exception("Google Gemini failed to produce a valid analysis")
+        analysis = json.loads(response_text)
 
         # Free image data from memory
         try:
@@ -1347,6 +1344,13 @@ def analyze():
 
         return jsonify(analysis)
 
+    except httpx.TimeoutException:
+        print(f"  [Pipeline] {GOOGLE_MODEL} exceeded the {GOOGLE_TIMEOUT_MS / 1000:.0f}s analysis deadline")
+        return jsonify({
+            "error": "This analysis took longer than expected. Please try again.",
+            "code": "analysis_timeout",
+            "retryable": True,
+        }), 504
     except json.JSONDecodeError as e:
         import traceback
         traceback.print_exc()

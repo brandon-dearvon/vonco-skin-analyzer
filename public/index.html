@@ -188,6 +188,30 @@
             animation: fadeInUp 0.8s ease-out 0.4s both;
         }
 
+        .hero-upload-cta {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            margin-top: 24px;
+            padding: 11px 25px;
+            border: 1px solid var(--sand);
+            border-radius: 24px;
+            background: var(--sand);
+            color: #fff;
+            font-size: 0.84rem;
+            font-weight: 600;
+            letter-spacing: 0.45px;
+            text-decoration: none;
+            animation: fadeInUp 0.8s ease-out 0.55s both;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .hero-upload-cta:hover {
+            background: var(--gold);
+            transform: translateY(-2px);
+        }
+
         /* UPLOAD SECTION */
         .upload-section {
             background-color: var(--dove);
@@ -278,16 +302,74 @@
             display: flex;
             gap: 15px;
             justify-content: center;
-            margin-bottom: 40px;
+            margin-bottom: 16px;
             flex-wrap: wrap;
+        }
+
+        .intake-fields {
+            max-width: 460px;
+            margin: 0 auto 24px;
+            padding: 18px 20px;
+            background: rgba(255,255,255,0.72);
+            border: 1px solid rgba(81,104,98,0.12);
+            border-radius: 12px;
+        }
+
+        .intake-fields-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+            gap: 16px;
+            align-items: end;
+        }
+
+        .intake-field label {
+            display: block;
+            margin-bottom: 7px;
+            color: var(--evergreen);
+            font-size: 0.82rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .intake-field input,
+        .intake-field select {
+            width: 100%;
+            min-height: 46px;
+            padding: 11px 13px;
+            border: 1.5px solid var(--sand);
+            border-radius: 8px;
+            background: #fff;
+            color: var(--black);
+            font: 1rem 'Fira Sans', sans-serif;
+            outline: none;
+        }
+
+        .intake-field input:focus,
+        .intake-field select:focus {
+            border-color: var(--evergreen);
+            box-shadow: 0 0 0 3px rgba(81,104,98,0.10);
+        }
+
+        .intake-helper {
+            margin: 10px 0 0;
+            color: var(--black);
+            font-size: 0.78rem;
+            line-height: 1.45;
+            opacity: 0.55;
+            text-align: center;
+        }
+
+        .intake-actions {
+            max-width: 640px;
+            margin: 0 auto 12px;
         }
 
         .drop-zone {
             flex: 1;
             min-width: 250px;
-            padding: 50px 30px;
+            padding: 30px 28px;
             border: 2px dashed var(--sand);
-            border-radius: 8px;
+            border-radius: 14px;
             background: linear-gradient(135deg, var(--von-white) 0%, #f5f2eb 100%);
             text-align: center;
             cursor: pointer;
@@ -301,26 +383,91 @@
             transform: translateY(-2px);
         }
 
+        .drop-zone:focus-visible {
+            outline: 3px solid rgba(81,104,98,0.28);
+            outline-offset: 3px;
+        }
+
         .drop-zone.dragover {
             border-color: var(--evergreen);
             background-color: rgba(81, 104, 98, 0.05);
         }
 
         .drop-zone-icon {
-            font-size: 2.5rem;
-            margin-bottom: 15px;
-            opacity: 0.6;
+            width: 42px;
+            height: 42px;
+            margin: 0 auto 10px;
+            color: var(--evergreen);
+        }
+
+        .drop-zone-icon svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .drop-zone-kicker {
+            margin-bottom: 5px;
+            color: var(--gold);
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 1.35px;
+            text-transform: uppercase;
         }
 
         .drop-zone-text {
+            font-family: Georgia, serif;
+            font-size: 1.35rem;
             font-weight: 500;
             color: var(--evergreen);
-            margin-bottom: 5px;
+            margin-bottom: 7px;
         }
 
         .drop-zone-subtext {
-            font-size: 0.85rem;
+            max-width: 390px;
+            margin: 0 auto;
+            font-size: 0.88rem;
+            line-height: 1.5;
+            color: #666;
+        }
+
+        .drop-zone-specs {
+            margin-top: 8px;
             color: #999;
+            font-size: 0.72rem;
+        }
+
+        .camera-option {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 13px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+            color: var(--black);
+            font-size: 0.88rem;
+        }
+
+        .camera-option .btn {
+            min-height: 42px;
+            padding: 10px 22px;
+            background: transparent;
+            color: var(--evergreen);
+            border: 1.5px solid var(--evergreen);
+            border-radius: 24px;
+        }
+
+        .camera-option .btn:hover {
+            background: var(--evergreen);
+            color: #fff;
+        }
+
+        .camera-option-note {
+            flex-basis: 100%;
+            margin-top: -5px;
+            color: #777;
+            font-size: 0.75rem;
+            text-align: center;
         }
 
         .btn {
@@ -724,6 +871,63 @@
             color: var(--evergreen);
         }
 
+        .analysis-recovery {
+            display: none;
+            padding: 48px 20px;
+            background: var(--dove);
+        }
+
+        .analysis-recovery.show {
+            display: block;
+        }
+
+        .analysis-recovery-card {
+            max-width: 560px;
+            margin: 0 auto;
+            padding: 32px;
+            border: 1px solid rgba(81,104,98,0.16);
+            border-radius: 14px;
+            background: #fff;
+            box-shadow: 0 8px 28px rgba(29,29,27,0.07);
+            text-align: center;
+        }
+
+        .analysis-recovery-eyebrow {
+            margin-bottom: 7px;
+            color: var(--sand);
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+        }
+
+        .analysis-recovery-card h2 {
+            margin: 0 0 10px;
+            color: var(--evergreen);
+            font-family: Georgia, serif;
+            font-size: 1.75rem;
+            font-weight: 500;
+        }
+
+        #analysisRecoveryTitle:focus {
+            outline: none;
+        }
+
+        .analysis-recovery-card p {
+            max-width: 440px;
+            margin: 0 auto 22px;
+            color: #5e5e5e;
+            font-size: 0.92rem;
+            line-height: 1.6;
+        }
+
+        .analysis-recovery-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
         /* progress bar driven by JS. No keyframes needed */
 
         /* RESULTS DASHBOARD */
@@ -737,6 +941,13 @@
             display: block;
         }
 
+        #positiveLead,
+        #concernsGrid,
+        #recommendationsSection,
+        #takeHomePlanActions {
+            scroll-margin-top: 100px;
+        }
+
         .results-container {
             max-width: 900px;
             margin: 0 auto;
@@ -747,7 +958,81 @@
             font-family: Georgia, serif;
             font-size: 2.2rem;
             color: var(--evergreen);
-            margin-bottom: 50px;
+            margin-bottom: 18px;
+        }
+
+        .results-guide {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            max-width: 560px;
+            margin: 0 auto 34px;
+            padding: 6px;
+            border: 1px solid rgba(81,104,98,0.12);
+            border-radius: 28px;
+            background: rgba(255,255,255,0.9);
+            box-shadow: 0 3px 14px rgba(29,29,27,0.05);
+        }
+
+        .results-guide a {
+            flex: 1;
+            min-width: 0;
+            padding: 9px 12px;
+            border-radius: 22px;
+            color: var(--evergreen);
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-align: center;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .results-guide a.results-guide-primary {
+            background: var(--evergreen);
+            color: #fff;
+        }
+
+        .results-plan-teaser {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 22px;
+            max-width: 760px;
+            margin: -20px auto 42px;
+            padding: 22px 24px;
+            border: 1px solid rgba(193,168,144,0.65);
+            border-radius: 12px;
+            background: linear-gradient(135deg, #fff 0%, rgba(193,168,144,0.10) 100%);
+        }
+
+        .results-plan-teaser-label {
+            margin-bottom: 4px;
+            color: var(--sand);
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 1.25px;
+            text-transform: uppercase;
+        }
+
+        .results-plan-teaser p {
+            margin: 0;
+            color: var(--evergreen);
+            font-family: Georgia, serif;
+            font-size: 1.12rem;
+            line-height: 1.4;
+        }
+
+        .results-plan-button {
+            flex: 0 0 auto;
+            padding: 12px 20px;
+            border-radius: 24px;
+            background: var(--evergreen);
+            color: #fff;
+            font-size: 0.84rem;
+            font-weight: 600;
+            text-decoration: none;
+            white-space: nowrap;
         }
 
         .score-ring-container {
@@ -809,6 +1094,27 @@
             margin-bottom: 50px;
         }
 
+        .findings-toggle-wrap {
+            margin: -28px auto 46px;
+            text-align: center;
+        }
+
+        .findings-toggle {
+            min-height: 42px;
+            padding: 10px 22px;
+            border: 1.5px solid var(--evergreen);
+            border-radius: 24px;
+            background: transparent;
+            color: var(--evergreen);
+            font: 600 0.86rem 'Fira Sans', sans-serif;
+            cursor: pointer;
+        }
+
+        .findings-toggle:hover {
+            background: var(--evergreen);
+            color: #fff;
+        }
+
         .concern-card {
             background: white;
             padding: 25px;
@@ -864,9 +1170,15 @@
             margin-bottom: 12px;
         }
 
-        .severity-good {
+        .severity-good,
+        .severity-none {
             background-color: rgba(192, 200, 169, 0.25);
             color: #4a6040;
+        }
+
+        .severity-mild {
+            background-color: rgba(193, 168, 144, 0.22);
+            color: #75604d;
         }
 
         .severity-moderate {
@@ -874,7 +1186,8 @@
             color: #8a6a10;
         }
 
-        .severity-concern {
+        .severity-concern,
+        .severity-significant {
             background-color: rgba(197, 139, 116, 0.2);
             color: #9a4a35;
         }
@@ -985,7 +1298,83 @@
             font-family: Georgia, serif;
             font-size: 2.2rem;
             color: var(--evergreen);
-            margin-bottom: 50px;
+            margin-bottom: 8px;
+        }
+
+        .recommendations-intro {
+            max-width: 620px;
+            margin: 0 auto 36px;
+            color: #666;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .recommendation-group + .recommendation-group {
+            margin-top: 42px;
+        }
+
+        .recommendation-group-title {
+            display: flex;
+            align-items: baseline;
+            gap: 9px;
+            margin: 0 0 16px;
+            color: var(--evergreen);
+            font-family: Georgia, serif;
+            font-size: 1.45rem;
+            font-weight: 500;
+        }
+
+        .recommendation-count {
+            color: #888;
+            font: 500 0.78rem 'Fira Sans', sans-serif;
+        }
+
+        .offers-membership {
+            margin-top: 34px;
+            border: 1px solid rgba(81,104,98,0.16);
+            border-radius: 14px;
+            background: #fff;
+            overflow: hidden;
+        }
+
+        .offers-membership > summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            padding: 19px 22px;
+            color: var(--evergreen);
+            font-family: Georgia, serif;
+            font-size: 1.15rem;
+            cursor: pointer;
+            list-style: none;
+        }
+
+        .offers-membership > summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .offers-membership > summary span {
+            color: #777;
+            font: 500 0.76rem 'Fira Sans', sans-serif;
+            text-align: right;
+        }
+
+        .offers-membership > summary::after {
+            content: '+';
+            flex: 0 0 auto;
+            color: var(--sand);
+            font-family: 'Fira Sans', sans-serif;
+            font-size: 1.35rem;
+        }
+
+        .offers-membership[open] > summary::after {
+            content: '−';
+        }
+
+        .offers-membership-content {
+            padding: 0 22px 24px;
         }
 
         .recommendation-cards {
@@ -1474,6 +1863,16 @@
                 grid-template-columns: 1fr;
             }
 
+            .results-plan-teaser {
+                align-items: stretch;
+                flex-direction: column;
+                gap: 14px;
+            }
+
+            .results-plan-button {
+                text-align: center;
+            }
+
             .cta-heading {
                 font-size: 1.8rem;
             }
@@ -1519,10 +1918,11 @@
 
             .upload-section,
             .analysis-section,
+            .analysis-recovery,
             .results-section,
             .recommendations-section,
             .cta-section {
-                padding: 40px 15px;
+                padding: 40px clamp(20px, 5.5vw, 26px);
             }
 
             .logo {
@@ -1547,6 +1947,61 @@
 
             .positive-highlights {
                 grid-template-columns: 1fr;
+            }
+
+            .intake-fields-row {
+                grid-template-columns: 1fr 1.35fr;
+                gap: 11px;
+            }
+
+            .intake-fields {
+                padding: 15px;
+            }
+
+            .drop-zone {
+                min-width: 0;
+                padding: 26px 18px;
+            }
+
+            .results-guide {
+                position: sticky;
+                top: 80px;
+                z-index: 25;
+                gap: 3px;
+                margin-bottom: 30px;
+                border-radius: 12px;
+                box-shadow: 0 5px 18px rgba(29,29,27,0.10);
+            }
+
+            .results-guide a {
+                padding: 9px 7px;
+                font-size: 0.7rem;
+            }
+
+            .results-plan-teaser {
+                margin: -16px auto 34px;
+                padding: 20px;
+            }
+
+            .analysis-recovery-card {
+                padding: 28px 20px;
+            }
+
+            .analysis-recovery-actions .btn {
+                width: 100%;
+            }
+
+            .offers-membership > summary {
+                align-items: flex-start;
+                padding: 17px 18px;
+            }
+
+            .offers-membership > summary span {
+                display: none;
+            }
+
+            .offers-membership-content {
+                padding: 0 14px 18px;
             }
 
             .cta-heading {
@@ -1598,6 +2053,7 @@
             </a>
             <h1>Illuminating Results, Expertly Delivered</h1>
             <p>See what your skin reveals. Powered by the same clinical insight behind every Von & Co Aesthetics consultation</p>
+            <a class="hero-upload-cta" href="#dropZone">Upload a Photo</a>
         </div>
     </header>
 
@@ -1605,11 +2061,57 @@
     <section class="upload-section">
         <div class="upload-container">
             <h2>Your Skin Story Starts Here</h2>
-            <p class="upload-intro">Upload a selfie in natural lighting and our AI will approximate the kind of analysis you'd receive in-studio at Von & Co Aesthetics.</p>
+            <p class="upload-intro">Choose the area you want to preview, then upload one clear photo already on your phone. Taking a new photo is optional.</p>
+
+            <div class="intake-fields">
+                <div class="intake-fields-row">
+                    <div class="intake-field">
+                        <label for="ageInput">Age <span style="font-weight:400; opacity:0.65;">(optional)</span></label>
+                        <input type="number" id="ageInput" min="18" max="99" placeholder="18+" inputmode="numeric" />
+                    </div>
+                    <div class="intake-field">
+                        <label for="bodyAreaSelect">Area to analyze</label>
+                        <select id="bodyAreaSelect">
+                            <option value="face">Face</option>
+                            <option value="neck_chest">Neck & Chest</option>
+                            <option value="hands">Hands</option>
+                            <option value="back">Back</option>
+                            <option value="legs">Legs</option>
+                        </select>
+                    </div>
+                </div>
+                <p class="intake-helper">This helps tailor your visible-skin findings, treatment options, and skincare suggestions.</p>
+            </div>
+
+            <div class="intake-actions">
+                <div class="upload-buttons-row">
+                    <div class="drop-zone" id="dropZone" role="button" tabindex="0" aria-label="Upload one clear photo from your device">
+                        <div class="drop-zone-icon" aria-hidden="true">
+                            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="7" y="11" width="34" height="29" rx="5" stroke="currentColor" stroke-width="2"/>
+                                <path d="M16 11.5L19 7.5H29L32 11.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <circle cx="24" cy="25" r="8" stroke="currentColor" stroke-width="2"/>
+                                <path d="M24 29V20M20.5 23.5L24 20L27.5 23.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <div class="drop-zone-kicker">Fastest option</div>
+                        <div class="drop-zone-text">Upload one clear photo</div>
+                        <div class="drop-zone-subtext">Choose a selfie or photo already on your phone. No camera capture required.</div>
+                        <div class="drop-zone-specs">JPG, PNG or WEBP &middot; Max 10MB</div>
+                    </div>
+                </div>
+
+                <div class="camera-option">
+                    <span>Prefer to take a photo now?</span>
+                    <button class="btn" id="webcamBtn">Use Camera</button>
+                    <div class="camera-option-note">Optional guided framing is available after you open the camera.</div>
+                </div>
+                <p class="upload-privacy">Your image is never stored. Most results are ready in under a minute.</p>
+            </div>
 
             <div class="visia-callout">
                 <div class="visia-callout-header">Powered by VISIA-Style Analysis</div>
-                <p class="visia-callout-sub">Our AI scores your skin the same way our in-studio VISIA system does, then recommends specific Von & Co treatments matched to what it sees.</p>
+                <p class="visia-callout-sub">Your photo is reviewed for visible surface patterns, then matched to relevant Von & Co treatments and skincare. An in-studio VISIA consultation can provide a more detailed assessment.</p>
                 <ul class="visia-list">
                     <li>
                         <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" stroke="#c1a890" stroke-width="1.5"/><path d="M5.5 9.5L7.5 11.5L12.5 6.5" stroke="#516862" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1633,46 +2135,6 @@
                     </li>
                 </ul>
             </div>
-
-            <div style="max-width:400px; margin:0 auto 30px; text-align:center;">
-                <div style="display:flex; gap:20px; justify-content:center; align-items:flex-end; flex-wrap:wrap;">
-                    <div>
-                        <label for="ageInput" style="font-family:'Fira Sans',sans-serif; font-size:0.9rem; color:var(--evergreen); font-weight:500; display:block; margin-bottom:8px;">Your Age</label>
-                        <input type="number" id="ageInput" min="18" max="99" placeholder="18+" style="width:120px; padding:12px 16px; border:1.5px solid var(--sand); border-radius:8px; font-family:'Fira Sans',sans-serif; font-size:1.1rem; text-align:center; outline:none; background:#fff; transition:border-color 0.3s;" onfocus="this.style.borderColor='var(--evergreen)'" onblur="this.style.borderColor='var(--sand)'" />
-                    </div>
-                    <div>
-                        <label for="bodyAreaSelect" style="font-family:'Fira Sans',sans-serif; font-size:0.9rem; color:var(--evergreen); font-weight:500; display:block; margin-bottom:8px;">Area of Focus</label>
-                        <select id="bodyAreaSelect" style="padding:12px 16px; border:1.5px solid var(--sand); border-radius:8px; font-family:'Fira Sans',sans-serif; font-size:1rem; outline:none; background:#fff; color:var(--black); transition:border-color 0.3s; cursor:pointer; min-width:160px;" onfocus="this.style.borderColor='var(--evergreen)'" onblur="this.style.borderColor='var(--sand)'">
-                            <option value="face">Face</option>
-                            <option value="neck_chest">Neck & Chest</option>
-                            <option value="hands">Hands</option>
-                            <option value="back">Back</option>
-                            <option value="legs">Legs</option>
-                        </select>
-                    </div>
-                </div>
-                <p style="font-size:0.78rem; color:var(--black); opacity:0.45; margin-top:10px;">Helps us tailor your analysis and treatment recommendations</p>
-            </div>
-
-            <div style="text-align:center; margin-bottom:20px;">
-                <button class="btn btn-primary" id="webcamBtn" style="font-size:1.05rem; padding:16px 36px;">Start Guided Capture</button>
-                <p style="font-size:0.82rem; color:var(--evergreen); opacity:0.65; margin-top:10px;">We'll walk you through 3 angles for the most accurate analysis</p>
-            </div>
-
-            <div style="display:flex; align-items:center; gap:16px; max-width:360px; margin:18px auto;">
-                <div style="flex:1; height:1px; background:var(--sand); opacity:0.4;"></div>
-                <span style="font-size:0.82rem; color:#999; white-space:nowrap;">Or upload a photo</span>
-                <div style="flex:1; height:1px; background:var(--sand); opacity:0.4;"></div>
-            </div>
-
-            <div class="upload-buttons-row" style="margin-top:14px;">
-                <div class="drop-zone" id="dropZone" style="padding:22px 16px;">
-                    <div class="drop-zone-icon" style="font-size:1.4rem;">📸</div>
-                    <div class="drop-zone-text" style="font-size:0.92rem;">Tap to upload a photo</div>
-                    <div class="drop-zone-subtext">JPG, PNG • Max 10MB</div>
-                </div>
-            </div>
-            <p class="upload-privacy">Your image is never stored. Results in about 30 seconds.</p>
         </div>
     </section>
 
@@ -1690,7 +2152,7 @@
                     Quick Snap<small>Single photo</small>
                 </button>
                 <button id="modeGuided" class="active" onclick="setCaptureMode('guided')">
-                    Guided Capture<small>3 angles, better results</small>
+                    Guided Capture<small>Three guided poses</small>
                 </button>
             </div>
 
@@ -1736,41 +2198,54 @@
     <!-- ANALYSIS SECTION -->
     <section class="analysis-section" id="analysisSection">
         <div class="analysis-container">
-            <h2 class="analysis-title">Analyzing Your Skin...</h2>
-            <p style="text-align: center; color: #777; font-size: 0.9rem; margin: -28px 0 30px;">Analyzing your skin. About 30 seconds.</p>
+            <h2 class="analysis-title">Preparing Your Personalized Preview...</h2>
+            <p style="text-align: center; color: #777; font-size: 0.9rem; margin: -28px 0 30px;">Keep this page open. Most results are ready in under a minute.</p>
 
             <div class="progress-bar">
                 <div class="progress-fill" id="analysisProgressFill"></div>
             </div>
             <div class="analysis-timer" id="analysisTimer">
-                <span class="elapsed" id="analysisElapsed">0s</span> elapsed
+                <span class="elapsed" id="analysisElapsed">0s</span>
+                <span id="analysisTimerStatus">elapsed</span>
             </div>
 
             <div class="analysis-steps" id="analysisSteps">
                 <div class="step" id="analysisStep0">
                     <div class="step-dot"></div>
-                    <div class="step-text">Uploading & processing your photo...</div>
+                    <div class="step-text">Preparing your photo...</div>
                 </div>
                 <div class="step" id="analysisStep1">
                     <div class="step-dot"></div>
-                    <div class="step-text">Mapping your skin's unique profile...</div>
+                    <div class="step-text">Sending it securely for analysis...</div>
                 </div>
                 <div class="step" id="analysisStep2">
                     <div class="step-dot"></div>
-                    <div class="step-text">Evaluating texture, pigmentation & tone...</div>
+                    <div class="step-text">Reviewing visible tone and texture...</div>
                 </div>
                 <div class="step" id="analysisStep3">
                     <div class="step-dot"></div>
-                    <div class="step-text">Analyzing sun damage, pores & hydration levels...</div>
+                    <div class="step-text">Reviewing visible pigmentation and surface patterns...</div>
                 </div>
                 <div class="step" id="analysisStep4">
                     <div class="step-dot"></div>
-                    <div class="step-text">Identifying surface & subsurface concerns...</div>
+                    <div class="step-text">Matching relevant treatments and skincare...</div>
                 </div>
                 <div class="step" id="analysisStep5">
                     <div class="step-dot"></div>
-                    <div class="step-text">Building your personalized treatment recommendations...</div>
+                    <div class="step-text">Preparing your personalized results...</div>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="analysis-recovery" id="analysisRecovery" aria-live="polite">
+        <div class="analysis-recovery-card">
+            <div class="analysis-recovery-eyebrow">Your photo is still selected</div>
+            <h2 id="analysisRecoveryTitle" tabindex="-1">This is taking longer than expected</h2>
+            <p id="analysisRecoveryMessage">The analysis did not finish within the expected time. You can try the same photo again or choose another one.</p>
+            <div class="analysis-recovery-actions">
+                <button class="btn btn-secondary" id="retryAnalysisBtn" type="button" onclick="retryAnalysis()">Try This Photo Again</button>
+                <button class="btn btn-primary" id="chooseAnotherPhotoBtn" type="button" onclick="chooseAnotherPhoto()">Choose Another Photo</button>
             </div>
         </div>
     </section>
@@ -1780,10 +2255,25 @@
         <div class="results-container">
             <h2 class="results-title">Your Personalized Skin Profile</h2>
 
+            <nav class="results-guide" aria-label="Jump through your results">
+                <a href="#positiveLead">Highlights</a>
+                <a href="#concernsGrid">Findings</a>
+                <a href="#recommendationsSection" class="results-guide-primary">My Plan <span id="resultsPlanCount"></span></a>
+                <a href="#takeHomePlanActions">Report</a>
+            </nav>
+
             <div class="positive-lead" id="positiveLead">
                 <div class="positive-lead-eyebrow">What Looks Especially Good</div>
                 <h3>The Qualities Worth Preserving</h3>
                 <div class="positive-highlights" id="positiveHighlights"></div>
+            </div>
+
+            <div class="results-plan-teaser" id="resultsPlanTeaser">
+                <div>
+                    <div class="results-plan-teaser-label">Your personalized plan is ready</div>
+                    <p id="resultsPlanSummary">See the treatments and skincare selected for your visible goals.</p>
+                </div>
+                <a class="results-plan-button" id="resultsPlanButton" href="#recommendationsSection">See My Recommendations</a>
             </div>
 
             <div class="score-ring-container">
@@ -1812,19 +2302,37 @@
             <div class="concerns-grid" id="concernsGrid">
                 <!-- Populated by JavaScript -->
             </div>
+            <div class="findings-toggle-wrap">
+                <button class="findings-toggle" id="findingsToggle" type="button" hidden aria-expanded="false" onclick="toggleAllFindings()">See All Findings</button>
+            </div>
         </div>
     </section>
 
     <!-- RECOMMENDATIONS SECTION -->
     <section class="recommendations-section" id="recommendationsSection">
         <div class="recommendations-container">
-            <h2 class="recommendations-title">Curated for You</h2>
-            <div class="recommendation-cards" id="recommendationCards">
-                <!-- Populated by JavaScript -->
+            <h2 class="recommendations-title">Your Personalized Plan</h2>
+            <p class="recommendations-intro">Treatments and at-home skincare matched to the visible features in your photo. Your provider will confirm what is right for you in person.</p>
+            <div id="recommendationCards">
+                <div class="recommendation-group" id="treatmentRecommendationsGroup">
+                    <h3 class="recommendation-group-title">Treatment Options <span class="recommendation-count" id="treatmentRecommendationCount"></span></h3>
+                    <div class="recommendation-cards" id="treatmentRecommendationCards">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+                <div class="recommendation-group" id="productRecommendationsGroup">
+                    <h3 class="recommendation-group-title">At-Home Skincare <span class="recommendation-count" id="productRecommendationCount"></span></h3>
+                    <div class="recommendation-cards" id="productRecommendationCards">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
             </div>
 
+            <details class="offers-membership" id="offersMembership">
+                <summary>Offers &amp; Membership <span>15% off your first visit + The Club</span></summary>
+                <div class="offers-membership-content">
             <!-- PROMO BANNER - evergreen new guest offer -->
-            <div id="promoBanner" style="background:linear-gradient(135deg, rgba(198,141,47,0.12), rgba(198,141,47,0.06)); border-radius:16px; padding:32px 28px; margin-top:36px; text-align:center; border:2px solid var(--gold);">
+            <div id="promoBanner" style="background:linear-gradient(135deg, rgba(198,141,47,0.12), rgba(198,141,47,0.06)); border-radius:16px; padding:32px 28px; margin-top:8px; text-align:center; border:2px solid var(--gold);">
                 <div style="font-family:Georgia,serif; font-size:2.2rem; font-weight:600; color:var(--evergreen); margin-bottom:8px;">New to Von & Co?</div>
                 <div style="font-size:1.4rem; font-weight:700; color:var(--gold); margin-bottom:12px;">15% Off Your First Visit</div>
                 <div style="font-size:1rem; color:var(--black); opacity:0.7; max-width:400px; margin:0 auto 16px;">Treatments and same-day skincare purchases. No code needed.</div>
@@ -1854,9 +2362,11 @@
                 <a href="https://www.vonandcoaesthetics.com/membership/" target="_blank" style="display:inline-block; padding:18px 48px; background:linear-gradient(135deg, var(--sand), var(--gold)); color:#fff; border-radius:30px; font-size:1.15rem; font-weight:700; text-decoration:none; transition:all 0.3s; box-shadow:0 6px 20px rgba(198,141,47,0.35); letter-spacing:0.5px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 28px rgba(198,141,47,0.45)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 20px rgba(198,141,47,0.35)'">Join The Club</a>
                 <div style="margin-top:16px; font-size:0.88rem; color:rgba(255,255,255,0.6);">Member-only events + exclusive specials year-round</div>
             </div>
+                </div>
+            </details>
 
             <!-- DOWNLOAD/PREVIEW REPORT BUTTONS -->
-            <div style="text-align:center; margin-top:35px;">
+            <div id="takeHomePlanActions" style="text-align:center; margin-top:35px; scroll-margin-top:100px;">
                 <div style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
                     <button id="downloadReportBtn" onclick="downloadReport()" style="background:var(--evergreen); color:#fff; border:none; padding:16px 36px; border-radius:30px; font-family:'Fira Sans',sans-serif; font-size:1rem; font-weight:600; cursor:pointer; transition:all 0.3s; box-shadow:0 4px 12px rgba(81,104,98,0.3);" onmouseover="this.style.background='#3f5350'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='var(--evergreen)'; this.style.transform='translateY(0)'">&#128196; View My Treatment Plan</button>
                 </div>
@@ -1948,6 +2458,8 @@
         let demoMode = false;
         let uploadedImage = null;
         let pendingAnalysisData = null;  // holds data while lead gate is shown
+        const ANALYSIS_REQUEST_TIMEOUT_MS = Number(window.__ANALYSIS_TIMEOUT_MS__) || 80000;
+        let activeAnalysisController = null;
 
         // Check API health on page load
         async function checkHealth() {
@@ -1968,6 +2480,12 @@
         const fileInput = document.getElementById('fileInput');
 
         dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fileInput.click();
+            }
+        });
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.classList.add('dragover');
@@ -2241,8 +2759,11 @@
         function startAnalysisProgress() {
             const fill = document.getElementById('analysisProgressFill');
             const elapsed = document.getElementById('analysisElapsed');
+            const status = document.getElementById('analysisTimerStatus');
             const steps = [0, 1, 2, 3, 4, 5];
             const TOTAL_STEPS = steps.length;
+
+            if (analysisTimerInterval) clearInterval(analysisTimerInterval);
 
             // Reset all steps
             steps.forEach(i => {
@@ -2250,16 +2771,17 @@
                 if (el) { el.className = 'step'; }
             });
             fill.style.width = '0%';
+            elapsed.textContent = '0s';
+            status.textContent = 'elapsed';
 
             let currentStep = -1;
             let seconds = 0;
             let progressPercent = 0;
 
             // Step timing: when each step activates (in seconds)
-            // Tuned for dual-model pipeline (~12-20s typical)
-            const stepTimings = [0, 2, 5, 8, 12, 16];
+            const stepTimings = [0, 3, 8, 16, 28, 40];
             // Progress targets at each step activation
-            const stepProgress = [5, 20, 40, 60, 80, 92];
+            const stepProgress = [5, 18, 38, 58, 78, 90];
 
             // Timer. Counts elapsed seconds
             analysisTimerInterval = setInterval(() => {
@@ -2284,7 +2806,7 @@
                 if (currentStep >= 0 && currentStep < TOTAL_STEPS) {
                     const target = stepProgress[currentStep];
                     const nextTarget = currentStep < TOTAL_STEPS - 1 ? stepProgress[currentStep + 1] : 92;
-                    const nextTime = currentStep < TOTAL_STEPS - 1 ? stepTimings[currentStep + 1] : 65;
+                    const nextTime = currentStep < TOTAL_STEPS - 1 ? stepTimings[currentStep + 1] : 70;
                     const elapsed_in_step = seconds - stepTimings[currentStep];
                     const step_duration = nextTime - stepTimings[currentStep];
                     const frac = Math.min(elapsed_in_step / step_duration, 1);
@@ -2293,11 +2815,11 @@
 
                 fill.style.width = Math.min(progressPercent, 92) + '%';
 
-                // Safety: if over 90 seconds, show reassurance
-                if (seconds === 75) {
-                    elapsed.parentElement.innerHTML = '<span class="elapsed">' + seconds + 's</span> elapsed... almost there, finalizing your results...';
-                } else if (seconds > 75) {
-                    elapsed.textContent = seconds + 's';
+                // Preserve the elapsed node so the visible timer never freezes.
+                if (seconds === 45) {
+                    status.textContent = 'elapsed · taking a little longer than usual; keep this page open';
+                } else if (seconds === 65) {
+                    status.textContent = 'elapsed · still working on your personalized plan';
                 }
             }, 1000);
         }
@@ -2317,6 +2839,41 @@
             }
         }
 
+        function showAnalysisRecovery(isTimeout, message) {
+            document.getElementById('analysisSection').classList.remove('show');
+            const recovery = document.getElementById('analysisRecovery');
+            const title = document.getElementById('analysisRecoveryTitle');
+            title.textContent = isTimeout
+                ? 'This is taking longer than expected'
+                : 'We couldn\'t complete your analysis';
+            document.getElementById('analysisRecoveryMessage').textContent = message || (
+                isTimeout
+                    ? 'The analysis did not finish within the expected time. You can try the same photo again or choose another one.'
+                    : 'Your photo is still selected. Please try it again, or choose another clear, well-lit photo.'
+            );
+            recovery.classList.add('show');
+            recovery.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => title.focus({ preventScroll: true }), 250);
+        }
+
+        function retryAnalysis() {
+            if (!uploadedImage) {
+                chooseAnotherPhoto();
+                return;
+            }
+            document.getElementById('analysisRecovery').classList.remove('show');
+            analyzeImage();
+        }
+
+        function chooseAnotherPhoto() {
+            if (activeAnalysisController) activeAnalysisController.abort();
+            document.getElementById('analysisRecovery').classList.remove('show');
+            uploadedImage = null;
+            fileInput.value = '';
+            dropZone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            fileInput.click();
+        }
+
         async function analyzeImage() {
             // Client-side age gate: block minors before hitting the server
             const enteredAge = document.getElementById('ageInput')?.value?.trim();
@@ -2326,11 +2883,20 @@
             }
 
             // Show analysis section and start progress immediately
+            document.getElementById('analysisRecovery').classList.remove('show');
+            ['resultsSection', 'recommendationsSection', 'ctaSection'].forEach(id => {
+                document.getElementById(id)?.classList.remove('show');
+            });
             document.getElementById('analysisSection').classList.add('show');
             window.scrollTo({ top: document.getElementById('analysisSection').offsetTop - 50, behavior: 'smooth' });
             startAnalysisProgress();
 
-            // Fire API call immediately (no artificial delay)
+            let requestTimeoutId = null;
+            let requestTimedOut = false;
+            const controller = new AbortController();
+            activeAnalysisController = controller;
+
+            // Fire one bounded API call. The backend owns the Gemini request budget.
             try {
                 const formData = new FormData();
 
@@ -2378,73 +2944,64 @@
                 const bodyArea = document.getElementById('bodyAreaSelect')?.value || 'face';
                 formData.append('body_area', bodyArea);
 
-                // Try up to 2 times before falling back to demo
-                // The Google-only backend already retries Gemini internally.
-                let lastErr = null;
-                let data = null;
-                let response = null;
-                for (let attempt = 1; attempt <= 2; attempt++) {
-                    try {
-                        console.log(`[Analyzer] API attempt ${attempt}/2...`);
-                        response = await fetch(`${API_BASE}/api/analyze`, {
-                            method: 'POST',
-                            body: formData
-                        });
-                        const json = await response.json();
-                        if (json && json.rejected) {
-                            data = json;
-                            console.log(`[Analyzer] API rejection received on attempt ${attempt}`);
-                            break;
-                        } else if (response.ok && !json.error) {
-                            data = json;
-                            console.log(`[Analyzer] API success on attempt ${attempt}, score: ${json.overallScore}`);
-                            break;
-                        } else {
-                            lastErr = json.error || `HTTP ${response.status}`;
-                            console.warn(`[Analyzer] Attempt ${attempt} failed: ${lastErr}`);
-                        }
-                    } catch (fetchErr) {
-                        lastErr = fetchErr.message || 'Network error';
-                        console.warn(`[Analyzer] Attempt ${attempt} network error: ${lastErr}`);
-                    }
-                    // Wait 1.5s before retry
-                    if (attempt < 2) await new Promise(r => setTimeout(r, 1500));
+                requestTimeoutId = setTimeout(() => {
+                    requestTimedOut = true;
+                    controller.abort();
+                }, ANALYSIS_REQUEST_TIMEOUT_MS);
+
+                const response = await fetch(`${API_BASE}/api/analyze`, {
+                    method: 'POST',
+                    body: formData,
+                    signal: controller.signal,
+                });
+
+                let data = {};
+                try {
+                    data = await response.json();
+                } catch (jsonError) {
+                    data = {};
                 }
 
-                stopAnalysisProgress(!!data);
+                if (data.rejected) {
+                    stopAnalysisProgress(false);
+                    document.getElementById('analysisSection').classList.remove('show');
+                    showRejectionMessage(data.reason || "That doesn't appear to be a photo of skin. Please upload a clear, well-lit photo of the area you'd like analyzed.");
+                    return;
+                }
+
+                if (!response.ok || data.error) {
+                    const apiError = new Error(data.error || `Analysis request failed with HTTP ${response.status}`);
+                    apiError.code = data.code || `http_${response.status}`;
+                    apiError.retryable = data.retryable === true;
+                    throw apiError;
+                }
+
+                stopAnalysisProgress(true);
 
                 // Brief pause to show 100% before transitioning
-                await new Promise(r => setTimeout(r, 600));
+                await new Promise(r => setTimeout(r, 450));
 
-                if (data) {
-                    // Check if image was rejected (non-skin photo)
-                    if (data.rejected) {
-                        document.getElementById('analysisSection').classList.remove('show');
-                        showRejectionMessage(data.reason || "That doesn't appear to be a photo of skin. Please upload a clear, well-lit photo of the area you'd like analyzed.");
-                        return;
-                    }
-                    // Never present server demo data as a live photo analysis.
-                    if (data._isDemo || demoMode) {
-                        data._isDemo = true;
-                        delete data._isLive;
-                    } else {
-                        data._isLive = true;
-                    }
-                    showLeadGate(data);
+                // Never present server demo data as a live photo analysis.
+                if (data._isDemo || demoMode) {
+                    data._isDemo = true;
+                    delete data._isLive;
                 } else {
-                    // All attempts failed: use demo fallback WITH visible banner
-                    console.error('API FAILED after 2 attempts, using demo fallback. Last error:', lastErr);
-                    const demoData = generateDemoResults();
-                    demoData._isDemo = true;
-                    console.log('Demo score:', demoData.overallScore, '(should NOT be 63-73)');
-                    showLeadGate(demoData);
+                    data._isLive = true;
                 }
+                showLeadGate(data);
             } catch (err) {
                 stopAnalysisProgress(false);
-                console.error('API FAILED (unexpected), using demo fallback:', err);
-                const demoData = generateDemoResults();
-                demoData._isDemo = true;
-                showLeadGate(demoData);
+                const isTimeout = requestTimedOut || err.name === 'AbortError' || err.code === 'analysis_timeout';
+                console.error(isTimeout ? 'Analysis timed out' : 'Analysis request failed', err);
+                showAnalysisRecovery(
+                    isTimeout,
+                    isTimeout
+                        ? 'The analysis did not finish within the expected time. You can try the same photo again or choose another one.'
+                        : 'We were unable to complete this analysis. Your photo is still selected, so you can safely try again.'
+                );
+            } finally {
+                if (requestTimeoutId) clearTimeout(requestTimeoutId);
+                if (activeAnalysisController === controller) activeAnalysisController = null;
             }
         }
 
@@ -2452,8 +3009,10 @@
             // Hide analysis spinner and any results
             const analysis = document.getElementById('analysisSection');
             if (analysis) analysis.classList.remove('show');
-            const results = document.getElementById('results');
+            const results = document.getElementById('resultsSection');
             if (results) results.classList.remove('show');
+            document.getElementById('recommendationsSection')?.classList.remove('show');
+            document.getElementById('ctaSection')?.classList.remove('show');
 
             // Pick a contextual title and icon
             const isMinor = reason.toLowerCase().includes('18+') || reason.toLowerCase().includes('minor');
@@ -2720,6 +3279,17 @@
             };
         }
 
+        function toggleAllFindings() {
+            const button = document.getElementById('findingsToggle');
+            const secondaryCards = [...document.querySelectorAll('#concernsGrid .concern-card-secondary')];
+            const shouldExpand = button.getAttribute('aria-expanded') !== 'true';
+            secondaryCards.forEach(card => { card.hidden = !shouldExpand; });
+            button.setAttribute('aria-expanded', String(shouldExpand));
+            button.textContent = shouldExpand
+                ? 'Show Fewer Findings'
+                : `See All Findings (${document.querySelectorAll('#concernsGrid .concern-card').length})`;
+        }
+
         function displayResults(data) {
             document.getElementById('analysisSection').classList.remove('show');
 
@@ -2760,6 +3330,14 @@
                 positiveHighlightsEl.appendChild(card);
             });
 
+            const treatmentRecommendations = Array.isArray(data.recommendations) ? data.recommendations : [];
+            const productRecommendations = Array.isArray(data.productRecommendations) ? data.productRecommendations : [];
+            const totalRecommendations = treatmentRecommendations.length + productRecommendations.length;
+            document.getElementById('resultsPlanCount').textContent = totalRecommendations ? `(${totalRecommendations})` : '';
+            document.getElementById('resultsPlanSummary').textContent = `${treatmentRecommendations.length} treatment ${treatmentRecommendations.length === 1 ? 'option' : 'options'} and ${productRecommendations.length} at-home skincare ${productRecommendations.length === 1 ? 'pick' : 'picks'}, selected for what is visible in your photo.`;
+            document.getElementById('treatmentRecommendationCount').textContent = `(${treatmentRecommendations.length})`;
+            document.getElementById('productRecommendationCount').textContent = `(${productRecommendations.length})`;
+
             // HAUT.AI-INSPIRED: Animated score counter
             const scoreEl = document.getElementById('overallScore');
             const targetScore = data.overallScore;
@@ -2786,7 +3364,7 @@
             else if (data.overallScore >= 75) { interpText = 'Very Good'; interpColor = '#516862'; }
             else if (data.overallScore >= 65) { interpText = 'Good'; interpColor = '#C68D2F'; }
             else if (data.overallScore >= 55) { interpText = 'Fair'; interpColor = '#b08030'; }
-            else { interpText = 'Needs Attention'; interpColor = '#C58B74'; }
+            else { interpText = 'Priority Focus'; interpColor = '#C58B74'; }
             interpEl.textContent = interpText;
             interpEl.style.color = interpColor;
 
@@ -2796,7 +3374,7 @@
             else if (data.overallScore >= 75) interpSubtext = 'Your skin is in great shape. A few targeted treatments could take it to the next level.';
             else if (data.overallScore >= 65) interpSubtext = 'Good foundation. The right treatments can make a visible difference.';
             else if (data.overallScore >= 55) interpSubtext = 'Several areas where professional treatments would make a real impact.';
-            else interpSubtext = 'Your skin has clear opportunities for improvement. A customized treatment plan can help significantly.';
+            else interpSubtext = 'Your photo highlights a few clear priorities. An in-person consultation can shape the right plan.';
 
             let subtextEl = document.getElementById('scoreSubtext');
             if (!subtextEl) {
@@ -2818,9 +3396,9 @@
 
             const insights = [
                 { icon: '✨', label: 'Visible Strength', value: positiveHighlights[0].title },
-                { icon: '⚡', label: 'Top Priority', value: concernNames[topConcernKey] || topConcernKey },
+                { icon: '⚡', label: 'Primary Focus', value: concernNames[topConcernKey] || topConcernKey },
                 { icon: '✨', label: 'Best Score', value: concernNames[strongestKey] || strongestKey },
-                { icon: '📊', label: 'Avg Skin Health', value: avgHealth >= 75 ? 'Great' : avgHealth >= 55 ? 'Good' : avgHealth >= 40 ? 'Fair' : 'Needs Work' }
+                { icon: '📊', label: 'Avg Skin Health', value: avgHealth >= 75 ? 'Great' : avgHealth >= 55 ? 'Good' : avgHealth >= 40 ? 'Focus' : 'Priority Focus' }
             ];
             insights.forEach(ins => {
                 const chip = document.createElement('div');
@@ -2835,14 +3413,7 @@
                 if (old) old.remove();
             });
 
-            // BOOKING CTA after the score overview (high up on the page)
-            const earlyBookingCTA = document.createElement('div');
-            earlyBookingCTA.id = 'earlyBookingCTA';
-            earlyBookingCTA.style.cssText = 'text-align:center; margin:0 auto 40px; max-width:500px;';
-            earlyBookingCTA.innerHTML = `<a href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" style="display:inline-block; padding:16px 40px; background:var(--evergreen); color:#fff; border-radius:30px; font-size:1.05rem; font-weight:600; text-decoration:none; transition:all 0.3s; box-shadow:0 4px 14px rgba(81,104,98,0.3); letter-spacing:0.3px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(81,104,98,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 14px rgba(81,104,98,0.3)'">Book Your Free Consultation</a>
-            <div style="font-size:0.82rem; color:#888; margin-top:8px;">Complimentary VISIA scan + provider consult. No obligation.</div>`;
             const concernsGridEl = document.getElementById('concernsGrid');
-            concernsGridEl.parentNode.insertBefore(earlyBookingCTA, concernsGridEl);
 
             // Concerns. Sort by score descending (worst concerns first)
             const concernsGrid = document.getElementById('concernsGrid');
@@ -2851,7 +3422,8 @@
             sortedConcerns.forEach((key, idx) => {
                 const concern = data.concerns[key];
                 const card = document.createElement('div');
-                card.className = 'concern-card';
+                card.className = `concern-card${idx >= 3 ? ' concern-card-secondary' : ''}`;
+                card.hidden = idx >= 3;
                 card.style.animationDelay = `${0.2 + idx * 0.15}s`;
 
                 // Invert: show health score (higher = better, matching overall score)
@@ -2862,17 +3434,17 @@
                 // Contextual meaning for each score range
                 let healthLabel, contextLine;
                 if (healthScore >= 75) {
-                    healthLabel = 'GREAT';
-                    contextLine = 'Looking good here. Maintenance will keep it that way.';
+                    healthLabel = 'STRONG';
+                    contextLine = 'A visible strength worth preserving.';
                 } else if (healthScore >= 55) {
-                    healthLabel = 'GOOD';
-                    contextLine = 'Minor signs visible. Easy to address with the right treatment.';
+                    healthLabel = 'BALANCED';
+                    contextLine = 'A targeted plan could gently refine this area.';
                 } else if (healthScore >= 40) {
-                    healthLabel = 'FAIR';
-                    contextLine = 'Noticeable concern. Treatment would make a real difference.';
+                    healthLabel = 'FOCUS';
+                    contextLine = 'A visible opportunity for thoughtful, targeted improvement.';
                 } else {
-                    healthLabel = 'NEEDS WORK';
-                    contextLine = 'This is a priority area. Professional treatment strongly recommended.';
+                    healthLabel = 'PRIORITY';
+                    contextLine = 'This area may benefit most from an in-person treatment plan.';
                 }
                 const severityClass = healthScore >= 75 ? 'severity-none' : healthScore >= 55 ? 'severity-mild' : healthScore >= 40 ? 'severity-moderate' : 'severity-significant';
 
@@ -2892,24 +3464,28 @@
                 concernsGrid.appendChild(card);
             });
 
-            // BOOKING CTA between concerns and recommendations
-            const midBookingCTA = document.createElement('div');
-            midBookingCTA.id = 'midBookingCTA';
-            midBookingCTA.style.cssText = 'text-align:center; margin:10px auto 30px; padding:24px 20px; background:linear-gradient(135deg, rgba(81,104,98,0.06), rgba(81,104,98,0.02)); border-radius:12px; border:1.5px solid var(--evergreen); max-width:500px;';
-            midBookingCTA.innerHTML = `<div style="font-family:Georgia,serif; font-size:1.5rem; color:var(--evergreen); margin-bottom:8px;">Ready to Get Started?</div>
-            <a href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" style="display:inline-block; padding:14px 36px; background:var(--sand); color:#fff; border-radius:30px; font-size:1rem; font-weight:600; text-decoration:none; transition:all 0.3s; box-shadow:0 4px 12px rgba(193,168,144,0.3);" onmouseover="this.style.background='var(--gold)'" onmouseout="this.style.background='var(--sand)'">Book Your Free Consultation</a>`;
-            concernsGridEl.parentNode.appendChild(midBookingCTA);
+            const findingsToggle = document.getElementById('findingsToggle');
+            findingsToggle.hidden = sortedConcerns.length <= 3;
+            findingsToggle.setAttribute('aria-expanded', 'false');
+            findingsToggle.textContent = `See All Findings (${sortedConcerns.length})`;
 
             // Recommendations
-            const recCards = document.getElementById('recommendationCards');
-            recCards.innerHTML = '';
-            data.recommendations.forEach((rec, idx) => {
+            const recRoot = document.getElementById('recommendationCards');
+            const treatmentCards = document.getElementById('treatmentRecommendationCards');
+            const productCards = document.getElementById('productRecommendationCards');
+            treatmentCards.innerHTML = '';
+            productCards.innerHTML = '';
+            document.getElementById('treatmentRecommendationsGroup').hidden = treatmentRecommendations.length === 0;
+            document.getElementById('productRecommendationsGroup').hidden = productRecommendations.length === 0;
+
+            treatmentRecommendations.forEach((rec, idx) => {
                 const card = document.createElement('div');
                 card.className = 'recommendation-card';
                 card.style.animationDelay = `${0.2 + idx * 0.15}s`;
 
-                const tagColor = rec.targets[0] && data.concerns[rec.targets[0]].score <= 30 ? 'mint' : 
-                                rec.targets[0] && data.concerns[rec.targets[0]].score <= 60 ? 'gold' : 'peach';
+                const firstTarget = Array.isArray(rec.targets) ? rec.targets[0] : null;
+                const targetScore = firstTarget && data.concerns[firstTarget] ? data.concerns[firstTarget].score : 50;
+                const tagColor = targetScore <= 30 ? 'mint' : targetScore <= 60 ? 'gold' : 'peach';
 
                 card.innerHTML = `
                     <div class="rec-header">
@@ -2918,28 +3494,26 @@
                     </div>
                     <p class="rec-reason">${rec.reason}</p>
                     <div class="rec-targets">
-                        ${rec.targets.map(target => `<span class="rec-tag tag-${tagColor}">${concernNames[target]}</span>`).join('')}
+                        ${(rec.targets || []).map(target => `<span class="rec-tag tag-${tagColor}">${concernNames[target] || target}</span>`).join('')}
                     </div>
-                    <a href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" style="display:inline-block; margin-top:12px; padding:8px 20px; background:var(--sand); color:#fff; border-radius:20px; font-size:0.82rem; font-weight:600; text-decoration:none; transition:all 0.3s;" onmouseover="this.style.background='var(--evergreen)'" onmouseout="this.style.background='var(--sand)'">Book Consultation</a>
                 `;
-                recCards.appendChild(card);
+                treatmentCards.appendChild(card);
             });
 
             // SKINCARE PRODUCT RECOMMENDATIONS
-            if (data.productRecommendations && data.productRecommendations.length > 0) {
-                data.productRecommendations.forEach((pr, idx) => {
+            if (productRecommendations.length > 0) {
+                productRecommendations.forEach((pr, idx) => {
                     const pCard = document.createElement('div');
                     pCard.className = 'recommendation-card';
-                    pCard.style.animationDelay = `${0.2 + (data.recommendations.length + idx) * 0.15}s`;
+                    pCard.style.animationDelay = `${0.2 + (treatmentRecommendations.length + idx) * 0.15}s`;
                     pCard.innerHTML = `
                         <div class="rec-header" style="background:linear-gradient(135deg, var(--sand) 0%, var(--gold) 100%);">
                             <h3 class="rec-treatment">${pr.product}</h3>
                             <div class="rec-priority" style="background:rgba(255,255,255,0.25); color:#fff;">Skincare</div>
                         </div>
                         <p class="rec-reason">${pr.reason}</p>
-                        <a href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" style="display:inline-block; margin-top:12px; padding:8px 20px; background:var(--sand); color:#fff; border-radius:20px; font-size:0.82rem; font-weight:600; text-decoration:none; transition:all 0.3s;" onmouseover="this.style.background='var(--evergreen)'" onmouseout="this.style.background='var(--sand)'">Book Consultation</a>
                     `;
-                    recCards.appendChild(pCard);
+                    productCards.appendChild(pCard);
                 });
             }
 
@@ -2950,7 +3524,7 @@
                 comboDiv.style.cssText = 'background:linear-gradient(135deg, rgba(198,141,47,0.08), rgba(193,168,144,0.12)); border:1px solid var(--sand); border-radius:12px; padding:24px 28px; margin-top:24px; text-align:center;';
                 comboDiv.innerHTML = `<div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:1.5px; color:var(--sand); font-weight:700; margin-bottom:8px;">Recommended Treatment Stack</div>
                 <p style="font-size:0.95rem; color:var(--black); line-height:1.6;">${data.suggestedCombo}</p>`;
-                recCards.parentElement.appendChild(comboDiv);
+                recRoot.appendChild(comboDiv);
             }
 
             // PROMINENT BOOKING CTA
@@ -2958,7 +3532,8 @@
             bookingCTA.id = 'bottomBookingCTA';
             bookingCTA.style.cssText = 'text-align:center; margin-top:32px;';
             bookingCTA.innerHTML = `<a href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" style="display:inline-block; padding:18px 48px; background:var(--evergreen); color:#fff; border-radius:30px; font-size:1.15rem; font-weight:700; text-decoration:none; transition:all 0.3s; box-shadow:0 6px 20px rgba(81,104,98,0.35); letter-spacing:0.5px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 28px rgba(81,104,98,0.45)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 20px rgba(81,104,98,0.35)'">Book Your Complimentary Consultation</a>`;
-            recCards.parentElement.appendChild(bookingCTA);
+            const offersMembership = document.getElementById('offersMembership');
+            recRoot.parentElement.insertBefore(bookingCTA, offersMembership);
 
             // VISIA upsell banner
             const visiaDiv = document.createElement('div');
@@ -2970,7 +3545,7 @@
                 <a href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" style="display:inline-block; padding:14px 34px; background:var(--sand); color:#fff; border-radius:30px; font-size:1rem; font-weight:600; text-decoration:none; transition:all 0.3s; box-shadow:0 4px 12px rgba(0,0,0,0.15);" onmouseover="this.style.background='var(--gold)'" onmouseout="this.style.background='var(--sand)'">Book Your Complimentary VISIA Consultation</a>
                 <div style="margin-top:14px; font-size:0.82rem; opacity:0.6;">100% Complimentary &middot; VISIA Assessment + Provider Consult &middot; ~50 Minutes</div>
             `;
-            recCards.parentElement.appendChild(visiaDiv);
+            recRoot.parentElement.insertBefore(visiaDiv, offersMembership);
 
             // Store analysis for report download
             window.lastAnalysis = data;

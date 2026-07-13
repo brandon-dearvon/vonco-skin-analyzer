@@ -11,6 +11,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
+import httpx
 from PIL import Image
 
 import server
@@ -113,10 +114,33 @@ class FakeModels:
         return SimpleNamespace(text=json.dumps(self.payload))
 
 
+class TimeoutModels:
+    def __init__(self):
+        self.calls: list[dict] = []
+
+    def generate_content(self, **kwargs):
+        self.calls.append(kwargs)
+        raise httpx.ReadTimeout(
+            "synthetic upstream timeout",
+            request=httpx.Request("POST", "https://example.test/generate"),
+        )
+
+
 class FakePart:
     @staticmethod
     def from_bytes(*, data: bytes, mime_type: str):
         return {"data": data, "mime_type": mime_type}
+
+
+def fake_genai_types():
+    return SimpleNamespace(
+        Part=FakePart,
+        GenerateContentConfig=lambda **kwargs: kwargs,
+        HttpOptions=lambda **kwargs: kwargs,
+        HttpRetryOptions=lambda **kwargs: kwargs,
+        ThinkingConfig=lambda **kwargs: kwargs,
+        ThinkingLevel=SimpleNamespace(HIGH="HIGH"),
+    )
 
 
 class RestoredAnalyzerBehaviorTests(unittest.TestCase):
@@ -308,15 +332,10 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
 
     @unittest.skipUnless(BRITTANY_PHOTO.exists(), "Brittany test photo is unavailable")
     def test_exact_brittany_photo_reaches_mocked_gemini_as_clean_rgb_jpeg(self) -> None:
-        models = FakeModels(accepted_analysis(), fail_first=True)
+        models = FakeModels(accepted_analysis())
         server.LIVE_MODE = True
         server.gemini_client = SimpleNamespace(models=models)
-        server.genai_types = SimpleNamespace(
-            Part=FakePart,
-            GenerateContentConfig=lambda **kwargs: kwargs,
-            ThinkingConfig=lambda **kwargs: kwargs,
-            ThinkingLevel=SimpleNamespace(HIGH="HIGH"),
-        )
+        server.genai_types = fake_genai_types()
 
         response = server.app.test_client().post(
             "/api/analyze",
@@ -330,10 +349,14 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(models.calls), 2)
-        call = models.calls[-1]
+        self.assertEqual(len(models.calls), 1)
+        call = models.calls[0]
         self.assertEqual(call["model"], "gemini-3.1-pro-preview")
         self.assertEqual(call["config"]["thinking_config"], {"thinking_level": "HIGH"})
+        self.assertEqual(
+            call["config"]["http_options"],
+            {"timeout": 70_000, "retry_options": {"attempts": 1}},
+        )
         self.assertEqual(
             call["config"]["response_json_schema"],
             server._analysis_schema_for_area("face"),
@@ -345,6 +368,36 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
             self.assertEqual(image.mode, "RGB")
             self.assertEqual(image.size, (480, 640))
             self.assertNotEqual(image.getexif().get(274), 6)
+
+    def test_gemini_timeout_is_not_retried_and_returns_retryable_504(self) -> None:
+        models = TimeoutModels()
+        server.LIVE_MODE = True
+        server.gemini_client = SimpleNamespace(models=models)
+        server.genai_types = fake_genai_types()
+
+        response = server.app.test_client().post(
+            "/api/analyze",
+            data={
+                "image": (io.BytesIO(jpeg_bytes()), "photo.jpg"),
+                "body_area": "face",
+                "age": "35",
+            },
+            content_type="multipart/form-data",
+            headers={"X-Forwarded-For": "unit-timeout"},
+        )
+
+        self.assertEqual(len(models.calls), 1)
+        call = models.calls[0]
+        self.assertEqual(
+            call["config"]["http_options"],
+            {"timeout": 70_000, "retry_options": {"attempts": 1}},
+        )
+        self.assertEqual(response.status_code, 504)
+        payload = response.get_json()
+        self.assertEqual(payload["code"], "analysis_timeout")
+        self.assertIs(payload["retryable"], True)
+        self.assertIsInstance(payload["error"], str)
+        self.assertNotIn("synthetic upstream timeout", payload["error"].lower())
 
     def test_health_endpoint_reports_current_mode(self) -> None:
         server.MODE = "demo"
