@@ -187,11 +187,12 @@ class RestoredOriginalContractTests(unittest.TestCase):
         self.assertIn('GOOGLE_MODEL = "gemini-3.1-pro-preview"', SERVER)
         self.assertIn("thinking_level=genai_types.ThinkingLevel.HIGH", SERVER)
         self.assertIn('response_mime_type="application/json"', SERVER)
-        self.assertIn("response_json_schema=ANALYSIS_RESPONSE_SCHEMA", SERVER)
+        self.assertIn("response_json_schema=_analysis_schema_for_area(body_area)", SERVER)
         self.assertIn("max_output_tokens=65536", SERVER)
         self.assertEqual(REQUIREMENTS.count("google-genai==2.11.0"), 1)
         self.assertNotIn("anthropic", SERVER.lower())
         self.assertNotIn("anthropic", REQUIREMENTS.lower())
+        self.assertNotIn("DiamondGlow", SERVER)
 
     def test_provider_setup_and_runtime_copy_are_google_only(self) -> None:
         current_provider_surface = "\n".join(

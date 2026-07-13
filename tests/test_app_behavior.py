@@ -162,6 +162,21 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
         self.assertNotIn("skinAge", accepted["properties"])
         self.assertNotIn("skinAge", accepted["required"])
 
+    def test_live_schema_is_constrained_to_each_selected_body_area(self) -> None:
+        for area, expected_keys in AREA_CONCERNS.items():
+            with self.subTest(area=area):
+                accepted = server._analysis_schema_for_area(area)["anyOf"][1]
+                concerns = accepted["properties"]["concerns"]
+                self.assertEqual(set(concerns["properties"]), expected_keys)
+                self.assertEqual(set(concerns["required"]), expected_keys)
+                self.assertIs(concerns["additionalProperties"], False)
+
+        fallback = server._analysis_schema_for_area("unknown")["anyOf"][1]
+        self.assertEqual(
+            set(fallback["properties"]["concerns"]["properties"]),
+            AREA_CONCERNS["face"],
+        )
+
     def test_installed_google_sdk_accepts_the_exact_high_thinking_config(self) -> None:
         self.assertIsNotNone(server.genai_types)
         config = server.genai_types.GenerateContentConfig(
@@ -319,9 +334,9 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
         call = models.calls[-1]
         self.assertEqual(call["model"], "gemini-3.1-pro-preview")
         self.assertEqual(call["config"]["thinking_config"], {"thinking_level": "HIGH"})
-        self.assertIs(
+        self.assertEqual(
             call["config"]["response_json_schema"],
-            server.ANALYSIS_RESPONSE_SCHEMA,
+            server._analysis_schema_for_area("face"),
         )
         image_part = call["contents"][0]
         self.assertEqual(image_part["mime_type"], "image/jpeg")

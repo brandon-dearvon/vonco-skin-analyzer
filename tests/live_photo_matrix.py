@@ -67,6 +67,68 @@ AREA_CONCERNS = {
     "legs": {"veins", "texture", "sunDamage", "hairRemoval", "dryness"},
 }
 
+ALLOWED_TREATMENTS = {
+    "Botox",
+    "Dysport",
+    "Xeomin",
+    "Microneedling",
+    "RF Microneedling",
+    "Dermal Fillers",
+    "Sculptra",
+    "Lip Filler (Versa)",
+    "HydraFacial Clarifying",
+    "HydraFacial Customized",
+    "HydraFacial Elite",
+    "SaltFacial",
+    "SkinVive",
+    "Sciton Moxi",
+    "Chemical Peels (VI Peel)",
+    "Microneedling + PRF",
+    "Deep Pore Facial",
+    "Signature Facial",
+    "Anti-Aging Facial",
+    "Sciton BBL",
+    "Sciton Halo",
+    "Chemical Peels",
+    "Kybella",
+    "Laser Hair Removal",
+    "Hair Restoration (PRF)",
+    "Brow Lamination",
+}
+
+ALLOWED_PRODUCTS = {
+    "SkinBetter AlphaRet",
+    "ZO Wrinkle+Texture Repair",
+    "Avene Thermal Water",
+    "Avene Cicalfate+",
+    "Alastin HydraTint",
+    "SkinBetter Even Tone",
+    "ISDIN Melaclear Advanced",
+    "ZO 10% Vitamin C",
+    "Hydrinity Vivid Serum",
+    "ZO Complexion Renewal Pads",
+    "SkinBetter Peel Pads",
+    "Alastin Restorative Skin Complex",
+    "ZO Growth Factor Serum",
+    "Hydrinity Renewing HA Serum",
+    "SkinBetter Trio Moisture",
+    "Alastin Restorative Eye Cream",
+    "ZO Growth Factor Eye",
+    "Colorescience Face Shield SPF 50",
+    "ISDIN Eryfotona Actinica",
+    "SkinBetter Sunbetter SPF 68",
+    "RevitaLash Conditioner",
+    "Alastin Skin Nectar",
+    "Hydrinity Hyacyn Mist",
+    "SkinBetter Alto Defense",
+}
+
+SPF_PRODUCTS = {
+    "Colorescience Face Shield SPF 50",
+    "ISDIN Eryfotona Actinica",
+    "SkinBetter Sunbetter SPF 68",
+}
+
 
 def encode_multipart(image_path: Path, body_area: str) -> tuple[bytes, str]:
     boundary = f"----vonco-{uuid.uuid4().hex}"
@@ -150,6 +212,11 @@ def validate_preview_contract(payload: dict, area: str) -> list[str]:
         for item in highlights
     ):
         problems.append("positiveHighlights contains an incomplete item")
+    else:
+        first_detail = str(highlights[0].get("detail", "")).strip()
+        summary = str(payload.get("summary", "")).strip()
+        if not summary.lower().startswith(first_detail.lower()):
+            problems.append("summary does not begin with the first positive detail")
 
     concerns = payload.get("concerns", {})
     keys = set(concerns) if isinstance(concerns, dict) else set()
@@ -158,6 +225,32 @@ def validate_preview_contract(payload: dict, area: str) -> list[str]:
             f"concerns {sorted(keys)} != expected baseline keys "
             f"{sorted(AREA_CONCERNS[area])}"
         )
+
+    recommendations = payload.get("recommendations", [])
+    if not isinstance(recommendations, list) or not 3 <= len(recommendations) <= 5:
+        problems.append("recommendations must contain 3 to 5 treatments")
+    else:
+        for recommendation in recommendations:
+            treatment = str(recommendation.get("treatment", "")).strip()
+            if treatment not in ALLOWED_TREATMENTS:
+                problems.append(f"non-catalog treatment: {treatment}")
+            targets = set(recommendation.get("targets", []))
+            if not targets <= keys:
+                problems.append(
+                    f"unsupported targets for {treatment}: {sorted(targets - keys)}"
+                )
+
+    products = payload.get("productRecommendations", [])
+    if not isinstance(products, list) or not 2 <= len(products) <= 3:
+        problems.append("productRecommendations must contain 2 to 3 products")
+    else:
+        product_names = {
+            str(product.get("product", "")).strip() for product in products
+        }
+        for product in sorted(product_names - ALLOWED_PRODUCTS):
+            problems.append(f"non-catalog product: {product}")
+        if not product_names & SPF_PRODUCTS:
+            problems.append("productRecommendations must include an approved SPF")
     return problems
 
 
@@ -204,6 +297,20 @@ def main() -> int:
                 if isinstance(payload.get("concerns"), dict)
                 else []
             ),
+            "positiveCount": len(payload.get("positiveHighlights", [])),
+            "treatments": [
+                {
+                    "name": item.get("treatment"),
+                    "targets": item.get("targets", []),
+                }
+                for item in payload.get("recommendations", [])
+                if isinstance(item, dict)
+            ],
+            "products": [
+                item.get("product")
+                for item in payload.get("productRecommendations", [])
+                if isinstance(item, dict)
+            ],
             "problems": problems,
         }
         results.append(record)

@@ -6,6 +6,7 @@ Flask server for AI-powered skin analysis using Google Gemini
 import os
 import json
 import random
+from copy import deepcopy
 from pathlib import Path
 from io import BytesIO
 
@@ -1052,6 +1053,42 @@ BODY_AREA_PROMPTS = {
     "legs": "This is a photo of the patient's LEGS. Analyze for spider veins/vascularity, texture, sun damage, unwanted hair, and dryness. Use concern keys: veins, texture, sunDamage, hairRemoval, dryness. Do NOT recommend Botox, dermal fillers, or Sculptra for legs. Focus on BBL, Moxi, Microneedling, SaltFacial, and Laser Hair Removal."
 }
 
+AREA_CONCERN_KEYS = {
+    "face": (
+        "wrinkles",
+        "redness",
+        "darkSpots",
+        "texture",
+        "pores",
+        "laxity",
+        "sunDamage",
+        "unevenTone",
+    ),
+    "neck_chest": ("sunDamage", "laxity", "redness", "texture", "wrinkles"),
+    "hands": ("sunDamage", "laxity", "texture", "veins", "dryness"),
+    "back": ("acne", "scarring", "texture", "unevenTone", "hairRemoval"),
+    "legs": ("veins", "texture", "sunDamage", "hairRemoval", "dryness"),
+}
+
+
+def _analysis_schema_for_area(body_area="face"):
+    """Constrain Gemini's concern object to the guest-selected body area."""
+    schema = deepcopy(ANALYSIS_RESPONSE_SCHEMA)
+    completed = schema["anyOf"][1]
+    concern_value_schema = completed["properties"]["concerns"][
+        "additionalProperties"
+    ]
+    concern_keys = AREA_CONCERN_KEYS.get(body_area, AREA_CONCERN_KEYS["face"])
+    completed["properties"]["concerns"] = {
+        "type": "object",
+        "properties": {
+            key: deepcopy(concern_value_schema) for key in concern_keys
+        },
+        "required": list(concern_keys),
+        "additionalProperties": False,
+    }
+    return schema
+
 def build_user_prompt(user_age=None, body_area="face"):
     """Build the user prompt for the Google Gemini vision API, including age and body area."""
     area_instruction = BODY_AREA_PROMPTS.get(body_area, BODY_AREA_PROMPTS["face"])
@@ -1254,7 +1291,7 @@ def analyze():
                         system_instruction=SYSTEM_PROMPT,
                         max_output_tokens=65536,
                         response_mime_type="application/json",
-                        response_json_schema=ANALYSIS_RESPONSE_SCHEMA,
+                        response_json_schema=_analysis_schema_for_area(body_area),
                         thinking_config=genai_types.ThinkingConfig(
                             thinking_level=genai_types.ThinkingLevel.HIGH,
                         ),
