@@ -24,7 +24,7 @@ fi
 
 # Create .env from env.txt if neither exists
 if [ ! -f .env ] && [ ! -f env.txt ]; then
-    echo "  ⚠️  No config found. Edit env.txt to add your GOOGLE_API_KEY"
+    echo "  ⚠️  No config found. Edit env.txt to add your ANTHROPIC_API_KEY"
     echo ""
 fi
 
