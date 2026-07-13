@@ -6,6 +6,7 @@ Flask server for AI-powered skin analysis using Google Gemini
 import os
 import json
 import random
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from copy import deepcopy
 from pathlib import Path
 from io import BytesIO
@@ -19,6 +20,7 @@ from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
 from google import genai
+from google.genai import errors as genai_errors
 from google.genai import types as genai_types
 
 # Load environment variables (override=True so env.txt takes precedence over system vars)
@@ -44,15 +46,24 @@ def add_no_cache_headers(response):
     return response
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 GOOGLE_MODEL = "gemini-3.1-pro-preview"
-GOOGLE_TIMEOUT_MS = int(os.getenv("GOOGLE_TIMEOUT_MS", str(70_000)))
+GOOGLE_TOTAL_BUDGET_MS = int(os.getenv("GOOGLE_TOTAL_BUDGET_MS", str(70_000)))
+GOOGLE_HEDGE_DELAY_MS = int(os.getenv("GOOGLE_HEDGE_DELAY_MS", str(35_000)))
+GOOGLE_MAX_OUTPUT_TOKENS = int(os.getenv("GOOGLE_MAX_OUTPUT_TOKENS", str(32_768)))
+GOOGLE_TRANSIENT_STATUS_CODES = frozenset({408, 429, 500, 502, 503, 504})
 
 
-def _google_http_options():
-    """Return one bounded, non-retrying HTTP contract for each model request."""
+def _google_http_options(timeout_ms):
+    """Return a bounded, non-retrying HTTP contract for one model attempt."""
     return genai_types.HttpOptions(
-        timeout=GOOGLE_TIMEOUT_MS,
+        timeout=timeout_ms,
         retry_options=genai_types.HttpRetryOptions(attempts=1),
     )
+
+
+class _GoogleResponseError(Exception):
+    """The provider returned an empty or malformed structured response."""
+
+
 ANALYSIS_RESPONSE_SCHEMA = {
     "anyOf": [
         {
@@ -1259,6 +1270,7 @@ def analyze():
     # Live mode - Google Gemini vision and analysis
     try:
         t_start = time.time()
+        model_deadline = time.monotonic() + (GOOGLE_TOTAL_BUDGET_MS / 1000)
 
         # ── Normalize image bytes ──
         # Some JPEGs have unusual encoding (CMYK, progressive issues, EXIF
@@ -1289,40 +1301,249 @@ def analyze():
         image_part = genai_types.Part.from_bytes(data=image_bytes, mime_type=media_type)
         user_prompt = build_user_prompt(request.form.get("age"), body_area)
 
-        # One bounded model request per guest action. The response schema already
-        # constrains the JSON, and avoiding nested retries prevents a single photo
-        # from multiplying latency and cost.
-        gemini_response = gemini_client.models.generate_content(
-            model=GOOGLE_MODEL,
-            contents=[image_part, user_prompt],
-            config=genai_types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT,
-                max_output_tokens=65536,
-                response_mime_type="application/json",
-                response_json_schema=_analysis_schema_for_area(body_area),
-                thinking_config=genai_types.ThinkingConfig(
-                    thinking_level=genai_types.ThinkingLevel.HIGH,
-                ),
-                http_options=_google_http_options(),
+        # Give the primary high-thinking request the full deadline. If it is still
+        # running after the hedge delay, start one identical request and use the
+        # first valid structured result. Fast requests still make only one call;
+        # slow requests gain resilience without killing a response that may finish.
+        def run_google_attempt(attempt_number, attempt_timeout_ms):
+            attempt_started = time.time()
+            gemini_response = gemini_client.models.generate_content(
+                model=GOOGLE_MODEL,
+                contents=[image_part, user_prompt],
+                config=genai_types.GenerateContentConfig(
+                    system_instruction=SYSTEM_PROMPT,
+                    max_output_tokens=GOOGLE_MAX_OUTPUT_TOKENS,
+                    response_mime_type="application/json",
+                    response_json_schema=_analysis_schema_for_area(body_area),
+                    thinking_config=genai_types.ThinkingConfig(
+                        thinking_level=genai_types.ThinkingLevel.HIGH,
+                    ),
+                    http_options=_google_http_options(attempt_timeout_ms),
+                )
             )
+            try:
+                attempt_text = (gemini_response.text or "").strip()
+            except ValueError as response_error:
+                raise _GoogleResponseError(
+                    "Google Gemini did not return a readable text response"
+                ) from response_error
+            if not attempt_text:
+                raise _GoogleResponseError(
+                    "Google Gemini returned an empty text response"
+                )
+
+            if attempt_text.startswith("```json"):
+                attempt_text = attempt_text[7:]
+            if attempt_text.startswith("```"):
+                attempt_text = attempt_text[3:]
+            if attempt_text.endswith("```"):
+                attempt_text = attempt_text[:-3]
+            attempt_text = attempt_text.strip()
+            attempt_analysis = json.loads(attempt_text)
+            usage = getattr(gemini_response, "usage_metadata", None)
+            if usage is not None:
+                print(
+                    "  [Pipeline] Tokens: "
+                    f"prompt={getattr(usage, 'prompt_token_count', None)}, "
+                    f"thinking={getattr(usage, 'thoughts_token_count', None)}, "
+                    f"output={getattr(usage, 'candidates_token_count', None)}"
+                )
+            if not isinstance(attempt_analysis, dict):
+                raise _GoogleResponseError(
+                    "Google Gemini returned a non-object JSON response"
+                )
+            if attempt_analysis.get("rejected") is True:
+                if not str(attempt_analysis.get("reason", "")).strip():
+                    raise _GoogleResponseError(
+                        "Google Gemini returned a rejection without a reason"
+                    )
+            else:
+                required_keys = {
+                    "overallScore",
+                    "positiveHighlights",
+                    "concerns",
+                    "recommendations",
+                    "productRecommendations",
+                    "suggestedCombo",
+                    "summary",
+                }
+                if not required_keys.issubset(attempt_analysis):
+                    raise _GoogleResponseError(
+                        "Google Gemini returned an incomplete analysis"
+                    )
+                if not isinstance(attempt_analysis.get("overallScore"), int):
+                    raise _GoogleResponseError(
+                        "Google Gemini returned an invalid overall score"
+                    )
+                for list_key in (
+                    "positiveHighlights",
+                    "recommendations",
+                    "productRecommendations",
+                ):
+                    if not isinstance(attempt_analysis.get(list_key), list):
+                        raise _GoogleResponseError(
+                            f"Google Gemini returned an invalid {list_key} value"
+                        )
+                if not 2 <= len(attempt_analysis["positiveHighlights"]) <= 3:
+                    raise _GoogleResponseError(
+                        "Google Gemini returned the wrong positive highlight count"
+                    )
+                if not str(attempt_analysis.get("summary", "")).strip():
+                    raise _GoogleResponseError(
+                        "Google Gemini returned an empty summary"
+                    )
+                candidate_concerns = attempt_analysis.get("concerns")
+                if not isinstance(candidate_concerns, dict):
+                    raise _GoogleResponseError(
+                        "Google Gemini returned an invalid concern map"
+                    )
+                expected_concerns = set(
+                    AREA_CONCERN_KEYS.get(body_area, AREA_CONCERN_KEYS["face"])
+                )
+                if set(candidate_concerns) != expected_concerns:
+                    raise _GoogleResponseError(
+                        "Google Gemini returned the wrong concern set"
+                    )
+            print(
+                f"  [Pipeline] {GOOGLE_MODEL} attempt {attempt_number}/2 "
+                f"completed in {time.time() - attempt_started:.1f}s "
+                f"({len(attempt_text)} chars)"
+            )
+            return attempt_analysis, attempt_text
+
+        def classify_google_failure(model_error):
+            if isinstance(model_error, httpx.TimeoutException):
+                return "timeout", "transport timeout", True
+            if isinstance(model_error, genai_errors.APIError):
+                error_code = getattr(model_error, "code", None)
+                error_status = getattr(model_error, "status", None)
+                detail = f"Google API {error_code} {error_status or ''}".strip()
+                if error_code not in GOOGLE_TRANSIENT_STATUS_CODES:
+                    return "nonretryable", detail, False
+                kind = "timeout" if error_code in {408, 504} else "unavailable"
+                return kind, detail, True
+            if isinstance(model_error, (json.JSONDecodeError, _GoogleResponseError)):
+                return "invalid_response", model_error.__class__.__name__, True
+            return None, model_error.__class__.__name__, False
+
+        analysis = None
+        response_text = ""
+        failure_kinds = []
+        unexpected_errors = []
+        pending = set()
+        hedge_started = False
+        attempt_number = 0
+        hedge_at = min(
+            model_deadline,
+            time.monotonic() + (GOOGLE_HEDGE_DELAY_MS / 1000),
         )
-        response_text = gemini_response.text.strip()
-        if not response_text:
-            raise ValueError("Google Gemini returned no text response")
+        executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="gemini")
 
-        t_done = time.time()
-        print(f"  [Pipeline] {GOOGLE_MODEL} vision+analysis completed in {t_done - t_start:.1f}s ({len(response_text)} chars)")
+        def submit_google_attempt():
+            nonlocal attempt_number, hedge_started
+            remaining_budget_ms = max(
+                0, int((model_deadline - time.monotonic()) * 1000)
+            )
+            if remaining_budget_ms <= 0 or attempt_number >= 2:
+                return False
+            attempt_number += 1
+            if attempt_number == 2:
+                hedge_started = True
+                print("  [Pipeline] Started one backup Google request")
+            future = executor.submit(
+                run_google_attempt,
+                attempt_number,
+                remaining_budget_ms,
+            )
+            pending.add(future)
+            return True
 
-        # Strip markdown fences if present
-        if response_text.startswith("```json"):
-            response_text = response_text[7:]
-        if response_text.startswith("```"):
-            response_text = response_text[3:]
-        if response_text.endswith("```"):
-            response_text = response_text[:-3]
-        response_text = response_text.strip()
+        submit_google_attempt()
+        try:
+            while pending and analysis is None:
+                now = time.monotonic()
+                remaining_seconds = model_deadline - now
+                if remaining_seconds <= 0:
+                    break
+                wait_seconds = remaining_seconds
+                if not hedge_started:
+                    wait_seconds = min(wait_seconds, max(0, hedge_at - now))
 
-        analysis = json.loads(response_text)
+                completed, still_pending = wait(
+                    pending,
+                    timeout=wait_seconds,
+                    return_when=FIRST_COMPLETED,
+                )
+                pending = set(still_pending)
+
+                if not completed:
+                    if not hedge_started and submit_google_attempt():
+                        continue
+                    break
+
+                saw_retryable_failure = False
+                saw_nonretryable_failure = False
+                for future in completed:
+                    try:
+                        candidate_analysis, candidate_text = future.result()
+                    except Exception as model_error:
+                        failure_kind, failure_detail, retryable = (
+                            classify_google_failure(model_error)
+                        )
+                        if failure_kind is None:
+                            unexpected_errors.append(model_error)
+                        else:
+                            failure_kinds.append(failure_kind)
+                            print(
+                                f"  [Pipeline] {failure_detail} "
+                                f"(attempt failure: {failure_kind})"
+                            )
+                            saw_retryable_failure = saw_retryable_failure or retryable
+                            saw_nonretryable_failure = (
+                                saw_nonretryable_failure or not retryable
+                            )
+                    else:
+                        analysis = candidate_analysis
+                        response_text = candidate_text
+                        break
+
+                if analysis is not None:
+                    break
+                if (
+                    not hedge_started
+                    and saw_retryable_failure
+                    and not saw_nonretryable_failure
+                ):
+                    submit_google_attempt()
+                if not pending and (hedge_started or saw_nonretryable_failure):
+                    break
+        finally:
+            for future in pending:
+                future.cancel()
+            executor.shutdown(wait=False, cancel_futures=True)
+
+        if analysis is None:
+            if unexpected_errors and not failure_kinds:
+                raise unexpected_errors[0]
+            if "nonretryable" in failure_kinds:
+                return jsonify({
+                    "error": "The analysis service could not process this request.",
+                    "code": "analysis_unavailable",
+                    "retryable": False,
+                }), 502
+            if not failure_kinds or all(
+                failure_kind == "timeout" for failure_kind in failure_kinds
+            ):
+                return jsonify({
+                    "error": "This analysis took longer than expected. Please try again.",
+                    "code": "analysis_timeout",
+                    "retryable": True,
+                }), 504
+            return jsonify({
+                "error": "The analysis service is temporarily unavailable. Please try again.",
+                "code": "analysis_unavailable",
+                "retryable": True,
+            }), 503
 
         # Free image data from memory
         try:
@@ -1344,21 +1565,14 @@ def analyze():
 
         return jsonify(analysis)
 
-    except httpx.TimeoutException:
-        print(f"  [Pipeline] {GOOGLE_MODEL} exceeded the {GOOGLE_TIMEOUT_MS / 1000:.0f}s analysis deadline")
+    except Exception:
+        import traceback
+        traceback.print_exc()
         return jsonify({
-            "error": "This analysis took longer than expected. Please try again.",
-            "code": "analysis_timeout",
+            "error": "We could not complete this analysis. Please try again.",
+            "code": "analysis_failed",
             "retryable": True,
-        }), 504
-    except json.JSONDecodeError as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({"error": f"Invalid JSON response from AI: {str(e)}"}), 500
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({"error": f"Analysis failed: {str(e)}"}), 500
+        }), 500
 
 
 @app.route("/")
@@ -1397,7 +1611,7 @@ def print_startup_banner():
     Mode: {MODE.upper()}
     Google API: {"Configured" if LIVE_MODE else "Not configured"}
     Gemini: {f"Enabled ({GOOGLE_MODEL}, high thinking)" if LIVE_MODE else "Not configured"}
-    Pipeline: Google Gemini single-call (vision+analysis)
+    Pipeline: Google Gemini high-thinking vision+analysis with slow-request hedge
     Debug: {DEBUG}
     Port: {PORT}
     

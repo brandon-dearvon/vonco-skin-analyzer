@@ -7,6 +7,9 @@ const baseUrl = process.env.TEST_BASE_URL || 'http://127.0.0.1:5004';
 const brittanyPhoto = process.env.BRITTANY_TEST_PHOTO
   || path.resolve('work/test-images/brittany-test-photo.jpeg');
 const artifactDir = path.resolve('work/qa/live-preview');
+const chromiumRuns = Number(process.env.LIVE_CHROMIUM_RUNS || 1);
+const webkitRuns = Number(process.env.LIVE_WEBKIT_RUNS || 1);
+const ledger = [];
 const expectedFaceConcerns = [
   'darkSpots', 'laxity', 'pores', 'redness',
   'sunDamage', 'texture', 'unevenTone', 'wrinkles',
@@ -18,20 +21,67 @@ function launchOptions(engineName) {
     : { headless: true };
 }
 
-async function runLiveUpload(browserType, engineName) {
+async function runLiveUpload(browserType, engineName, runNumber) {
   const browser = await browserType.launch(launchOptions(engineName));
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
   const pageErrors = [];
+  let apiResponse = null;
   page.on('pageerror', error => pageErrors.push(String(error)));
+  page.on('response', async response => {
+    if (new URL(response.url()).pathname !== '/api/analyze') return;
+    let payload = {};
+    try { payload = await response.json(); } catch (_) { payload = {}; }
+    apiResponse = {
+      httpStatus: response.status(),
+      code: payload.code || null,
+      retryable: payload.retryable === true,
+      error: payload.error || null,
+    };
+  });
 
   const healthResponse = await context.request.get(`${baseUrl}/api/health`);
   assert.equal(healthResponse.ok(), true, `${engineName}: preview health request succeeds`);
   assert.equal((await healthResponse.json()).mode, 'live', `${engineName}: preview is in live mode`);
 
   await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+  const startedAt = Date.now();
   await page.locator('#fileInput').setInputFiles(brittanyPhoto);
-  await page.waitForSelector('#leadGateOverlay.show', { timeout: 120000 });
+  await page.waitForFunction(() => (
+    document.getElementById('leadGateOverlay')?.classList.contains('show')
+      || document.getElementById('analysisRecovery')?.classList.contains('show')
+      || Boolean(document.getElementById('rejectionOverlay'))
+  ), null, { timeout: 90000 });
+
+  const terminalState = await page.evaluate(() => ({
+    lead: document.getElementById('leadGateOverlay')?.classList.contains('show'),
+    recovery: document.getElementById('analysisRecovery')?.classList.contains('show'),
+    recoveryTitle: document.getElementById('analysisRecoveryTitle')?.textContent || null,
+    recoveryMessage: document.getElementById('analysisRecoveryMessage')?.textContent || null,
+    rejection: Boolean(document.getElementById('rejectionOverlay')),
+    rejectionTitle: document.getElementById('rejectionTitle')?.textContent || null,
+  }));
+  const analysisElapsedMs = Date.now() - startedAt;
+  if (!terminalState.lead) {
+    await page.screenshot({
+      path: path.join(artifactDir, `${engineName}-run-${runNumber}-failure.png`),
+      fullPage: true,
+    });
+    const failure = new Error(
+      `${engineName} run ${runNumber} ended without results after ${analysisElapsedMs}ms: `
+      + JSON.stringify({ terminalState, apiResponse }),
+    );
+    failure.qaRecord = {
+      engine: engineName,
+      run: runNumber,
+      outcome: 'fail',
+      elapsedMs: analysisElapsedMs,
+      apiResponse,
+      terminalState,
+    };
+    await browser.close();
+    throw failure;
+  }
 
   const pending = await page.evaluate(() => ({
     live: pendingAnalysisData?._isLive === true,
@@ -96,19 +146,51 @@ async function runLiveUpload(browserType, engineName) {
   assert.deepEqual(pageErrors, [], `${engineName}: no page errors`);
 
   await page.screenshot({
-    path: path.join(artifactDir, `${engineName}-mobile-live-brittany.png`),
+    path: path.join(artifactDir, `${engineName}-run-${runNumber}-mobile-live-brittany.png`),
     fullPage: true,
   });
+  ledger.push({
+    engine: engineName,
+    run: runNumber,
+    outcome: 'pass',
+    elapsedMs: analysisElapsedMs,
+    apiResponse,
+    pageErrors: pageErrors.length,
+  });
   await browser.close();
-  process.stdout.write(`PASS ${engineName} live Brittany upload at 390x844\n`);
+  process.stdout.write(
+    `PASS ${engineName} run ${runNumber} live Brittany upload in ${analysisElapsedMs}ms at 390x844\n`,
+  );
 }
 
 (async () => {
   assert.ok(fs.existsSync(brittanyPhoto), `Brittany photo must be present: ${brittanyPhoto}`);
   fs.mkdirSync(artifactDir, { recursive: true });
-  for (const [engineName, browserType] of [['chromium', chromium], ['webkit', webkit]]) {
-    await runLiveUpload(browserType, engineName);
+  const failures = [];
+  for (const [engineName, browserType, runs] of [
+    ['chromium', chromium, chromiumRuns],
+    ['webkit', webkit, webkitRuns],
+  ]) {
+    for (let runNumber = 1; runNumber <= runs; runNumber += 1) {
+      try {
+        await runLiveUpload(browserType, engineName, runNumber);
+      } catch (error) {
+        failures.push(String(error));
+        ledger.push(error.qaRecord || {
+          engine: engineName,
+          run: runNumber,
+          outcome: 'fail',
+          error: String(error),
+        });
+        process.stderr.write(`FAIL ${String(error)}\n`);
+      }
+    }
   }
+  fs.writeFileSync(
+    path.join(artifactDir, 'brittany-reliability-ledger.json'),
+    `${JSON.stringify(ledger, null, 2)}\n`,
+  );
+  assert.deepEqual(failures, [], `Live Brittany reliability failures:\n${failures.join('\n')}`);
 })().catch(error => {
   console.error(error);
   process.exitCode = 1;

@@ -7,11 +7,14 @@ import io
 import json
 import os
 import random
+import threading
+import time
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
 import httpx
+from google.genai import errors as genai_errors
 from PIL import Image
 
 import server
@@ -126,6 +129,56 @@ class TimeoutModels:
         )
 
 
+class SequencedModels:
+    def __init__(self, steps):
+        self.steps = list(steps)
+        self.calls: list[dict] = []
+
+    def generate_content(self, **kwargs):
+        self.calls.append(kwargs)
+        step = self.steps.pop(0)
+        if isinstance(step, BaseException):
+            raise step
+        if isinstance(step, dict):
+            step = json.dumps(step)
+        return SimpleNamespace(text=step)
+
+
+class BlockingPrimaryModels:
+    def __init__(self, first_payload: dict, second_step):
+        self.steps = [first_payload, second_step]
+        self.calls: list[dict] = []
+        self.lock = threading.Lock()
+        self.first_started = threading.Event()
+        self.release_first = threading.Event()
+
+    def generate_content(self, **kwargs):
+        with self.lock:
+            call_index = len(self.calls)
+            self.calls.append(kwargs)
+        if call_index == 0:
+            self.first_started.set()
+            self.release_first.wait(timeout=1)
+        step = self.steps[call_index]
+        if isinstance(step, BaseException):
+            raise step
+        return SimpleNamespace(text=json.dumps(step))
+
+
+def google_api_error(code: int, status: str) -> genai_errors.APIError:
+    error_type = genai_errors.ServerError if code >= 500 else genai_errors.ClientError
+    return error_type(
+        code,
+        {
+            "error": {
+                "code": code,
+                "message": "synthetic provider failure",
+                "status": status,
+            }
+        },
+    )
+
+
 class FakePart:
     @staticmethod
     def from_bytes(*, data: bytes, mime_type: str):
@@ -150,6 +203,8 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
             "MODE": server.MODE,
             "gemini_client": server.gemini_client,
             "genai_types": server.genai_types,
+            "GOOGLE_TOTAL_BUDGET_MS": server.GOOGLE_TOTAL_BUDGET_MS,
+            "GOOGLE_HEDGE_DELAY_MS": server.GOOGLE_HEDGE_DELAY_MS,
         }
         server.rate_tracker.clear()
 
@@ -204,7 +259,7 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
     def test_installed_google_sdk_accepts_the_exact_high_thinking_config(self) -> None:
         self.assertIsNotNone(server.genai_types)
         config = server.genai_types.GenerateContentConfig(
-            max_output_tokens=65536,
+            max_output_tokens=server.GOOGLE_MAX_OUTPUT_TOKENS,
             response_mime_type="application/json",
             response_json_schema=server.ANALYSIS_RESPONSE_SCHEMA,
             thinking_config=server.genai_types.ThinkingConfig(
@@ -212,7 +267,7 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
             ),
         )
         self.assertEqual(config.thinking_config.thinking_level.value, "HIGH")
-        self.assertEqual(config.max_output_tokens, 65536)
+        self.assertEqual(config.max_output_tokens, 32_768)
         self.assertEqual(config.response_mime_type, "application/json")
         self.assertIsNotNone(config.response_json_schema)
 
@@ -353,10 +408,13 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
         call = models.calls[0]
         self.assertEqual(call["model"], "gemini-3.1-pro-preview")
         self.assertEqual(call["config"]["thinking_config"], {"thinking_level": "HIGH"})
+        self.assertEqual(call["config"]["max_output_tokens"], 32_768)
         self.assertEqual(
-            call["config"]["http_options"],
-            {"timeout": 70_000, "retry_options": {"attempts": 1}},
+            call["config"]["http_options"]["retry_options"],
+            {"attempts": 1},
         )
+        self.assertGreaterEqual(call["config"]["http_options"]["timeout"], 69_000)
+        self.assertLessEqual(call["config"]["http_options"]["timeout"], 70_000)
         self.assertEqual(
             call["config"]["response_json_schema"],
             server._analysis_schema_for_area("face"),
@@ -369,7 +427,7 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
             self.assertEqual(image.size, (480, 640))
             self.assertNotEqual(image.getexif().get(274), 6)
 
-    def test_gemini_timeout_is_not_retried_and_returns_retryable_504(self) -> None:
+    def test_gemini_transport_timeout_retries_once_within_total_budget(self) -> None:
         models = TimeoutModels()
         server.LIVE_MODE = True
         server.gemini_client = SimpleNamespace(models=models)
@@ -386,18 +444,255 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
             headers={"X-Forwarded-For": "unit-timeout"},
         )
 
-        self.assertEqual(len(models.calls), 1)
-        call = models.calls[0]
-        self.assertEqual(
-            call["config"]["http_options"],
-            {"timeout": 70_000, "retry_options": {"attempts": 1}},
-        )
+        self.assertEqual(len(models.calls), 2)
+        for call in models.calls:
+            options = call["config"]["http_options"]
+            self.assertEqual(options["retry_options"], {"attempts": 1})
+            self.assertGreater(options["timeout"], 0)
+            self.assertLessEqual(options["timeout"], 70_000)
         self.assertEqual(response.status_code, 504)
         payload = response.get_json()
         self.assertEqual(payload["code"], "analysis_timeout")
         self.assertIs(payload["retryable"], True)
         self.assertIsInstance(payload["error"], str)
         self.assertNotIn("synthetic upstream timeout", payload["error"].lower())
+
+    def test_google_deadline_error_recovers_on_second_high_thinking_attempt(self) -> None:
+        models = SequencedModels([
+            google_api_error(504, "DEADLINE_EXCEEDED"),
+            accepted_analysis(),
+        ])
+        server.LIVE_MODE = True
+        server.gemini_client = SimpleNamespace(models=models)
+        server.genai_types = fake_genai_types()
+
+        response = server.app.test_client().post(
+            "/api/analyze",
+            data={
+                "image": (io.BytesIO(jpeg_bytes()), "photo.jpg"),
+                "body_area": "face",
+                "age": "35",
+            },
+            content_type="multipart/form-data",
+            headers={"X-Forwarded-For": "unit-google-deadline-recovers"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(models.calls), 2)
+        self.assertEqual(
+            [call["config"]["thinking_config"] for call in models.calls],
+            [{"thinking_level": "HIGH"}, {"thinking_level": "HIGH"}],
+        )
+
+    def test_repeated_google_deadline_error_returns_retryable_504(self) -> None:
+        models = SequencedModels([
+            google_api_error(504, "DEADLINE_EXCEEDED"),
+            google_api_error(504, "DEADLINE_EXCEEDED"),
+        ])
+        server.LIVE_MODE = True
+        server.gemini_client = SimpleNamespace(models=models)
+        server.genai_types = fake_genai_types()
+
+        response = server.app.test_client().post(
+            "/api/analyze",
+            data={
+                "image": (io.BytesIO(jpeg_bytes()), "photo.jpg"),
+                "body_area": "face",
+                "age": "35",
+            },
+            content_type="multipart/form-data",
+            headers={"X-Forwarded-For": "unit-google-deadline-exhausted"},
+        )
+
+        self.assertEqual(len(models.calls), 2)
+        self.assertEqual(response.status_code, 504)
+        payload = response.get_json()
+        self.assertEqual(payload["code"], "analysis_timeout")
+        self.assertIs(payload["retryable"], True)
+        self.assertNotIn("synthetic provider failure", payload["error"].lower())
+
+    def test_slow_primary_starts_hedge_and_returns_without_waiting_for_loser(self) -> None:
+        second_payload = accepted_analysis()
+        second_payload["positiveHighlights"][0]["title"] = "Hedge winner"
+        models = BlockingPrimaryModels(accepted_analysis(), second_payload)
+        server.LIVE_MODE = True
+        server.gemini_client = SimpleNamespace(models=models)
+        server.genai_types = fake_genai_types()
+        server.GOOGLE_TOTAL_BUDGET_MS = 500
+        server.GOOGLE_HEDGE_DELAY_MS = 10
+
+        started = time.monotonic()
+        try:
+            response = server.app.test_client().post(
+                "/api/analyze",
+                data={
+                    "image": (io.BytesIO(jpeg_bytes()), "photo.jpg"),
+                    "body_area": "face",
+                },
+                content_type="multipart/form-data",
+                headers={"X-Forwarded-For": "unit-total-budget"},
+            )
+        finally:
+            models.release_first.set()
+        elapsed = time.monotonic() - started
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(models.calls), 2)
+        self.assertLess(elapsed, 0.2)
+        self.assertEqual(
+            response.get_json()["positiveHighlights"][0]["title"],
+            "Hedge winner",
+        )
+        timeouts = [
+            call["config"]["http_options"]["timeout"] for call in models.calls
+        ]
+        self.assertGreater(timeouts[0], timeouts[1])
+        self.assertGreater(timeouts[1], 0)
+
+    def test_slow_primary_can_finish_after_hedge_fails(self) -> None:
+        models = BlockingPrimaryModels(
+            accepted_analysis(),
+            google_api_error(503, "UNAVAILABLE"),
+        )
+        server.LIVE_MODE = True
+        server.gemini_client = SimpleNamespace(models=models)
+        server.genai_types = fake_genai_types()
+        server.GOOGLE_TOTAL_BUDGET_MS = 500
+        server.GOOGLE_HEDGE_DELAY_MS = 10
+
+        release_timer = threading.Timer(0.06, models.release_first.set)
+        release_timer.start()
+        started = time.monotonic()
+        try:
+            response = server.app.test_client().post(
+                "/api/analyze",
+                data={
+                    "image": (io.BytesIO(jpeg_bytes()), "photo.jpg"),
+                    "body_area": "face",
+                },
+                content_type="multipart/form-data",
+                headers={"X-Forwarded-For": "unit-primary-survives-hedge"},
+            )
+        finally:
+            models.release_first.set()
+            release_timer.join()
+        elapsed = time.monotonic() - started
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(models.calls), 2)
+        self.assertGreaterEqual(elapsed, 0.05)
+        self.assertLess(elapsed, 0.2)
+
+    def test_google_503_retries_once_then_returns_sanitized_503(self) -> None:
+        models = SequencedModels([
+            google_api_error(503, "UNAVAILABLE"),
+            google_api_error(503, "UNAVAILABLE"),
+        ])
+        server.LIVE_MODE = True
+        server.gemini_client = SimpleNamespace(models=models)
+        server.genai_types = fake_genai_types()
+
+        response = server.app.test_client().post(
+            "/api/analyze",
+            data={
+                "image": (io.BytesIO(jpeg_bytes()), "photo.jpg"),
+                "body_area": "face",
+            },
+            content_type="multipart/form-data",
+            headers={"X-Forwarded-For": "unit-google-unavailable"},
+        )
+
+        self.assertEqual(len(models.calls), 2)
+        self.assertEqual(response.status_code, 503)
+        payload = response.get_json()
+        self.assertEqual(payload["code"], "analysis_unavailable")
+        self.assertIs(payload["retryable"], True)
+        self.assertNotIn("synthetic provider failure", payload["error"].lower())
+
+    def test_google_429_retries_once_then_recovers(self) -> None:
+        models = SequencedModels([
+            google_api_error(429, "RESOURCE_EXHAUSTED"),
+            accepted_analysis(),
+        ])
+        server.LIVE_MODE = True
+        server.gemini_client = SimpleNamespace(models=models)
+        server.genai_types = fake_genai_types()
+
+        response = server.app.test_client().post(
+            "/api/analyze",
+            data={
+                "image": (io.BytesIO(jpeg_bytes()), "photo.jpg"),
+                "body_area": "face",
+            },
+            content_type="multipart/form-data",
+            headers={"X-Forwarded-For": "unit-google-rate-retry"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(models.calls), 2)
+
+    def test_nonretryable_google_error_does_not_start_a_second_call(self) -> None:
+        models = SequencedModels([
+            google_api_error(400, "INVALID_ARGUMENT"),
+            accepted_analysis(),
+        ])
+        server.LIVE_MODE = True
+        server.gemini_client = SimpleNamespace(models=models)
+        server.genai_types = fake_genai_types()
+
+        response = server.app.test_client().post(
+            "/api/analyze",
+            data={
+                "image": (io.BytesIO(jpeg_bytes()), "photo.jpg"),
+                "body_area": "face",
+            },
+            content_type="multipart/form-data",
+            headers={"X-Forwarded-For": "unit-google-nonretryable"},
+        )
+
+        self.assertEqual(len(models.calls), 1)
+        self.assertEqual(response.status_code, 502)
+        payload = response.get_json()
+        self.assertEqual(payload["code"], "analysis_unavailable")
+        self.assertIs(payload["retryable"], False)
+
+    def test_empty_google_response_retries_once_then_recovers(self) -> None:
+        models = SequencedModels(["", accepted_analysis()])
+        server.LIVE_MODE = True
+        server.gemini_client = SimpleNamespace(models=models)
+        server.genai_types = fake_genai_types()
+
+        response = server.app.test_client().post(
+            "/api/analyze",
+            data={
+                "image": (io.BytesIO(jpeg_bytes()), "photo.jpg"),
+                "body_area": "face",
+            },
+            content_type="multipart/form-data",
+            headers={"X-Forwarded-For": "unit-empty-response-recovers"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(models.calls), 2)
+
+    def test_partial_json_response_cannot_win_the_hedge(self) -> None:
+        models = SequencedModels([{}, accepted_analysis()])
+        server.LIVE_MODE = True
+        server.gemini_client = SimpleNamespace(models=models)
+        server.genai_types = fake_genai_types()
+
+        response = server.app.test_client().post(
+            "/api/analyze",
+            data={
+                "image": (io.BytesIO(jpeg_bytes()), "photo.jpg"),
+                "body_area": "face",
+            },
+            content_type="multipart/form-data",
+            headers={"X-Forwarded-For": "unit-partial-response-recovers"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(models.calls), 2)
 
     def test_health_endpoint_reports_current_mode(self) -> None:
         server.MODE = "demo"

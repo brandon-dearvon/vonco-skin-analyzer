@@ -109,10 +109,20 @@ class RestoredOriginalContractTests(unittest.TestCase):
 
     def test_analysis_timeout_and_live_timer_are_bounded(self) -> None:
         self.assertIn("HttpOptions(", SERVER)
+        self.assertIn('GOOGLE_TOTAL_BUDGET_MS', SERVER)
         self.assertIn('str(70_000)', SERVER)
-        self.assertIn("timeout=GOOGLE_TIMEOUT_MS", SERVER)
+        self.assertIn('GOOGLE_HEDGE_DELAY_MS', SERVER)
+        self.assertIn('str(35_000)', SERVER)
+        self.assertIn('GOOGLE_MAX_OUTPUT_TOKENS', SERVER)
+        self.assertIn('str(32_768)', SERVER)
+        self.assertIn('time.monotonic()', SERVER)
+        self.assertIn('ThreadPoolExecutor(max_workers=2', SERVER)
+        self.assertIn('return_when=FIRST_COMPLETED', SERVER)
+        self.assertIn('shutdown(wait=False, cancel_futures=True)', SERVER)
+        self.assertIn("timeout=timeout_ms", SERVER)
         self.assertIn("HttpRetryOptions(attempts=1)", SERVER)
-        self.assertIn("except httpx.TimeoutException", SERVER)
+        self.assertIn("genai_errors.APIError", SERVER)
+        self.assertIn("GOOGLE_TRANSIENT_STATUS_CODES", SERVER)
         self.assertIn('"code": "analysis_timeout"', SERVER)
         self.assertIn('"retryable": True', SERVER)
 
@@ -212,12 +222,12 @@ class RestoredOriginalContractTests(unittest.TestCase):
         self.assertIn("Your Skincare Essentials", report)
         self.assertIn("Any concerning lesion needs an in-person medical evaluation.", report)
 
-    def test_provider_is_single_gemini_pro_high_thinking_call(self) -> None:
+    def test_provider_is_gemini_pro_with_high_thinking_and_bounded_output(self) -> None:
         self.assertIn('GOOGLE_MODEL = "gemini-3.1-pro-preview"', SERVER)
         self.assertIn("thinking_level=genai_types.ThinkingLevel.HIGH", SERVER)
         self.assertIn('response_mime_type="application/json"', SERVER)
         self.assertIn("response_json_schema=_analysis_schema_for_area(body_area)", SERVER)
-        self.assertIn("max_output_tokens=65536", SERVER)
+        self.assertIn("max_output_tokens=GOOGLE_MAX_OUTPUT_TOKENS", SERVER)
         self.assertEqual(REQUIREMENTS.count("google-genai==2.11.0"), 1)
         self.assertNotIn("anthropic", SERVER.lower())
         self.assertNotIn("anthropic", REQUIREMENTS.lower())

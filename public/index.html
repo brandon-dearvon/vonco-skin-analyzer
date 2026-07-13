@@ -2241,11 +2241,11 @@
     <section class="analysis-recovery" id="analysisRecovery" aria-live="polite">
         <div class="analysis-recovery-card">
             <div class="analysis-recovery-eyebrow">Your photo is still selected</div>
-            <h2 id="analysisRecoveryTitle" tabindex="-1">This is taking longer than expected</h2>
-            <p id="analysisRecoveryMessage">The analysis did not finish within the expected time. You can try the same photo again or choose another one.</p>
+            <h2 id="analysisRecoveryTitle" tabindex="-1">The analysis needs one more try</h2>
+            <p id="analysisRecoveryMessage">Your photo uploaded successfully, but the analysis service did not finish. Try this photo again—there’s no need to upload it again.</p>
             <div class="analysis-recovery-actions">
-                <button class="btn btn-secondary" id="retryAnalysisBtn" type="button" onclick="retryAnalysis()">Try This Photo Again</button>
-                <button class="btn btn-primary" id="chooseAnotherPhotoBtn" type="button" onclick="chooseAnotherPhoto()">Choose Another Photo</button>
+                <button class="btn btn-primary" id="retryAnalysisBtn" type="button" onclick="retryAnalysis()">Try This Photo Again</button>
+                <button class="btn btn-secondary" id="chooseAnotherPhotoBtn" type="button" onclick="chooseAnotherPhoto()">Choose Another Photo</button>
             </div>
         </div>
     </section>
@@ -2839,18 +2839,25 @@
             }
         }
 
-        function showAnalysisRecovery(isTimeout, message) {
+        function showAnalysisRecovery(isTemporaryServiceIssue, message) {
             document.getElementById('analysisSection').classList.remove('show');
             const recovery = document.getElementById('analysisRecovery');
             const title = document.getElementById('analysisRecoveryTitle');
-            title.textContent = isTimeout
-                ? 'This is taking longer than expected'
+            title.textContent = isTemporaryServiceIssue
+                ? 'The analysis needs one more try'
                 : 'We couldn\'t complete your analysis';
             document.getElementById('analysisRecoveryMessage').textContent = message || (
-                isTimeout
-                    ? 'The analysis did not finish within the expected time. You can try the same photo again or choose another one.'
-                    : 'Your photo is still selected. Please try it again, or choose another clear, well-lit photo.'
+                isTemporaryServiceIssue
+                    ? 'Your photo uploaded successfully, but the analysis service did not finish. Try this photo again—there’s no need to upload it again.'
+                    : 'This request could not be processed. Please choose another clear, well-lit photo or return later.'
             );
+            const retryButton = document.getElementById('retryAnalysisBtn');
+            const chooseButton = document.getElementById('chooseAnotherPhotoBtn');
+            retryButton.hidden = !isTemporaryServiceIssue;
+            retryButton.className = 'btn btn-primary';
+            chooseButton.className = isTemporaryServiceIssue
+                ? 'btn btn-secondary'
+                : 'btn btn-primary';
             recovery.classList.add('show');
             recovery.scrollIntoView({ behavior: 'smooth', block: 'center' });
             setTimeout(() => title.focus({ preventScroll: true }), 250);
@@ -2992,12 +2999,14 @@
             } catch (err) {
                 stopAnalysisProgress(false);
                 const isTimeout = requestTimedOut || err.name === 'AbortError' || err.code === 'analysis_timeout';
+                const isTemporaryServiceIssue = isTimeout
+                    || err.retryable === true;
                 console.error(isTimeout ? 'Analysis timed out' : 'Analysis request failed', err);
                 showAnalysisRecovery(
-                    isTimeout,
-                    isTimeout
-                        ? 'The analysis did not finish within the expected time. You can try the same photo again or choose another one.'
-                        : 'We were unable to complete this analysis. Your photo is still selected, so you can safely try again.'
+                    isTemporaryServiceIssue,
+                    isTemporaryServiceIssue
+                        ? 'Your photo uploaded successfully, but the analysis service did not finish. Try this photo again—there’s no need to upload it again.'
+                        : 'This request could not be processed. Please choose another clear, well-lit photo or return later.'
                 );
             } finally {
                 if (requestTimeoutId) clearTimeout(requestTimeoutId);

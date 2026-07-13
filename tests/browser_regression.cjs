@@ -506,10 +506,14 @@ async function runServerTimeoutRecoveryContract(browserType, engineName) {
       && getComputedStyle(document.getElementById('demoBanner')).display !== 'none',
     pendingData: pendingAnalysisData,
     lastAnalysisPresent: Boolean(window.lastAnalysis),
+    retryClass: document.getElementById('retryAnalysisBtn')?.className,
+    chooseClass: document.getElementById('chooseAnotherPhotoBtn')?.className,
   }));
   assert.equal(analyzeRequests, 1, `${engineName}: server timeout receives exactly one analysis POST`);
-  assert.equal(recovery.title, 'This is taking longer than expected', `${engineName}: server timeout opens the recovery state`);
-  assert.match(recovery.message, /try the same photo again or choose another one/i, `${engineName}: server timeout offers actionable recovery`);
+  assert.equal(recovery.title, 'The analysis needs one more try', `${engineName}: server timeout opens the recovery state`);
+  assert.match(recovery.message, /photo uploaded successfully/i, `${engineName}: recovery confirms that re-uploading is unnecessary`);
+  assert.match(recovery.retryClass, /btn-primary/, `${engineName}: retrying the selected photo is the primary recovery action`);
+  assert.match(recovery.chooseClass, /btn-secondary/, `${engineName}: choosing another photo is secondary`);
   assert.equal(recovery.analysisOpen, false, `${engineName}: server timeout closes the progress state`);
   assert.equal(recovery.leadGateOpen, false, `${engineName}: server timeout never opens the lead gate`);
   assert.equal(recovery.resultsOpen, false, `${engineName}: server timeout never shows results`);
@@ -566,11 +570,52 @@ async function runClientAbortRecoveryContract(browserType, engineName) {
     pendingData: pendingAnalysisData,
   }));
   assert.equal(analyzeRequests, 1, `${engineName}: client deadline sends exactly one analysis POST`);
-  assert.equal(recovery.title, 'This is taking longer than expected', `${engineName}: AbortController opens the same recovery state`);
+  assert.equal(recovery.title, 'The analysis needs one more try', `${engineName}: AbortController opens the same recovery state`);
   assert.equal(recovery.leadGateOpen, false, `${engineName}: client deadline never opens the lead gate`);
   assert.equal(recovery.resultsOpen, false, `${engineName}: client deadline never shows results`);
   assert.equal(recovery.demoVisible, false, `${engineName}: client deadline never falls back to demo data`);
   assert.equal(recovery.pendingData, null, `${engineName}: client deadline creates no pending result`);
+  await browser.close();
+}
+
+async function runNonretryableProviderContract(browserType, engineName) {
+  const browser = await browserType.launch(launchOptions(engineName));
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await context.newPage();
+  let analyzeRequests = 0;
+
+  await page.route('**/api/health', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ status: 'ok', mode: 'live' }),
+  }));
+  await page.route('**/api/analyze', route => {
+    analyzeRequests += 1;
+    return route.fulfill({
+      status: 502,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        error: 'The analysis service could not process this request.',
+        code: 'analysis_unavailable',
+        retryable: false,
+      }),
+    });
+  });
+
+  await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+  await page.locator('#fileInput').setInputFiles(brittanyPhoto);
+  await page.waitForSelector('#analysisRecovery.show', { timeout: 10000 });
+  const recovery = await page.evaluate(() => ({
+    title: document.getElementById('analysisRecoveryTitle')?.textContent,
+    message: document.getElementById('analysisRecoveryMessage')?.textContent,
+    retryHidden: document.getElementById('retryAnalysisBtn')?.hidden,
+    chooseClass: document.getElementById('chooseAnotherPhotoBtn')?.className,
+  }));
+  assert.equal(analyzeRequests, 1, `${engineName}: a nonretryable provider error sends one POST`);
+  assert.equal(recovery.title, 'We couldn\'t complete your analysis', `${engineName}: permanent failure is not described as temporary`);
+  assert.match(recovery.message, /choose another clear, well-lit photo or return later/i, `${engineName}: permanent failure does not invite a futile same-photo retry`);
+  assert.equal(recovery.retryHidden, true, `${engineName}: same-photo retry is hidden for a nonretryable failure`);
+  assert.match(recovery.chooseClass, /btn-primary/, `${engineName}: choosing another photo becomes the primary action`);
   await browser.close();
 }
 
@@ -639,6 +684,8 @@ async function runAcceleratedTimerContract(browserType, engineName) {
       process.stdout.write(`PASS ${engineName} 504 timeout recovery contract\n`);
       await runClientAbortRecoveryContract(browserType, engineName);
       process.stdout.write(`PASS ${engineName} client AbortController recovery contract\n`);
+      await runNonretryableProviderContract(browserType, engineName);
+      process.stdout.write(`PASS ${engineName} nonretryable provider recovery contract\n`);
       await runAcceleratedTimerContract(browserType, engineName);
       process.stdout.write(`PASS ${engineName} accelerated 75-second timer contract\n`);
     }
