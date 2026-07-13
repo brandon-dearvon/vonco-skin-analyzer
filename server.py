@@ -42,6 +42,83 @@ def add_no_cache_headers(response):
     return response
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 GOOGLE_MODEL = "gemini-3.1-pro-preview"
+ANALYSIS_RESPONSE_SCHEMA = {
+    "anyOf": [
+        {
+            "type": "object",
+            "properties": {
+                "rejected": {"type": "boolean"},
+                "reason": {"type": "string"},
+            },
+            "required": ["rejected", "reason"],
+            "additionalProperties": False,
+        },
+        {
+            "type": "object",
+            "properties": {
+                "overallScore": {"type": "integer", "minimum": 0, "maximum": 100},
+                "skinAge": {"type": ["string", "null"]},
+                "concerns": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                            "score": {"type": "integer", "minimum": 0, "maximum": 100},
+                            "severity": {
+                                "type": "string",
+                                "enum": ["none", "mild", "moderate", "severe"],
+                            },
+                            "description": {"type": "string"},
+                        },
+                        "required": ["score", "severity", "description"],
+                        "additionalProperties": False,
+                    },
+                },
+                "recommendations": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "treatment": {"type": "string"},
+                            "reason": {"type": "string"},
+                            "targets": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                            },
+                            "priority": {"type": "integer", "minimum": 1, "maximum": 5},
+                        },
+                        "required": ["treatment", "reason", "targets", "priority"],
+                        "additionalProperties": False,
+                    },
+                },
+                "productRecommendations": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "product": {"type": "string"},
+                            "reason": {"type": "string"},
+                        },
+                        "required": ["product", "reason"],
+                        "additionalProperties": False,
+                    },
+                },
+                "suggestedCombo": {"type": ["string", "null"]},
+                "summary": {"type": "string"},
+            },
+            "required": [
+                "overallScore",
+                "skinAge",
+                "concerns",
+                "recommendations",
+                "productRecommendations",
+                "suggestedCombo",
+                "summary",
+            ],
+            "additionalProperties": False,
+        },
+    ]
+}
 PORT = int(os.getenv("PORT", "5002"))
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 FORCE_DEMO_MODE = os.getenv("DEMO_MODE", "false").lower() == "true"
@@ -1123,6 +1200,7 @@ def analyze():
                         system_instruction=SYSTEM_PROMPT,
                         max_output_tokens=65536,
                         response_mime_type="application/json",
+                        response_json_schema=ANALYSIS_RESPONSE_SCHEMA,
                         thinking_config=genai_types.ThinkingConfig(
                             thinking_level=genai_types.ThinkingLevel.HIGH,
                         ),
