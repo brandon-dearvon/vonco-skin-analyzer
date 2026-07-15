@@ -1148,6 +1148,27 @@
             color: #fff;
         }
 
+        .treatment-options-toggle {
+            display: block;
+            width: min(100%, 420px);
+            min-height: 48px;
+            margin: 20px auto 0;
+            padding: 12px 24px;
+            border: 1.5px solid var(--evergreen);
+            border-radius: 9999px;
+            background: transparent;
+            color: var(--evergreen);
+            font: 600 0.94rem 'Fira Sans', sans-serif;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .treatment-options-toggle:hover,
+        .treatment-options-toggle:focus-visible {
+            background: var(--evergreen);
+            color: #fff;
+        }
+
         .concern-card {
             background: white;
             padding: 25px;
@@ -2665,6 +2686,7 @@
                     <div class="recommendation-cards" id="treatmentRecommendationCards">
                         <!-- Populated by JavaScript -->
                     </div>
+                    <button class="treatment-options-toggle" id="treatmentOptionsToggle" type="button" hidden aria-expanded="false" aria-controls="treatmentRecommendationCards" onclick="toggleMoreTreatments()">See More Treatment Options</button>
                 </div>
                 <div class="recommendation-group" id="productRecommendationsGroup">
                     <h3 class="recommendation-group-title">At-Home Skincare <span class="recommendation-count" id="productRecommendationCount"></span></h3>
@@ -3688,6 +3710,7 @@
             const used = new Set();
 
             for (const [key, data] of ranked) {
+                if (recs.length >= 6) break;
                 if (data.score < 20) break;
                 const options = txMap[key] || [];
                 for (const opt of options) {
@@ -3702,7 +3725,7 @@
 
             // Accessible entry point if none included
             const accessible = new Set(['HydraFacial Clarifying','HydraFacial Customized','SaltFacial','Signature Facial']);
-            if (!Array.from(used).some(t => accessible.has(t)) && bodyArea === 'face') {
+            if (recs.length < 6 && !Array.from(used).some(t => accessible.has(t)) && bodyArea === 'face') {
                 recs.push({treatment:'HydraFacial Clarifying', reason:'For visible texture and pore visibility, HydraFacial Clarifying is a cleansing and exfoliating option to discuss. An in-person evaluation can confirm the right plan.', targets:['texture','pores'], priority: recs.length + 1});
             }
 
@@ -3733,6 +3756,17 @@
             button.textContent = shouldExpand
                 ? 'Show Fewer Findings'
                 : `See All Findings (${document.querySelectorAll('#concernsGrid .concern-card').length})`;
+        }
+
+        function toggleMoreTreatments() {
+            const button = document.getElementById('treatmentOptionsToggle');
+            const secondaryCards = [...document.querySelectorAll('#treatmentRecommendationCards .treatment-card-secondary')];
+            const shouldExpand = button.getAttribute('aria-expanded') !== 'true';
+            secondaryCards.forEach(card => { card.hidden = !shouldExpand; });
+            button.setAttribute('aria-expanded', String(shouldExpand));
+            button.textContent = shouldExpand
+                ? 'Show Top 3'
+                : `See ${secondaryCards.length} More Treatment ${secondaryCards.length === 1 ? 'Option' : 'Options'}`;
         }
 
         function displayResults(data) {
@@ -3914,6 +3948,10 @@
             treatmentRecommendations.forEach((rec, idx) => {
                 const card = document.createElement('div');
                 card.className = 'recommendation-card';
+                if (idx >= 3) {
+                    card.classList.add('treatment-card-secondary');
+                    card.hidden = true;
+                }
                 card.style.animationDelay = `${0.2 + idx * 0.15}s`;
 
                 const firstTarget = Array.isArray(rec.targets) ? rec.targets[0] : null;
@@ -3932,6 +3970,12 @@
                 `;
                 treatmentCards.appendChild(card);
             });
+
+            const treatmentOptionsToggle = document.getElementById('treatmentOptionsToggle');
+            const additionalTreatmentCount = Math.max(0, treatmentRecommendations.length - 3);
+            treatmentOptionsToggle.hidden = additionalTreatmentCount === 0;
+            treatmentOptionsToggle.setAttribute('aria-expanded', 'false');
+            treatmentOptionsToggle.textContent = `See ${additionalTreatmentCount} More Treatment ${additionalTreatmentCount === 1 ? 'Option' : 'Options'}`;
 
             // SKINCARE PRODUCT RECOMMENDATIONS
             if (productRecommendations.length > 0) {

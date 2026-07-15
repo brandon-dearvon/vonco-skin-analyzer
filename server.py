@@ -80,8 +80,9 @@ def _runtime_source_fingerprint():
 
 
 BUILD_FINGERPRINT = os.getenv("BUILD_FINGERPRINT") or _runtime_source_fingerprint()
-ANALYSIS_REPEAT_VERSION = "2026-07-15-v2"
+ANALYSIS_REPEAT_VERSION = "2026-07-15-v4"
 ANALYSIS_MODEL_SEED_VERSION = "2026-07-15-v1"
+MAX_TREATMENT_RECOMMENDATIONS = 6
 ANALYSIS_REPEAT_TTL_SECONDS = int(
     os.getenv("ANALYSIS_REPEAT_TTL_SECONDS", str(30 * 24 * 60 * 60))
 )
@@ -187,7 +188,6 @@ def _analysis_repeat_key(
     message = hashlib.sha256()
     for value in (
         ANALYSIS_REPEAT_VERSION,
-        BUILD_FINGERPRINT,
         GOOGLE_MODEL,
         body_area,
         _normalized_repeat_age(user_age),
@@ -794,7 +794,7 @@ EXAMPLES OF REALISTIC CONCERN SPREADS:
 === END CREDIBILITY GUARDRAILS ===
 
 RECOMMENDATION RULES:
-- Recommend all and only TREATMENTS with a specific visible rationale. There is no fixed minimum or maximum. Do not pad a plan to hit a count, and do not omit a distinct clearly supported option merely to hit a count.
+- Recommend all and only TREATMENTS with a specific visible rationale, up to six distinct options. There is no fixed minimum. Do not pad a plan to hit a count, and do not omit a distinct clearly supported option merely to stop at three.
 - Recommend all and only SKINCARE PRODUCTS that map to a visible concern, plus an SPF. There is no fixed count. Do not add unrelated products.
 - Use ONLY the exact treatment and product names from the menus above
 - Every treatment target must be a visible concern scored above 10 and must be one that treatment actually addresses
@@ -1065,13 +1065,16 @@ def generate_demo_analysis(body_area="face"):
     ]
 
     # Use the same conservative exact-catalog fallback choices as live results.
-    # One supported service may cover multiple visible concerns; there is no
-    # arbitrary recommendation cap.
+    # One supported service may cover multiple visible concerns; keep the demo
+    # within the same six-option consumer contract as live results.
     area = body_area if body_area in AREA_CONCERN_KEYS else "face"
     concern_scores = {
         key: value["score"]
         for key, value in concerns.items()
     }
+    laser_hair_removal_supported = _supports_laser_hair_removal({
+        "concerns": concerns,
+    })
     recommendations_by_treatment = {}
     for concern_key, concern_data in ranked:
         if concern_data["score"] < 20:
@@ -1080,6 +1083,7 @@ def generate_demo_analysis(body_area="face"):
             area,
             concern_key,
             concern_scores,
+            laser_hair_removal_supported,
         )
         if treatment is None:
             continue
@@ -1091,6 +1095,8 @@ def generate_demo_analysis(body_area="face"):
 
     recs = []
     for treatment, targets in recommendations_by_treatment.items():
+        if len(recs) >= MAX_TREATMENT_RECOMMENDATIONS:
+            break
         recs.append({
             "treatment": treatment,
             "reason": _fallback_treatment_reason(treatment, targets),
@@ -1575,6 +1581,142 @@ FALLBACK_TREATMENTS_BY_AREA_CONCERN = {
     },
 }
 
+# Ordered, conservative area-specific alternatives for a moderate visible
+# finding. This is a disclosure pool, not a claim that later options outrank a
+# provider's individualized plan. The primary fallback map above remains
+# intentionally small; this separate list lets a completed plan offer one
+# additional path per finding without manufacturing six cards from one score.
+ADDITIONAL_TREATMENTS_BY_AREA_CONCERN = {
+    "face": {
+        "wrinkles": (
+            "Sciton Moxi",
+            "Sciton Halo",
+            "RF Microneedling",
+            "Microneedling + PRF",
+            "Anti-Aging Facial",
+        ),
+        "redness": (
+            "Sciton BBL",
+            "HydraFacial Clarifying",
+            "Signature Facial",
+        ),
+        "darkSpots": (
+            "Sciton BBL",
+            "Sciton Moxi",
+            "Chemical Peels",
+            "Sciton Halo",
+        ),
+        "texture": (
+            "Sciton Moxi",
+            "HydraFacial Customized",
+            "Microneedling",
+            "Chemical Peels",
+            "Sciton Halo",
+        ),
+        "pores": (
+            "Microneedling",
+            "HydraFacial Clarifying",
+            "Deep Pore Facial",
+            "SaltFacial",
+            "RF Microneedling",
+            "Chemical Peels",
+        ),
+        "laxity": (
+            "RF Microneedling",
+            "Sculptra",
+            "Microneedling + PRF",
+            "Anti-Aging Facial",
+            "Sciton Halo",
+        ),
+        "sunDamage": (
+            "Sciton BBL",
+            "Sciton Moxi",
+            "Chemical Peels",
+            "Sciton Halo",
+        ),
+        "unevenTone": (
+            "Sciton BBL",
+            "Sciton Moxi",
+            "Chemical Peels",
+            "HydraFacial Customized",
+            "Signature Facial",
+            "Sciton Halo",
+        ),
+    },
+    "neck_chest": {
+        "sunDamage": ("Sciton BBL", "Sciton Moxi", "Sciton Halo"),
+        "laxity": (
+            "RF Microneedling",
+            "Sculptra",
+            "Microneedling + PRF",
+            "Microneedling",
+            "Sciton Halo",
+        ),
+        "redness": ("Sciton BBL",),
+        "texture": (
+            "Sciton Moxi",
+            "Sciton Halo",
+            "Microneedling + PRF",
+            "Microneedling",
+            "RF Microneedling",
+        ),
+        "wrinkles": (
+            "Sciton Moxi",
+            "Sciton Halo",
+            "RF Microneedling",
+            "Microneedling + PRF",
+        ),
+    },
+    "hands": {
+        "sunDamage": (
+            "Sciton BBL",
+            "Sciton Moxi",
+            "Chemical Peels",
+            "Sciton Halo",
+        ),
+        "laxity": (
+            "RF Microneedling",
+            "Microneedling + PRF",
+            "Microneedling",
+            "Sciton Halo",
+        ),
+        "texture": (
+            "Microneedling",
+            "Sciton Moxi",
+            "Chemical Peels",
+            "Microneedling + PRF",
+            "RF Microneedling",
+            "Sciton Halo",
+        ),
+        "veins": ("Sciton BBL",),
+    },
+    "back": {
+        "acne": ("Chemical Peels", "Sciton BBL"),
+        "scarring": (
+            "Microneedling",
+            "RF Microneedling",
+            "Microneedling + PRF",
+            "Sciton Halo",
+            "Chemical Peels",
+        ),
+        "texture": (
+            "Microneedling",
+            "RF Microneedling",
+            "Microneedling + PRF",
+            "Chemical Peels",
+            "Sciton Halo",
+        ),
+        "unevenTone": ("Sciton BBL", "Chemical Peels", "Sciton Halo"),
+        "hairRemoval": ("Laser Hair Removal",),
+    },
+    "legs": {
+        "veins": ("Sciton BBL",),
+        "texture": ("Microneedling", "Sciton Moxi"),
+        "sunDamage": ("Sciton Moxi", "Sciton BBL"),
+        "hairRemoval": ("Laser Hair Removal",),
+    },
+}
+
 _CONCERN_GOAL_LABELS = {
     "wrinkles": "visible lines",
     "redness": "visible redness",
@@ -1612,6 +1754,27 @@ _FALLBACK_TREATMENT_REASON_TEMPLATES = {
     ),
     "HydraFacial Clarifying": (
         "For {goal}, HydraFacial Clarifying is a cleansing and exfoliating option to discuss."
+    ),
+    "HydraFacial Customized": (
+        "For {goal}, HydraFacial Customized offers a tailored facial option to explore with your provider."
+    ),
+    "Deep Pore Facial": (
+        "For {goal}, the Deep Pore Facial offers a focused cleansing option to explore."
+    ),
+    "Signature Facial": (
+        "For {goal}, the Signature Facial offers a personalized facial option to explore."
+    ),
+    "Anti-Aging Facial": (
+        "For {goal}, the Anti-Aging Facial offers a personalized treatment option to explore."
+    ),
+    "SaltFacial": (
+        "For {goal}, SaltFacial offers a customized facial option to explore."
+    ),
+    "Microneedling + PRF": (
+        "For {goal}, Microneedling + PRF is a combined treatment option to explore with your provider."
+    ),
+    "Sciton Halo": (
+        "For {goal}, Sciton Halo is a comprehensive resurfacing option to explore with your provider."
     ),
     "Laser Hair Removal": (
         "For {goal}, Laser Hair Removal is a focused reduction option to discuss."
@@ -1722,17 +1885,10 @@ def _product_names_for_area(body_area):
     }
 
 
-def _normalize_suggested_combo(analysis):
-    """Keep a stack only when its named treatment components are in the plan."""
-    combo = analysis.get("suggestedCombo")
+def _supported_suggested_combo_name(combo, treatment_names):
+    """Return the exact combo name only when all components are represented."""
     if not isinstance(combo, str) or not combo.strip():
-        analysis["suggestedCombo"] = None
-        return analysis
-    treatment_names = {
-        item.get("treatment")
-        for item in analysis.get("recommendations", [])
-        if isinstance(item, dict)
-    }
+        return None
     matching_names = [
         combo_name
         for combo_name in _COMBO_REQUIREMENTS
@@ -1742,9 +1898,21 @@ def _normalize_suggested_combo(analysis):
         combo_name = matching_names[0]
         requirements = _COMBO_REQUIREMENTS[combo_name]
         if all(treatment_names.intersection(options) for options in requirements):
-            analysis["suggestedCombo"] = combo_name
-            return analysis
-    analysis["suggestedCombo"] = None
+            return combo_name
+    return None
+
+
+def _normalize_suggested_combo(analysis):
+    """Keep a stack only when its named treatment components are in the plan."""
+    treatment_names = {
+        item.get("treatment")
+        for item in analysis.get("recommendations", [])
+        if isinstance(item, dict)
+    }
+    analysis["suggestedCombo"] = _supported_suggested_combo_name(
+        analysis.get("suggestedCombo"),
+        treatment_names,
+    )
     return analysis
 
 
@@ -1901,25 +2069,117 @@ def _supports_laser_hair_removal(analysis):
     return _has_nonnegated_hair_evidence(description)
 
 
-def _fallback_treatment_for_target(area, target, concern_scores):
+def _treatment_meets_visible_evidence_gate(
+    area,
+    treatment,
+    targets,
+    concern_scores,
+    laser_hair_removal_supported,
+):
+    """Apply one evidence gate to model, fallback, and alternative paths."""
+    actual_targets = [
+        target
+        for target in targets
+        if target in TREATMENT_TARGETS.get(treatment, set())
+    ]
+    if treatment not in AREA_TREATMENTS.get(area, set()) or not actual_targets:
+        return False
+    minimum_target_score = (
+        41
+        if (
+            treatment in {"Sciton Halo", "Sculptra", "Laser Hair Removal"}
+            or (area == "hands" and treatment == "Sciton BBL")
+        )
+        else 11
+    )
+    if not any(
+        concern_scores.get(target, 0) >= minimum_target_score
+        for target in actual_targets
+    ):
+        return False
+    if (
+        concern_scores.get("redness", 0) >= 41
+        and treatment in {"Microneedling", "RF Microneedling"}
+    ):
+        return False
+    if treatment == "Laser Hair Removal" and not laser_hair_removal_supported:
+        return False
+    return True
+
+
+# These are formulation choices within one consumer-facing treatment lane, not
+# three separate reasons to fill a plan. Keep the model's highest-priority
+# valid choice and let an in-person provider confirm the formulation.
+TREATMENT_EQUIVALENCE_GROUPS = (
+    frozenset({"Botox", "Dysport", "Xeomin"}),
+)
+
+
+def _treatment_equivalence_group(treatment):
+    """Return the shared option group for interchangeable catalog choices."""
+    return next(
+        (
+            group
+            for group in TREATMENT_EQUIVALENCE_GROUPS
+            if treatment in group
+        ),
+        None,
+    )
+
+
+def _prune_treatment_option_padding(
+    recommendations,
+    concern_scores,
+    ranked_targets,
+):
+    """Keep useful breadth without manufacturing six cards from one finding."""
+    selected = []
+    used_equivalence_groups = set()
+    lane_counts = defaultdict(int)
+    for item in recommendations:
+        treatment = item.get("treatment")
+        equivalence_group = _treatment_equivalence_group(treatment)
+        if (
+            equivalence_group is not None
+            and equivalence_group in used_equivalence_groups
+        ):
+            continue
+        lane_target = next(
+            (
+                target
+                for target in ranked_targets
+                if target in item.get("targets", [])
+                and lane_counts[target]
+                < (3 if concern_scores.get(target, 0) >= 41 else 2)
+            ),
+            None,
+        )
+        if lane_target is None:
+            continue
+        selected.append(item)
+        lane_counts[lane_target] += 1
+        if equivalence_group is not None:
+            used_equivalence_groups.add(equivalence_group)
+    return selected
+
+
+def _fallback_treatment_for_target(
+    area,
+    target,
+    concern_scores,
+    laser_hair_removal_supported,
+):
     """Return one conservative exact-catalog service for uncovered evidence."""
     for treatment in FALLBACK_TREATMENTS_BY_AREA_CONCERN.get(area, {}).get(
         target,
         (),
     ):
-        if (
-            treatment not in AREA_TREATMENTS[area]
-            or target not in TREATMENT_TARGETS.get(treatment, set())
-        ):
-            continue
-        if (
-            treatment in {"Sciton Halo", "Sculptra", "Laser Hair Removal"}
-            or (area == "hands" and treatment == "Sciton BBL")
-        ) and concern_scores.get(target, 0) < 41:
-            continue
-        if (
-            concern_scores.get("redness", 0) >= 41
-            and treatment in {"Microneedling", "RF Microneedling"}
+        if not _treatment_meets_visible_evidence_gate(
+            area,
+            treatment,
+            [target],
+            concern_scores,
+            laser_hair_removal_supported,
         ):
             continue
         return treatment
@@ -2041,6 +2301,7 @@ def _normalize_catalog_recommendations(analysis, body_area):
                     area,
                     target,
                     concern_scores,
+                    laser_hair_removal_supported,
                 )
             ),
             None,
@@ -2074,25 +2335,13 @@ def _normalize_catalog_recommendations(analysis, body_area):
             ):
                 model_targets.append(target)
         reason = str(item.get("reason", "")).strip()
-        minimum_target_score = (
-            41
-            if (
-                treatment in {"Sciton Halo", "Sculptra", "Laser Hair Removal"}
-                or (area == "hands" and treatment == "Sciton BBL")
-            )
-            else 11
-        )
-        if not any(
-            concern_scores.get(target, 0) >= minimum_target_score
-            for target in model_targets
+        if not _treatment_meets_visible_evidence_gate(
+            area,
+            treatment,
+            model_targets,
+            concern_scores,
+            laser_hair_removal_supported,
         ):
-            continue
-        if (
-            concern_scores.get("redness", 0) >= 41
-            and treatment in {"Microneedling", "RF Microneedling"}
-        ):
-            continue
-        if treatment == "Laser Hair Removal" and not laser_hair_removal_supported:
             continue
         if not model_targets or not reason:
             continue
@@ -2119,6 +2368,7 @@ def _normalize_catalog_recommendations(analysis, body_area):
     # If the model omitted a service for clearly visible moderate evidence,
     # add one conservative, area-specific exact-catalog option. This is a
     # deterministic coverage fallback, not a diagnosis or candidacy decision.
+    model_selected_treatments = set(seen_treatments)
     covered_by_services = {
         target
         for item in normalized_recommendations
@@ -2137,6 +2387,7 @@ def _normalize_catalog_recommendations(analysis, body_area):
             area,
             mild_coverage_target,
             concern_scores,
+            laser_hair_removal_supported,
         )
     ):
         fallback_targets.append(mild_coverage_target)
@@ -2146,6 +2397,7 @@ def _normalize_catalog_recommendations(analysis, body_area):
             area,
             target,
             concern_scores,
+            laser_hair_removal_supported,
         )
         if not treatment:
             continue
@@ -2178,8 +2430,81 @@ def _normalize_catalog_recommendations(analysis, body_area):
             fallback_treatments_added.add(treatment)
         covered_by_services.add(target)
 
+    # A model often stops after three useful services even when the same
+    # visible moderate concerns have additional, distinct catalog paths. Add
+    # only curated area-specific alternatives that pass every existing gate,
+    # distribute at most one synthesized alternative per moderate concern,
+    # and stop at six total. Mild-only results are intentionally left compact.
+    additional_treatments_added = set()
+    if (
+        moderate_targets
+        and len(normalized_recommendations) < MAX_TREATMENT_RECOMMENDATIONS
+    ):
+        candidate_targets = [
+            target
+            for target in treatable_ranked_targets
+            if target in moderate_targets
+        ]
+        auto_coverage_targets = moderate_targets.union(ranked_targets[:2])
+        targets_with_synthesized_alternative = set()
+        for target in candidate_targets:
+            if target in targets_with_synthesized_alternative:
+                continue
+            existing_option_counts = {
+                candidate_target: sum(
+                    candidate_target in item["targets"]
+                    for item in normalized_recommendations
+                )
+                for candidate_target in auto_coverage_targets
+            }
+            if existing_option_counts.get(target, 0) >= 3:
+                continue
+            for treatment in ADDITIONAL_TREATMENTS_BY_AREA_CONCERN.get(
+                area,
+                {},
+            ).get(target, ()):
+                if treatment in seen_treatments:
+                    continue
+                supported_targets = TREATMENT_TARGETS.get(treatment, set())
+                targets = sorted(
+                    supported_targets.intersection(
+                        candidate_target
+                        for candidate_target in auto_coverage_targets
+                        if existing_option_counts.get(candidate_target, 0) < 3
+                    ),
+                    key=lambda key: (-concern_scores[key], key),
+                )
+                if not _treatment_meets_visible_evidence_gate(
+                    area,
+                    treatment,
+                    targets,
+                    concern_scores,
+                    laser_hair_removal_supported,
+                ):
+                    continue
+                normalized_recommendations.append({
+                    "treatment": treatment,
+                    "reason": _fallback_treatment_reason(treatment, targets),
+                    "targets": targets,
+                    "priority": len(normalized_recommendations) + 1,
+                })
+                seen_treatments.add(treatment)
+                additional_treatments_added.add(treatment)
+                targets_with_synthesized_alternative.update(
+                    set(targets).intersection(moderate_targets)
+                )
+                break
+            if len(normalized_recommendations) >= MAX_TREATMENT_RECOMMENDATIONS:
+                break
+
     # Model priority numbers can drift even when the selected treatments are
-    # useful. Reorder catalog-mapped choices so leading evidence comes first.
+    # useful. Reorder catalog-mapped choices so leading evidence comes first,
+    # greedily preserving coverage before the six-option display cap.
+    normalized_recommendations = _prune_treatment_option_padding(
+        normalized_recommendations,
+        concern_scores,
+        treatable_ranked_targets,
+    )
     prioritized_recommendations = []
     remaining_recommendations = list(normalized_recommendations)
     covered_ranked_targets = [
@@ -2190,7 +2515,7 @@ def _normalize_catalog_recommendations(analysis, body_area):
             for item in normalized_recommendations
         )
     ]
-    for leading_target in covered_ranked_targets[:2]:
+    for leading_target in covered_ranked_targets:
         if any(
             leading_target in item["targets"]
             for item in prioritized_recommendations
@@ -2209,7 +2534,9 @@ def _normalize_catalog_recommendations(analysis, body_area):
                 remaining_recommendations.pop(matching_index)
             )
     prioritized_recommendations.extend(remaining_recommendations)
-    normalized_recommendations = prioritized_recommendations
+    normalized_recommendations = prioritized_recommendations[
+        :MAX_TREATMENT_RECOMMENDATIONS
+    ]
     for priority, item in enumerate(normalized_recommendations, start=1):
         item["priority"] = priority
 
@@ -2341,6 +2668,14 @@ def _normalize_catalog_recommendations(analysis, body_area):
 
     if fallback_treatments_added:
         analysis["suggestedCombo"] = None
+    elif additional_treatments_added and not _supported_suggested_combo_name(
+        analysis.get("suggestedCombo"),
+        model_selected_treatments,
+    ):
+        # An additional card may complete a combo by coincidence. Only retain
+        # a model-authored combo when its components were already present in
+        # the model-selected plan.
+        analysis["suggestedCombo"] = None
     return _normalize_suggested_combo(analysis)
 
 
@@ -2363,6 +2698,7 @@ def _analysis_schema_for_area(body_area="face"):
     }
     recommendations = completed["properties"]["recommendations"]
     recommendations["minItems"] = 0
+    recommendations["maxItems"] = MAX_TREATMENT_RECOMMENDATIONS
     recommendations["items"]["properties"]["treatment"]["enum"] = sorted(
         AREA_TREATMENTS[area]
     )

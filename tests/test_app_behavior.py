@@ -398,6 +398,10 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
                 )
                 self.assertIsInstance(result["recommendations"], list)
                 self.assertIsInstance(result["productRecommendations"], list)
+                self.assertLessEqual(
+                    len(result["recommendations"]),
+                    server.MAX_TREATMENT_RECOMMENDATIONS,
+                )
 
     def test_demo_copy_and_catalog_are_bounded_across_2500_seeded_samples(self) -> None:
         audit_risk = re.compile(
@@ -447,6 +451,10 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
                     treatment_names = [
                         item["treatment"] for item in recommendations
                     ]
+                    self.assertLessEqual(
+                        len(treatment_names),
+                        server.MAX_TREATMENT_RECOMMENDATIONS,
+                    )
                     self.assertEqual(len(treatment_names), len(set(treatment_names)))
                     for item in recommendations:
                         self.assertIn(item["treatment"], server.AREA_TREATMENTS[area])
@@ -459,6 +467,10 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
                         )
                     if area == "hands":
                         self.assertNotIn("Sculptra", treatment_names)
+                    if "Laser Hair Removal" in treatment_names:
+                        self.assertTrue(
+                            server._supports_laser_hair_removal(result)
+                        )
 
                     product_names = [
                         item["product"]
@@ -584,7 +596,10 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
 
                 recommendations = accepted["properties"]["recommendations"]
                 self.assertEqual(recommendations["minItems"], 0)
-                self.assertNotIn("maxItems", recommendations)
+                self.assertEqual(
+                    recommendations["maxItems"],
+                    server.MAX_TREATMENT_RECOMMENDATIONS,
+                )
                 priority_schema = recommendations["items"]["properties"]["priority"]
                 self.assertEqual(priority_schema["minimum"], 1)
                 self.assertNotIn("maximum", priority_schema)
@@ -674,11 +689,16 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
         self.assertEqual(laser["targets"], ["hairRemoval"])
         self.assertEqual(
             [item["priority"] for item in normalized["recommendations"]],
-            [1, 2, 3],
+            list(range(1, len(normalized["recommendations"]) + 1)),
+        )
+        self.assertEqual(len(normalized["recommendations"]), 4)
+        self.assertIn(
+            "Sciton Moxi",
+            {item["treatment"] for item in normalized["recommendations"]},
         )
         self.assertIsNone(normalized["suggestedCombo"])
 
-    def test_catalog_normalizer_has_no_five_service_cap(self) -> None:
+    def test_catalog_normalizer_allows_six_supported_services(self) -> None:
         analysis = accepted_analysis("face")
         for concern_key, concern in analysis["concerns"].items():
             concern["score"] = 55
@@ -703,6 +723,94 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
         self.assertEqual(
             [item["priority"] for item in normalized["recommendations"]],
             [1, 2, 3, 4, 5, 6],
+        )
+
+    def test_catalog_normalizer_expands_a_supported_plan_without_padding(self) -> None:
+        analysis = accepted_analysis("face")
+        for key, score in (("redness", 55), ("laxity", 50)):
+            analysis["concerns"][key].update({
+                "score": score,
+                "severity": "moderate",
+                "description": concern_evidence_description(
+                    key,
+                    score=score,
+                    area="face",
+                ),
+            })
+
+        normalized = server._normalize_catalog_recommendations(analysis, "face")
+
+        self.assertEqual(
+            len(normalized["recommendations"]),
+            server.MAX_TREATMENT_RECOMMENDATIONS,
+        )
+        self.assertEqual(
+            len({item["treatment"] for item in normalized["recommendations"]}),
+            server.MAX_TREATMENT_RECOMMENDATIONS,
+        )
+        self.assertEqual(
+            [item["priority"] for item in normalized["recommendations"]],
+            list(range(1, server.MAX_TREATMENT_RECOMMENDATIONS + 1)),
+        )
+
+        mild = accepted_analysis("face")
+        for key, concern in mild["concerns"].items():
+            score = 25 if key == "texture" else 10
+            concern.update({
+                "score": score,
+                "severity": "mild" if score > 10 else "none",
+                "description": concern_evidence_description(
+                    key,
+                    score=score,
+                    area="face",
+                ),
+            })
+        mild["recommendations"] = [{
+            "treatment": "Sciton Moxi",
+            "reason": "A mapped option.",
+            "targets": ["texture"],
+            "priority": 1,
+        }]
+
+        mild_normalized = server._normalize_catalog_recommendations(mild, "face")
+
+        self.assertEqual(
+            [item["treatment"] for item in mild_normalized["recommendations"]],
+            ["Sciton Moxi"],
+        )
+
+    def test_catalog_normalizer_caps_model_output_at_six(self) -> None:
+        analysis = accepted_analysis("face")
+        for key, concern in analysis["concerns"].items():
+            concern.update({
+                "score": 55,
+                "severity": "moderate",
+                "description": concern_evidence_description(
+                    key,
+                    score=55,
+                    area="face",
+                ),
+            })
+        analysis["recommendations"] = [
+            {"treatment": "Sciton BBL", "reason": "Mapped.", "targets": ["redness"], "priority": 1},
+            {"treatment": "Sciton Moxi", "reason": "Mapped.", "targets": ["darkSpots"], "priority": 2},
+            {"treatment": "Sciton Halo", "reason": "Mapped.", "targets": ["texture"], "priority": 3},
+            {"treatment": "RF Microneedling", "reason": "Mapped.", "targets": ["laxity"], "priority": 4},
+            {"treatment": "Chemical Peels", "reason": "Mapped.", "targets": ["unevenTone"], "priority": 5},
+            {"treatment": "HydraFacial Customized", "reason": "Mapped.", "targets": ["pores"], "priority": 6},
+            {"treatment": "Botox", "reason": "Mapped.", "targets": ["wrinkles"], "priority": 7},
+            {"treatment": "Sculptra", "reason": "Mapped.", "targets": ["laxity"], "priority": 8},
+        ]
+
+        normalized = server._normalize_catalog_recommendations(analysis, "face")
+
+        self.assertEqual(
+            len(normalized["recommendations"]),
+            server.MAX_TREATMENT_RECOMMENDATIONS,
+        )
+        self.assertEqual(
+            [item["priority"] for item in normalized["recommendations"]],
+            list(range(1, server.MAX_TREATMENT_RECOMMENDATIONS + 1)),
         )
 
     def test_treatment_reason_names_every_displayed_target(self) -> None:
@@ -806,8 +914,12 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
 
         normalized = server._normalize_catalog_recommendations(analysis, "face")
 
-        self.assertEqual(len(normalized["recommendations"]), 1)
-        reason = normalized["recommendations"][0]["reason"]
+        moxi = next(
+            item
+            for item in normalized["recommendations"]
+            if item["treatment"] == "Sciton Moxi"
+        )
+        reason = moxi["reason"]
         self.assertNotIn("redness", reason.lower())
         self.assertIn("visible tone variation", reason.lower())
         self.assertIn("approach to discuss", reason.lower())
@@ -1262,11 +1374,13 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
 
         self.assertEqual(
             [item["treatment"] for item in normalized["recommendations"]],
-            ["Sciton Moxi"],
+            ["Sciton Moxi", "Sciton Halo"],
         )
-        self.assertEqual(
-            normalized["recommendations"][0]["targets"],
-            ["wrinkles"],
+        self.assertTrue(
+            all(
+                item["targets"] == ["wrinkles"]
+                for item in normalized["recommendations"]
+            )
         )
         self.assertIn(
             "approach to discuss",
@@ -1606,6 +1720,133 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
                         server._FALLBACK_TREATMENT_REASON_TEMPLATES,
                     )
 
+    def test_additional_treatment_map_stays_inside_area_and_target_catalogs(self) -> None:
+        self.assertEqual(
+            set(server.ADDITIONAL_TREATMENTS_BY_AREA_CONCERN),
+            set(server.AREA_CONCERN_KEYS),
+        )
+        for area, mappings in (
+            server.ADDITIONAL_TREATMENTS_BY_AREA_CONCERN.items()
+        ):
+            self.assertEqual(
+                set(mappings),
+                set(server.FALLBACK_TREATMENTS_BY_AREA_CONCERN[area]),
+            )
+            for target, candidates in mappings.items():
+                with self.subTest(area=area, target=target):
+                    self.assertTrue(candidates)
+                    self.assertEqual(len(candidates), len(set(candidates)))
+                    for treatment in candidates:
+                        self.assertIn(treatment, server.AREA_TREATMENTS[area])
+                        self.assertIn(
+                            target,
+                            server.TREATMENT_TARGETS[treatment],
+                        )
+
+    def test_one_moderate_concern_never_manufactures_a_six_card_plan(self) -> None:
+        for area, mappings in (
+            server.ADDITIONAL_TREATMENTS_BY_AREA_CONCERN.items()
+        ):
+            for target in mappings:
+                with self.subTest(area=area, target=target):
+                    analysis = accepted_analysis(area)
+                    for key, concern in analysis["concerns"].items():
+                        concern.update({
+                            "score": 10,
+                            "severity": "none",
+                            "description": "No prominent concern is visible.",
+                        })
+                    analysis["concerns"][target].update({
+                        "score": 55,
+                        "severity": "moderate",
+                        "description": concern_evidence_description(
+                            target,
+                            score=55,
+                            area=area,
+                        ),
+                    })
+                    analysis["recommendations"] = []
+                    analysis["productRecommendations"] = []
+                    analysis["suggestedCombo"] = None
+
+                    normalized = server._normalize_catalog_recommendations(
+                        analysis,
+                        area,
+                    )
+
+                    self.assertGreaterEqual(
+                        len(normalized["recommendations"]),
+                        1,
+                    )
+                    self.assertLessEqual(
+                        len(normalized["recommendations"]),
+                        2,
+                    )
+                    self.assertEqual(
+                        len({
+                            item["treatment"]
+                            for item in normalized["recommendations"]
+                        }),
+                        len(normalized["recommendations"]),
+                    )
+
+    def test_raw_model_cannot_pad_one_concern_or_stack_neuromodulators(self) -> None:
+        raw_treatments = (
+            "Botox",
+            "Dysport",
+            "Xeomin",
+            "Sciton Moxi",
+            "RF Microneedling",
+            "Microneedling",
+        )
+        neuromodulators = {"Botox", "Dysport", "Xeomin"}
+        for score, expected_maximum in ((30, 2), (55, 3)):
+            with self.subTest(score=score):
+                analysis = accepted_analysis("face")
+                for concern in analysis["concerns"].values():
+                    concern.update({
+                        "score": 10,
+                        "severity": "none",
+                        "description": "No prominent concern is visible.",
+                    })
+                analysis["concerns"]["wrinkles"].update({
+                    "score": score,
+                    "severity": "moderate" if score >= 41 else "mild",
+                    "description": concern_evidence_description(
+                        "wrinkles",
+                        score=score,
+                        area="face",
+                    ),
+                })
+                analysis["recommendations"] = [
+                    {
+                        "treatment": treatment,
+                        "reason": "A mapped option.",
+                        "targets": ["wrinkles"],
+                        "priority": priority,
+                    }
+                    for priority, treatment in enumerate(
+                        raw_treatments,
+                        start=1,
+                    )
+                ]
+                analysis["suggestedCombo"] = None
+
+                normalized = server._normalize_catalog_recommendations(
+                    analysis,
+                    "face",
+                )
+
+                treatments = [
+                    item["treatment"]
+                    for item in normalized["recommendations"]
+                ]
+                self.assertLessEqual(len(treatments), expected_maximum)
+                self.assertLessEqual(
+                    len(neuromodulators.intersection(treatments)),
+                    1,
+                )
+
     def test_redness_compatible_pore_fallback_avoids_needling(self) -> None:
         analysis = accepted_analysis("face")
         for concern in analysis["concerns"].values():
@@ -1796,6 +2037,10 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
                 len({item["treatment"] for item in normalized["recommendations"]}),
                 len(normalized["recommendations"]),
             )
+            self.assertLessEqual(
+                len(normalized["recommendations"]),
+                server.MAX_TREATMENT_RECOMMENDATIONS,
+            )
             for item in normalized["recommendations"]:
                 self.assertIn(item["treatment"], server.AREA_TREATMENTS[area])
                 self.assertTrue(item["targets"])
@@ -1953,8 +2198,9 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
         )
         self.assertEqual(
             [item["priority"] for item in normalized["recommendations"]],
-            [1, 2, 3],
+            list(range(1, len(normalized["recommendations"]) + 1)),
         )
+        self.assertEqual(len(normalized["recommendations"]), 4)
 
     def test_catalog_normalizer_derives_severity_and_rejects_invalid_scores(self) -> None:
         analysis = accepted_analysis()
@@ -1989,7 +2235,92 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
         with self.assertRaises(server._GoogleResponseError):
             server._normalize_catalog_recommendations(analysis, "face")
 
-    def test_catalog_normalizer_drops_halo_without_forcing_replacement(self) -> None:
+    def test_evidence_threshold_is_shared_by_model_fallback_and_additional_paths(self) -> None:
+        for score, expected in ((40, False), (41, True)):
+            with self.subTest(path="model", score=score):
+                analysis = accepted_analysis("face")
+                for concern in analysis["concerns"].values():
+                    concern.update({
+                        "score": 10,
+                        "severity": "none",
+                        "description": "No prominent concern is visible.",
+                    })
+                analysis["concerns"]["texture"].update({
+                    "score": score,
+                    "severity": "moderate" if score >= 41 else "mild",
+                    "description": concern_evidence_description(
+                        "texture",
+                        score=score,
+                        area="face",
+                    ),
+                })
+                analysis["recommendations"] = [{
+                    "treatment": "Sciton Halo",
+                    "reason": "Mapped.",
+                    "targets": ["texture"],
+                    "priority": 1,
+                }]
+                analysis["suggestedCombo"] = None
+                normalized = server._normalize_catalog_recommendations(
+                    analysis,
+                    "face",
+                )
+                self.assertEqual(
+                    "Sciton Halo" in {
+                        item["treatment"]
+                        for item in normalized["recommendations"]
+                    },
+                    expected,
+                )
+
+            with self.subTest(path="fallback", score=score):
+                self.assertEqual(
+                    server._fallback_treatment_for_target(
+                        "hands",
+                        "veins",
+                        {"veins": score},
+                        False,
+                    ),
+                    "Sciton BBL" if expected else None,
+                )
+
+            with self.subTest(path="additional", score=score):
+                analysis = accepted_analysis("face")
+                for concern in analysis["concerns"].values():
+                    concern.update({
+                        "score": 10,
+                        "severity": "none",
+                        "description": "No prominent concern is visible.",
+                    })
+                analysis["concerns"]["wrinkles"].update({
+                    "score": score,
+                    "severity": "moderate" if score >= 41 else "mild",
+                    "description": concern_evidence_description(
+                        "wrinkles",
+                        score=score,
+                        area="face",
+                    ),
+                })
+                analysis["recommendations"] = [{
+                    "treatment": "Sciton Moxi",
+                    "reason": "Mapped.",
+                    "targets": ["wrinkles"],
+                    "priority": 1,
+                }]
+                analysis["suggestedCombo"] = None
+                normalized = server._normalize_catalog_recommendations(
+                    analysis,
+                    "face",
+                )
+                self.assertEqual(
+                    "Sciton Halo" in {
+                        item["treatment"]
+                        for item in normalized["recommendations"]
+                    },
+                    expected,
+                )
+
+    def test_catalog_normalizer_drops_halo_below_its_evidence_gate(self) -> None:
         analysis = accepted_analysis()
         analysis["recommendations"] = [
             {
@@ -2016,7 +2347,11 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
 
         self.assertEqual(
             [item["treatment"] for item in normalized["recommendations"]],
-            ["Sciton BBL", "Sciton Moxi"],
+            ["Sciton BBL", "Sciton Moxi", "Chemical Peels"],
+        )
+        self.assertNotIn(
+            "Sciton Halo",
+            {item["treatment"] for item in normalized["recommendations"]},
         )
 
     def test_catalog_normalizer_allows_clear_photo_without_forced_treatment(self) -> None:
@@ -3819,7 +4154,7 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
         self.assertEqual(fail_if_called.calls, [])
         self.assertEqual(second.headers["X-Von-Analysis-Repeat"], "reused")
 
-    def test_repeat_key_separates_photo_area_age_and_build_contract(self) -> None:
+    def test_repeat_key_separates_analysis_inputs_but_not_cosmetic_builds(self) -> None:
         first_bytes = jpeg_bytes(color=(180, 145, 122))
         second_bytes = jpeg_bytes(color=(120, 145, 180))
 
@@ -3861,14 +4196,21 @@ class RestoredAnalyzerBehaviorTests(unittest.TestCase):
             ),
         )
         original_fingerprint = server.BUILD_FINGERPRINT
+        original_repeat_version = server.ANALYSIS_REPEAT_VERSION
         try:
-            server.BUILD_FINGERPRINT = "different-analysis-contract"
+            server.BUILD_FINGERPRINT = "different-cosmetic-build"
+            self.assertEqual(
+                baseline,
+                server._analysis_repeat_key(first_bytes, "face", "35"),
+            )
+            server.ANALYSIS_REPEAT_VERSION = "future-analysis-contract"
             self.assertNotEqual(
                 baseline,
                 server._analysis_repeat_key(first_bytes, "face", "35"),
             )
         finally:
             server.BUILD_FINGERPRINT = original_fingerprint
+            server.ANALYSIS_REPEAT_VERSION = original_repeat_version
 
     def test_primary_model_seed_is_stable_across_build_fingerprints(self) -> None:
         photo = jpeg_bytes(color=(178, 144, 121))

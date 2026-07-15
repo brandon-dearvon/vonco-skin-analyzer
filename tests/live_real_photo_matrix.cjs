@@ -1099,8 +1099,8 @@ function assertStructuredResult(testCase, data) {
 
   assert.ok(
     Array.isArray(data.recommendations)
-      && data.recommendations.length <= areaTreatments[testCase.area].size,
-    `${testCase.id}: result has zero or more unique treatments, never exceeding the selected area's catalog`,
+      && data.recommendations.length <= 6,
+    `${testCase.id}: result has zero through six treatments`,
   );
   const allowedProducts = allowedProductsForArea(testCase.area);
   assert.ok(
@@ -1454,6 +1454,7 @@ async function assertRenderedDomParity(page, testCase, data) {
         name: text(card.querySelector('.rec-treatment')),
         reason: text(card.querySelector('.rec-reason')),
         priority: text(card.querySelector('.rec-priority')),
+        hidden: card.hidden,
       })),
       products: [...document.querySelectorAll('#productRecommendationCards .recommendation-card')].map(card => ({
         name: text(card.querySelector('.rec-treatment')),
@@ -1470,6 +1471,11 @@ async function assertRenderedDomParity(page, testCase, data) {
       planButtonVisible: isRenderable(planButton),
       planButtonHref: planButton?.getAttribute('href') || null,
       planCount: text(document.getElementById('resultsPlanCount')),
+      treatmentOptionsToggle: {
+        hidden: document.getElementById('treatmentOptionsToggle')?.hidden ?? true,
+        expanded: document.getElementById('treatmentOptionsToggle')?.getAttribute('aria-expanded') || null,
+        text: text(document.getElementById('treatmentOptionsToggle')),
+      },
       reportActionVisible: isRenderable(document.getElementById('downloadReportBtn')),
       ctaVisible: isRenderable(document.getElementById('ctaSection'))
         && document.getElementById('ctaSection')?.classList.contains('show'),
@@ -1519,6 +1525,7 @@ async function assertRenderedDomParity(page, testCase, data) {
       name: normalizeText(item.treatment),
       reason: normalizeText(item.reason),
       priority: index === 0 ? 'Top Pick' : `Priority ${item.priority}`,
+      hidden: index >= 3,
     })),
     `${testCase.id}: every treatment, reason, and priority renders verbatim and in order`,
   );
@@ -1542,6 +1549,40 @@ async function assertRenderedDomParity(page, testCase, data) {
   assert.equal(rendered.planTeaserVisible, true, `${testCase.id}: plan teaser is visible`);
   assert.equal(rendered.planButtonVisible, true, `${testCase.id}: plan CTA is visible`);
   assert.equal(rendered.planButtonHref, '#recommendationsSection', `${testCase.id}: plan CTA targets recommendations`);
+  const additionalTreatmentCount = Math.max(0, data.recommendations.length - 3);
+  assert.equal(
+    rendered.treatmentOptionsToggle.hidden,
+    additionalTreatmentCount === 0,
+    `${testCase.id}: treatment disclosure visibility matches the returned count`,
+  );
+  assert.equal(
+    rendered.treatmentOptionsToggle.expanded,
+    'false',
+    `${testCase.id}: treatment disclosure starts collapsed`,
+  );
+  if (additionalTreatmentCount > 0) {
+    assert.equal(
+      rendered.treatmentOptionsToggle.text,
+      `See ${additionalTreatmentCount} More Treatment ${additionalTreatmentCount === 1 ? 'Option' : 'Options'}`,
+      `${testCase.id}: treatment disclosure names the exact remaining count`,
+    );
+    await page.locator('#treatmentOptionsToggle').click();
+    const expandedTreatmentState = await page.evaluate(() => ({
+      expanded: document.getElementById('treatmentOptionsToggle').getAttribute('aria-expanded'),
+      hiddenCards: document.querySelectorAll('#treatmentRecommendationCards .recommendation-card[hidden]').length,
+      visibleCards: [...document.querySelectorAll('#treatmentRecommendationCards .recommendation-card')]
+        .filter(card => !card.hidden && getComputedStyle(card).display !== 'none').length,
+    }));
+    assert.deepEqual(
+      expandedTreatmentState,
+      {
+        expanded: 'true',
+        hiddenCards: 0,
+        visibleCards: data.recommendations.length,
+      },
+      `${testCase.id}: treatment disclosure reveals every returned option`,
+    );
+  }
   assert.equal(rendered.reportActionVisible, true, `${testCase.id}: printable plan action is visible`);
   assert.equal(rendered.ctaVisible, true, `${testCase.id}: consultation CTA section is visible`);
   assert.ok(rendered.bookingActionCount >= 1, `${testCase.id}: at least one booking CTA is visible`);
@@ -2041,7 +2082,7 @@ function createRunLedger(manifest) {
       halo: 'Sciton Halo requires at least one listed target score >= 41',
       treatmentIntensity: 'Sculptra requires at least one listed target score >= 41 and is not cataloged for hands or veins; Sciton BBL on hands also requires at least one listed target score >= 41',
       redness: 'when redness >= 41, exclude exact standard Microneedling and RF Microneedling; Microneedling + PRF remains independently catalog-mapped',
-      recommendationCount: 'zero through the selected area catalog maximum; no treatment quota and no treatment is forced when every concern score is 10 or below',
+      recommendationCount: 'zero through six; no minimum, no padding, and no treatment is forced when every concern score is 10 or below',
       priority: 'returned treatment priorities are unique, sequential, and preserve API order in both the result page and printable report; priority one maps to the leading concern actually covered by a selected service, and the first two services cover the first two service-covered concerns when present',
       coverage: 'treatment plus skincare covers every moderate visible concern; when all findings are mild, it covers the highest concern with a permitted catalog path and records any higher unmappable mild finding without forcing a contraindicated option; services cover every moderate concern with an allowed treatment match; a sparse all-10-or-below result remains valid with zero services',
       products: 'one through the selected area catalog maximum, including at least one SPF; every non-SPF product maps to a visible score above 10; no artificial 2-3 quota',

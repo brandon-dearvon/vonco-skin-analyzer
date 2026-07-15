@@ -29,6 +29,10 @@ const fixture = {
   recommendations: [
     { treatment: 'Sciton BBL', reason: 'An in-person consultation can determine whether this option fits your goals.', targets: ['darkSpots', 'redness'], priority: 1 },
     { treatment: 'Sciton Halo', reason: 'An in-person consultation can determine whether this option fits your goals.', targets: ['darkSpots', 'texture'], priority: 2 },
+    { treatment: 'Chemical Peels', reason: 'An in-person consultation can determine whether this option fits your goals.', targets: ['darkSpots'], priority: 3 },
+    { treatment: 'HydraFacial Customized', reason: 'An in-person consultation can determine whether this option fits your goals.', targets: ['texture'], priority: 4 },
+    { treatment: 'Sciton Moxi', reason: 'An in-person consultation can determine whether this option fits your goals.', targets: ['darkSpots', 'texture'], priority: 5 },
+    { treatment: 'Signature Facial', reason: 'An in-person consultation can determine whether this option fits your goals.', targets: ['redness'], priority: 6 },
   ],
   productRecommendations: [
     { product: 'SkinBetter Even Tone', reason: 'A provider can discuss whether this option fits your routine.' },
@@ -317,6 +321,12 @@ async function assertResultContract(page, engineName, viewport, uploadImageParts
       productGroupTitle: document.querySelector('#productRecommendationsGroup .recommendation-group-title')?.textContent.replace(/\s+/g, ' ').trim(),
       treatmentCardCount: document.querySelectorAll('#treatmentRecommendationCards .recommendation-card').length,
       productCardCount: document.querySelectorAll('#productRecommendationCards .recommendation-card').length,
+      initiallyVisibleTreatmentCount: [...document.querySelectorAll('#treatmentRecommendationCards .recommendation-card')]
+        .filter(card => !card.hidden && getComputedStyle(card).display !== 'none').length,
+      initiallyHiddenTreatmentCount: document.querySelectorAll('#treatmentRecommendationCards .recommendation-card[hidden]').length,
+      treatmentOptionsToggleVisible: !document.getElementById('treatmentOptionsToggle')?.hidden,
+      treatmentOptionsToggleExpanded: document.getElementById('treatmentOptionsToggle')?.getAttribute('aria-expanded'),
+      treatmentOptionsToggleText: document.getElementById('treatmentOptionsToggle')?.textContent.trim(),
       initiallyVisibleFindingCount: [...document.querySelectorAll('#concernsGrid .concern-card')]
         .filter(card => !card.hidden && getComputedStyle(card).display !== 'none').length,
       initiallyHiddenFindingCount: document.querySelectorAll('#concernsGrid .concern-card[hidden]').length,
@@ -394,16 +404,21 @@ async function assertResultContract(page, engineName, viewport, uploadImageParts
   assert.equal(result.clubCtaStyle.textTransform, 'none', `${engineName}/${viewport.name}: Club action stays in live-site title case`);
   assert.match(result.clubCtaStyle.fontFamily, /Fira Sans/i, `${engineName}/${viewport.name}: Club action uses Fira Sans`);
   assert.equal(result.planTeaserVisible, true, `${engineName}/${viewport.name}: recommendation teaser is visible in the result overview`);
-  assert.equal(result.planGuideText, 'View Plan (4)', `${engineName}/${viewport.name}: highlighted plan control reads as an action, not a selected tab`);
+  assert.equal(result.planGuideText, 'View Plan (8)', `${engineName}/${viewport.name}: highlighted plan control reads as an action, not a selected tab`);
   assert.ok(result.planGuideGap >= 3, `${engineName}/${viewport.name}: plan label and count retain visible spacing`);
-  assert.equal(result.planCount, '(4)', `${engineName}/${viewport.name}: plan guide shows the total recommendation count`);
-  assert.match(result.planSummary, /2 treatment options and 2 at-home skincare picks/i, `${engineName}/${viewport.name}: plan teaser separates treatment and skincare counts`);
+  assert.equal(result.planCount, '(8)', `${engineName}/${viewport.name}: plan guide shows the total recommendation count`);
+  assert.match(result.planSummary, /6 treatment options and 2 at-home skincare picks/i, `${engineName}/${viewport.name}: plan teaser separates treatment and skincare counts`);
   assert.equal(result.resultUsesUnsupportedConditionLabel, false, `${engineName}/${viewport.name}: result uses appearance-only finding labels`);
   assert.equal(result.reportUsesUnsupportedConditionLabel, false, `${engineName}/${viewport.name}: report uses appearance-only finding labels`);
-  assert.equal(result.treatmentGroupTitle, 'Treatment Options (2)', `${engineName}/${viewport.name}: treatment recommendations have a labeled count`);
+  assert.equal(result.treatmentGroupTitle, 'Treatment Options (6)', `${engineName}/${viewport.name}: treatment recommendations have a labeled count`);
   assert.equal(result.productGroupTitle, 'At-Home Skincare (2)', `${engineName}/${viewport.name}: product recommendations have a labeled count`);
-  assert.equal(result.treatmentCardCount, 2, `${engineName}/${viewport.name}: treatment cards render in the treatment group`);
+  assert.equal(result.treatmentCardCount, 6, `${engineName}/${viewport.name}: treatment cards render in the treatment group`);
   assert.equal(result.productCardCount, 2, `${engineName}/${viewport.name}: skincare cards render in the skincare group`);
+  assert.equal(result.initiallyVisibleTreatmentCount, 3, `${engineName}/${viewport.name}: the top three treatments show first`);
+  assert.equal(result.initiallyHiddenTreatmentCount, 3, `${engineName}/${viewport.name}: three additional treatments remain available`);
+  assert.equal(result.treatmentOptionsToggleVisible, true, `${engineName}/${viewport.name}: additional treatments have a disclosure`);
+  assert.equal(result.treatmentOptionsToggleExpanded, 'false', `${engineName}/${viewport.name}: treatment disclosure starts collapsed`);
+  assert.equal(result.treatmentOptionsToggleText, 'See 3 More Treatment Options', `${engineName}/${viewport.name}: treatment disclosure names the exact additional count`);
   assert.equal(result.initiallyVisibleFindingCount, 3, `${engineName}/${viewport.name}: only three findings show initially`);
   assert.equal(result.initiallyHiddenFindingCount, 1, `${engineName}/${viewport.name}: remaining findings are preserved behind disclosure`);
   assert.equal(result.findingsToggleVisible, true, `${engineName}/${viewport.name}: findings disclosure is available`);
@@ -445,6 +460,65 @@ async function assertResultContract(page, engineName, viewport, uploadImageParts
     `${engineName}/${viewport.name}: model and guest copy is escaped in results and printable reports`,
   );
 
+  await page.locator('#treatmentOptionsToggle').click();
+  const expandedTreatments = await page.evaluate(() => ({
+    visibleCount: [...document.querySelectorAll('#treatmentRecommendationCards .recommendation-card')]
+      .filter(card => !card.hidden && getComputedStyle(card).display !== 'none').length,
+    hiddenCount: document.querySelectorAll('#treatmentRecommendationCards .recommendation-card[hidden]').length,
+    expanded: document.getElementById('treatmentOptionsToggle').getAttribute('aria-expanded'),
+    text: document.getElementById('treatmentOptionsToggle').textContent.trim(),
+  }));
+  assert.equal(expandedTreatments.visibleCount, 6, `${engineName}/${viewport.name}: expanding reveals every supported treatment`);
+  assert.equal(expandedTreatments.hiddenCount, 0, `${engineName}/${viewport.name}: no treatment remains hidden after expansion`);
+  assert.equal(expandedTreatments.expanded, 'true', `${engineName}/${viewport.name}: treatment disclosure exposes its expanded state`);
+  assert.equal(expandedTreatments.text, 'Show Top 3', `${engineName}/${viewport.name}: expanded treatment disclosure offers a compact return`);
+  await page.locator('#treatmentOptionsToggle').click();
+
+  for (const count of [0, 1, 2, 3, 4, 5]) {
+    const disclosure = await page.evaluate(({ presentationFixture, recommendationCount }) => {
+      displayResults({
+        ...presentationFixture,
+        recommendations: presentationFixture.recommendations.slice(0, recommendationCount),
+      });
+      const button = document.getElementById('treatmentOptionsToggle');
+      return {
+        buttonHidden: button.hidden,
+        expanded: button.getAttribute('aria-expanded'),
+        text: button.textContent.trim(),
+        visibleCards: [...document.querySelectorAll('#treatmentRecommendationCards .recommendation-card')]
+          .filter(card => !card.hidden && getComputedStyle(card).display !== 'none').length,
+        hiddenCards: document.querySelectorAll('#treatmentRecommendationCards .recommendation-card[hidden]').length,
+      };
+    }, { presentationFixture: fixture, recommendationCount: count });
+    assert.equal(disclosure.buttonHidden, count <= 3, `${engineName}/${viewport.name}: ${count} treatments use the correct disclosure state`);
+    assert.equal(disclosure.expanded, 'false', `${engineName}/${viewport.name}: ${count} treatments reset the disclosure`);
+    assert.equal(disclosure.visibleCards, Math.min(count, 3), `${engineName}/${viewport.name}: ${count} treatments show at most the top three`);
+    assert.equal(disclosure.hiddenCards, Math.max(0, count - 3), `${engineName}/${viewport.name}: ${count} treatments preserve every additional card`);
+    if (count === 4) {
+      assert.equal(disclosure.text, 'See 1 More Treatment Option', `${engineName}/${viewport.name}: singular treatment disclosure is exact`);
+    }
+    if (count === 5) {
+      assert.equal(disclosure.text, 'See 2 More Treatment Options', `${engineName}/${viewport.name}: plural treatment disclosure is exact`);
+    }
+  }
+
+  await page.evaluate(presentationFixture => displayResults(presentationFixture), fixture);
+  await page.locator('#treatmentOptionsToggle').click();
+  await page.evaluate(presentationFixture => displayResults({
+    ...presentationFixture,
+    recommendations: presentationFixture.recommendations.slice(0, 5),
+  }), fixture);
+  const resetDisclosure = await page.evaluate(() => ({
+    expanded: document.getElementById('treatmentOptionsToggle').getAttribute('aria-expanded'),
+    hiddenCards: document.querySelectorAll('#treatmentRecommendationCards .recommendation-card[hidden]').length,
+  }));
+  assert.deepEqual(
+    resetDisclosure,
+    { expanded: 'false', hiddenCards: 2 },
+    `${engineName}/${viewport.name}: a new analysis collapses previously expanded treatment options`,
+  );
+  await page.evaluate(presentationFixture => displayResults(presentationFixture), fixture);
+
   await page.locator('#findingsToggle').click();
   const expandedFindings = await page.evaluate(() => ({
     visibleCount: [...document.querySelectorAll('#concernsGrid .concern-card')]
@@ -477,6 +551,13 @@ async function assertPrintableReport(page, context, engineName, viewport) {
   assert.match(reportHtml, /Personalized Skin Analysis Report/, `${engineName}/${viewport.name}: report uses the branded title case`);
   assert.match(reportHtml, /font-family:'Arsenica'/, `${engineName}/${viewport.name}: report embeds the Arsenica display face`);
   assert.match(reportHtml, /name="viewport"/, `${engineName}/${viewport.name}: report declares a mobile viewport`);
+  for (const recommendation of fixture.recommendations) {
+    assert.equal(
+      reportHtml.includes(recommendation.treatment),
+      true,
+      `${engineName}/${viewport.name}: client report preserves ${recommendation.treatment}`,
+    );
+  }
 
   const serverReportResponse = await context.request.post(`${baseUrl}/api/report`, {
     data: { name: 'Brittany', analysis: fixture },
@@ -500,6 +581,13 @@ async function assertPrintableReport(page, context, engineName, viewport) {
   }
   assert.match(serverReportHtml, /https:\/\/booking\.vonandcoaesthetics\.com\/webstoreNew\/services\?utm_source=skin-analyzer/, `${engineName}/${viewport.name}: fallback report uses the same booking action`);
   assert.match(serverReportHtml, /https?:\/\/[^"']+\/arsenica-regular\.otf/, `${engineName}/${viewport.name}: fallback report uses an absolute local Arsenica asset`);
+  for (const recommendation of fixture.recommendations) {
+    assert.equal(
+      serverReportHtml.includes(recommendation.treatment),
+      true,
+      `${engineName}/${viewport.name}: fallback report preserves ${recommendation.treatment}`,
+    );
+  }
 
   const serverReportPage = await context.newPage();
   await serverReportPage.setContent(serverReportHtml, { waitUntil: 'domcontentloaded' });

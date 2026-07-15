@@ -226,8 +226,8 @@ def validate_preview_contract(payload: dict, area: str) -> list[str]:
         )
 
     recommendations = payload.get("recommendations", [])
-    if not isinstance(recommendations, list) or not 3 <= len(recommendations) <= 5:
-        problems.append("recommendations must contain 3 to 5 treatments")
+    if not isinstance(recommendations, list) or len(recommendations) > 6:
+        problems.append("recommendations must contain 0 to 6 treatments")
     else:
         for recommendation in recommendations:
             treatment = str(recommendation.get("treatment", "")).strip()
@@ -240,8 +240,8 @@ def validate_preview_contract(payload: dict, area: str) -> list[str]:
                 )
 
     products = payload.get("productRecommendations", [])
-    if not isinstance(products, list) or not 2 <= len(products) <= 3:
-        problems.append("productRecommendations must contain 2 to 3 products")
+    if not isinstance(products, list):
+        problems.append("productRecommendations must be a list")
     else:
         product_names = {
             str(product.get("product", "")).strip() for product in products
