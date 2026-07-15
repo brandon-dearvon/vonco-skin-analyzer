@@ -35,14 +35,16 @@ class RestoredOriginalContractTests(unittest.TestCase):
     def test_hero_and_primary_upload_copy_remain(self) -> None:
         for copy in (
             "Illuminating Results, Expertly Delivered",
-            "See what your skin reveals.",
+            "A complimentary photo-based preview of visible skin patterns",
             "Your Skin Story Starts Here",
-            "Powered by VISIA-Style Analysis",
-            "Your image is never stored. Most results are ready in under a minute.",
+            "What This Photo Preview Reviews",
+            "Your image is not retained after analysis. Most results are ready in under a minute.",
             "Upload one clear photo",
             "No camera capture required.",
         ):
             self.assertIn(copy, HTML)
+        self.assertNotIn("Powered by the same clinical insight", HTML)
+        self.assertNotIn("VISIA-Style Analysis", HTML)
 
     def test_canonical_hd_primary_lockups_are_direct_and_exact(self) -> None:
         expected = {
@@ -112,7 +114,7 @@ class RestoredOriginalContractTests(unittest.TestCase):
         self.assertIn('GOOGLE_TOTAL_BUDGET_MS', SERVER)
         self.assertIn('str(70_000)', SERVER)
         self.assertIn('GOOGLE_HEDGE_DELAY_MS', SERVER)
-        self.assertIn('str(35_000)', SERVER)
+        self.assertIn('str(15_000)', SERVER)
         self.assertIn('GOOGLE_MAX_OUTPUT_TOKENS', SERVER)
         self.assertIn('str(32_768)', SERVER)
         self.assertIn('time.monotonic()', SERVER)
@@ -157,6 +159,18 @@ class RestoredOriginalContractTests(unittest.TestCase):
             "See My Recommendations",
         ):
             self.assertIn(marker, HTML)
+        self.assertIn("View Plan", HTML)
+        self.assertNotIn("Redness & Rosacea", HTML)
+        self.assertNotIn("Redness & Rosacea", SERVER)
+        for unsupported_label in (
+            "Dark Spots & Hyperpigmentation",
+            "Sun Damage & Photoaging",
+            "Visible Veins & Vascularity",
+            "Scarring & Marks",
+            "Body Acne & Breakouts",
+            "Dryness & Dehydration",
+        ):
+            self.assertNotIn(unsupported_label, HTML)
 
     def test_original_lead_offer_club_and_report_features_remain(self) -> None:
         for marker in (
@@ -168,11 +182,16 @@ class RestoredOriginalContractTests(unittest.TestCase):
             'id="reportPreviewContainer"',
             "function buildReportHTML",
             "function downloadReport",
-            "15% Off Your First Visit",
-            "Claim Your 15% Off",
-            "Join The Club",
+            "15% off your first visit + The Club",
+            'class="promo-banner"',
+            'class="von-offer-cta"',
+            'class="club-cta"',
+            ">Learn More</a>",
+            "arsenica-regular.otf",
+            "Personalized Skin Analysis Report",
         ):
             self.assertIn(marker, HTML)
+        self.assertNotIn(">Join The Club</a>", HTML)
 
     def test_estimated_skin_age_and_radar_are_removed_everywhere(self) -> None:
         removed = (
@@ -201,6 +220,8 @@ class RestoredOriginalContractTests(unittest.TestCase):
         self.assertIn("title.textContent = highlight.title", HTML)
         self.assertIn("detail.textContent = highlight.detail", HTML)
         self.assertIn("Never phrase a positive as the absence of a concern", SERVER)
+        self.assertIn("Overall View", HTML)
+        self.assertNotIn("Avg Skin Health", HTML)
 
     def test_positive_schema_is_required_and_bounded(self) -> None:
         self.assertIn('"positiveHighlights": {', SERVER)
@@ -211,7 +232,7 @@ class RestoredOriginalContractTests(unittest.TestCase):
 
     def test_take_home_report_is_positive_first_and_complete(self) -> None:
         report = HTML[HTML.index("function buildReportHTML"):]
-        positive = report.index("What Looks Especially Good")
+        positive = report.index("Begin With the Positive")
         score = report.index("Overall Score:")
         concerns = report.index("Skin Analysis Results")
         self.assertLess(positive, score)

@@ -9,6 +9,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <style>
+        @font-face {
+            font-family: 'Arsenica';
+            src: url('/arsenica-regular.otf') format('opentype');
+            font-style: normal;
+            font-weight: 400;
+            font-display: swap;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -25,14 +33,16 @@
             --mint: #C0C8A9;
             --moss: #B0A074;
             --black: #4C4C4E;
+            --font-display: 'Arsenica', Georgia, serif;
+            --font-body: 'Fira Sans', 'Trebuchet MS', sans-serif;
         }
 
         html, body {
-            overflow-x: hidden;
+            overflow-x: clip;
         }
 
         body {
-            font-family: 'Fira Sans', sans-serif;
+            font-family: var(--font-body);
             color: var(--black);
             line-height: 1.6;
             background-color: var(--von-white);
@@ -46,11 +56,11 @@
             left: 0;
             right: 0;
             z-index: 900;
-            background: rgba(255, 255, 255, 0.97);
+            background: #FFFFFF;
             border-bottom: 1px solid rgba(81, 104, 98, 0.12);
             box-shadow: 0 5px 20px rgba(29, 29, 27, 0.09);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
         }
 
         .site-nav-inner {
@@ -344,6 +354,17 @@
             outline: none;
         }
 
+        .intake-field select {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 46px;
+            padding-right: 38px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1.5 1.5 7 7l5.5-5.5' fill='none' stroke='%23516862' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 13px center;
+            background-size: 14px 9px;
+        }
+
         .intake-field input:focus,
         .intake-field select:focus {
             border-color: var(--evergreen);
@@ -543,6 +564,7 @@
             width: 90%;
             max-width: 500px;
             max-height: 90vh;
+            max-height: 90dvh;
             overflow-y: auto;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
             animation: slideUp 0.4s ease;
@@ -563,6 +585,12 @@
         }
 
         .close-btn {
+            width: 44px;
+            height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 44px;
             background: none;
             border: none;
             font-size: 1.5rem;
@@ -622,6 +650,7 @@
             border-radius: 10px;
             margin-bottom: 8px;
             max-height: 45vh;
+            max-height: 45dvh;
         }
         .guided-video-wrap video {
             width: 100%;
@@ -629,6 +658,7 @@
             border-radius: 10px;
             background: #000;
             max-height: 45vh;
+            max-height: 45dvh;
             object-fit: cover;
         }
         .guided-oval {
@@ -746,6 +776,7 @@
             gap: 8px;
             margin-bottom: 10px;
         }
+        .capture-mode-picker[hidden] { display: none !important; }
         .capture-mode-picker button {
             flex: 1;
             padding: 8px 6px;
@@ -944,7 +975,8 @@
         #positiveLead,
         #concernsGrid,
         #recommendationsSection,
-        #takeHomePlanActions {
+        #takeHomePlanActions,
+        #intakeFields {
             scroll-margin-top: 100px;
         }
 
@@ -978,6 +1010,7 @@
         .results-guide a {
             flex: 1;
             min-width: 0;
+            gap: 3px;
             padding: 9px 12px;
             border-radius: 22px;
             color: var(--evergreen);
@@ -1100,7 +1133,7 @@
         }
 
         .findings-toggle {
-            min-height: 42px;
+            min-height: 44px;
             padding: 10px 22px;
             border: 1.5px solid var(--evergreen);
             border-radius: 24px;
@@ -1331,42 +1364,76 @@
         }
 
         .offers-membership {
-            margin-top: 34px;
-            border: 1px solid rgba(81,104,98,0.16);
-            border-radius: 14px;
+            margin-top: 40px;
+            border: 1px solid rgba(81, 104, 98, 0.24);
+            border-radius: 20px;
             background: #fff;
             overflow: hidden;
+            box-shadow: 0 10px 28px rgba(55, 66, 62, 0.08);
         }
 
         .offers-membership > summary {
-            display: flex;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
             align-items: center;
-            justify-content: space-between;
-            gap: 18px;
-            padding: 19px 22px;
+            gap: 22px;
+            min-height: 96px;
+            padding: 22px 26px;
             color: var(--evergreen);
-            font-family: Georgia, serif;
-            font-size: 1.15rem;
             cursor: pointer;
             list-style: none;
+            transition: background-color 0.2s ease;
         }
 
         .offers-membership > summary::-webkit-details-marker {
             display: none;
         }
 
-        .offers-membership > summary span {
-            color: #777;
-            font: 500 0.76rem 'Fira Sans', sans-serif;
-            text-align: right;
+        .offers-membership > summary:hover {
+            background: rgba(235, 234, 229, 0.58);
+        }
+
+        .offers-membership > summary:focus-visible {
+            outline: 3px solid rgba(81, 104, 98, 0.28);
+            outline-offset: -3px;
+        }
+
+        .offers-membership-summary-copy {
+            display: flex;
+            min-width: 0;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .offers-membership-eyebrow {
+            color: var(--evergreen);
+            font: 600 0.76rem/1.2 var(--font-body);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .offers-membership-title {
+            color: var(--evergreen);
+            font-family: var(--font-display);
+            font-size: clamp(1.75rem, 3.2vw, 2rem);
+            font-weight: 400;
+            line-height: 1.15;
         }
 
         .offers-membership > summary::after {
             content: '+';
-            flex: 0 0 auto;
-            color: var(--sand);
-            font-family: 'Fira Sans', sans-serif;
-            font-size: 1.35rem;
+            width: 42px;
+            height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--evergreen);
+            border: 1px solid rgba(81, 104, 98, 0.38);
+            border-radius: 50%;
+            font-family: var(--font-body);
+            font-size: 1.4rem;
+            font-weight: 400;
+            line-height: 1;
         }
 
         .offers-membership[open] > summary::after {
@@ -1374,7 +1441,9 @@
         }
 
         .offers-membership-content {
-            padding: 0 22px 24px;
+            padding: 2px 26px 28px;
+            background: var(--von-white);
+            border-top: 1px solid rgba(81, 104, 98, 0.12);
         }
 
         .recommendation-cards {
@@ -1405,6 +1474,17 @@
             padding: 15px;
             margin: -25px -25px 20px -25px;
             border-radius: 4px 4px 0 0;
+        }
+
+        .rec-header-product {
+            background: var(--von-white);
+            color: var(--evergreen);
+            border-bottom: 1px solid rgba(81, 104, 98, 0.18);
+        }
+
+        .rec-header-product .rec-priority {
+            background: var(--evergreen);
+            color: #ffffff;
         }
 
         .rec-treatment {
@@ -1450,6 +1530,39 @@
         .tag-mint { background-color: rgba(192, 200, 169, 0.3); color: #4a6040; }
         .tag-gold { background-color: rgba(198, 141, 47, 0.3); color: #8a6a10; }
         .tag-peach { background-color: rgba(197, 139, 116, 0.3); color: #9a4a35; }
+
+        .combo-play {
+            margin: 42px 0 0;
+            padding: 22px 26px;
+            background: rgba(235, 234, 229, 0.72);
+            border: 1px solid rgba(81, 104, 98, 0.24);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .combo-play-label {
+            color: var(--evergreen);
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .combo-play-title {
+            margin: 7px 0 5px;
+            color: var(--evergreen);
+            font-family: Georgia, serif;
+            font-size: 1.35rem;
+            font-weight: 500;
+        }
+
+        .combo-play-copy {
+            margin: 0;
+            color: var(--black);
+            font-size: 0.92rem;
+            line-height: 1.55;
+            opacity: 0.82;
+        }
 
         /* POSITIVE-FIRST RESULT INTRO */
         .positive-lead {
@@ -1580,7 +1693,9 @@
         }
         .lead-gate-skip {
             display: block;
-            margin-top: 15px;
+            min-height: 44px;
+            margin: 8px auto 0;
+            padding: 10px 14px;
             font-size: 0.85rem;
             color: #999;
             cursor: pointer;
@@ -1592,79 +1707,220 @@
         .lead-gate-skip:hover { color: #666; }
         .lead-gate-new-guest {
             margin-top: 18px;
-            padding: 12px 16px;
-            background: rgba(198, 141, 47, 0.08);
-            border-radius: 8px;
-            border-left: 3px solid var(--gold);
+            padding: 16px 18px;
+            background: var(--von-white);
+            border: 1px solid rgba(81, 104, 98, 0.3);
+            border-radius: 12px;
+            text-align: center;
         }
-        .lead-gate-new-guest p {
-            font-size: 0.82rem;
+
+        .lead-gate-offer-title {
             color: var(--evergreen);
-            margin-bottom: 0;
+            font-family: var(--font-display);
+            font-size: 1.35rem;
+            font-weight: 400;
+            line-height: 1.15;
+        }
+
+        .lead-gate-offer-copy {
+            margin-top: 5px;
+            color: var(--evergreen);
+            font-size: 0.84rem;
             font-weight: 500;
+            line-height: 1.45;
         }
 
         /* PROMO BANNER IN RECOMMENDATIONS */
         .promo-banner {
-            background: linear-gradient(135deg, rgba(198, 141, 47, 0.1) 0%, rgba(193, 168, 144, 0.15) 100%);
-            border: 1.5px solid var(--gold);
-            border-radius: 12px;
-            padding: 20px 25px;
-            margin-top: 30px;
+            margin-top: 26px;
+            padding: 38px 30px;
+            background: #fff;
+            border: 1px solid rgba(81, 104, 98, 0.34);
+            border-radius: 20px;
             text-align: center;
         }
-        .promo-banner-icon {
-            font-size: 1.4rem;
-            margin-bottom: 6px;
-        }
-        .promo-banner h4 {
-            font-family: Georgia, serif;
-            font-size: 1.3rem;
+
+        .offer-eyebrow,
+        .club-kicker {
             color: var(--evergreen);
-            margin-bottom: 6px;
-            font-weight: 600;
+            font: 600 0.76rem/1.2 var(--font-body);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
         }
-        .promo-banner p {
-            font-size: 0.88rem;
-            color: #555;
-            line-height: 1.5;
+
+        .promo-banner-title {
+            margin-top: 8px;
+            color: var(--evergreen);
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 4vw, 2.6rem);
+            font-weight: 400;
+            line-height: 1.08;
+        }
+
+        .promo-banner-discount {
+            margin-top: 8px;
+            color: var(--evergreen);
+            font-family: var(--font-display);
+            font-size: clamp(1.45rem, 3vw, 1.85rem);
+            font-weight: 400;
+            line-height: 1.2;
+        }
+
+        .promo-banner-copy {
+            max-width: 460px;
+            margin: 12px auto 0;
+            color: var(--black);
+            font-size: 1rem;
+            line-height: 1.55;
+        }
+
+        .promo-banner-terms {
+            margin-top: 12px;
+            color: var(--black);
+            font-size: 0.76rem;
+            line-height: 1.4;
+            opacity: 0.68;
+        }
+
+        .von-offer-cta,
+        .club-cta {
+            min-height: 48px;
+            margin-top: 20px;
+            padding: 12px 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            font: 500 1rem/1.2 var(--font-body);
+            letter-spacing: normal;
+            text-decoration: none;
+            text-transform: none;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .von-offer-cta {
+            color: #37423E;
+            background: transparent;
+            border: 2px solid var(--evergreen);
+        }
+
+        .von-offer-cta:hover {
+            color: #fff;
+            background: var(--evergreen);
         }
 
         /* CLUB MEMBERSHIP UPSELL */
         .club-upsell {
-            background: var(--evergreen);
-            border-radius: 12px;
-            padding: 28px 30px;
-            margin-top: 25px;
+            background-color: var(--evergreen);
+            background-image: linear-gradient(135deg, #263324 0%, #637866 58%, #83958C 100%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 44px 36px 40px;
+            margin-top: 28px;
             text-align: center;
             color: #fff;
         }
-        .club-upsell h4 {
-            font-family: Georgia, serif;
-            font-size: 1.3rem;
-            color: #fff;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-        .club-upsell p {
-            font-size: 0.88rem;
+
+        .club-kicker {
             color: var(--von-white);
-            line-height: 1.5;
-            opacity: 0.9;
         }
-        .club-upsell .club-link {
-            display: inline-block;
-            margin-top: 12px;
-            color: var(--sand);
-            font-weight: 600;
+
+        .club-title {
+            margin-top: 8px;
+            color: #fff;
+            font-family: var(--font-display);
+            font-size: clamp(2.25rem, 5vw, 3rem);
+            font-weight: 400;
+            line-height: 1.05;
+        }
+
+        .club-price {
+            margin-top: 18px;
+            color: #fff;
+            font-family: var(--font-display);
+            font-size: clamp(2.75rem, 7vw, 3.7rem);
+            font-weight: 400;
+            line-height: 1;
+        }
+
+        .club-price span {
+            margin-left: 4px;
+            font-family: var(--font-body);
+            font-size: 1rem;
+            font-weight: 400;
+        }
+
+        .club-price-note {
+            margin-top: 6px;
+            color: var(--von-white);
             font-size: 0.9rem;
-            text-decoration: none;
-            border-bottom: 1px solid var(--sand);
-            transition: color 0.3s;
+            opacity: 0.78;
         }
-        .club-upsell .club-link:hover {
-            color: var(--gold);
-            border-color: var(--gold);
+
+        .club-description {
+            max-width: 560px;
+            margin: 22px auto 0;
+            color: #fff;
+            font-size: 1.05rem;
+            line-height: 1.65;
+        }
+
+        .club-benefits {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+            max-width: 620px;
+            margin: 26px auto 0;
+        }
+
+        .club-benefit {
+            padding: 20px 22px;
+            background: rgba(235, 234, 229, 0.1);
+            border: 1px solid rgba(235, 234, 229, 0.26);
+            border-radius: 12px;
+        }
+
+        .club-benefit-value {
+            color: #fff;
+            font-family: var(--font-display);
+            font-size: 2.25rem;
+            font-weight: 400;
+            line-height: 1;
+        }
+
+        .club-benefit-label {
+            margin-top: 7px;
+            color: var(--von-white);
+            font: 600 0.72rem/1.2 var(--font-body);
+            letter-spacing: 1.1px;
+            text-transform: uppercase;
+        }
+
+        .club-benefit-copy {
+            margin-top: 8px;
+            color: #fff;
+            font-size: 0.9rem;
+            line-height: 1.45;
+            opacity: 0.88;
+        }
+
+        .club-cta {
+            color: #fff;
+            background: transparent;
+            border: 2px solid #fff;
+        }
+
+        .club-cta:hover {
+            color: var(--evergreen);
+            background: #fff;
+        }
+
+        .club-note {
+            margin-top: 14px;
+            color: var(--von-white);
+            font-size: 0.8rem;
+            line-height: 1.45;
+            opacity: 0.7;
         }
 
         /* CTA SECTION */
@@ -1819,6 +2075,13 @@
             }
         }
 
+        h1,
+        h2,
+        h3,
+        h4 {
+            font-family: var(--font-display) !important;
+        }
+
         /* RESPONSIVE */
         @media (max-width: 768px) {
             .site-nav-inner {
@@ -1909,11 +2172,29 @@
             }
 
             .header {
-                padding: 42px 15px 48px;
+                padding: 26px 20px 30px;
             }
 
             .header h1 {
-                font-size: 2rem;
+                margin-bottom: 12px;
+                font-size: 1.85rem;
+                line-height: 1.06;
+                letter-spacing: 0.5px;
+            }
+
+            .header p {
+                max-width: 300px;
+                font-size: 0.9rem;
+                line-height: 1.45;
+            }
+
+            .hero-logo-link {
+                display: none;
+            }
+
+            .hero-upload-cta {
+                min-height: 42px;
+                margin-top: 16px;
             }
 
             .upload-section,
@@ -1935,6 +2216,20 @@
             .recommendations-title,
             .analysis-title {
                 font-size: 1.6rem;
+            }
+
+            .recommendations-section {
+                padding-top: 28px;
+            }
+
+            .recommendations-intro {
+                margin-bottom: 22px;
+                font-size: 0.9rem;
+                line-height: 1.5;
+            }
+
+            .recommendation-group-title {
+                margin-bottom: 12px;
             }
 
             .positive-lead {
@@ -1961,6 +2256,7 @@
             .drop-zone {
                 min-width: 0;
                 padding: 26px 18px;
+                scroll-margin-top: 88px;
             }
 
             .results-guide {
@@ -1974,6 +2270,10 @@
             }
 
             .results-guide a {
+                min-height: 44px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
                 padding: 9px 7px;
                 font-size: 0.7rem;
             }
@@ -1992,16 +2292,53 @@
             }
 
             .offers-membership > summary {
-                align-items: flex-start;
-                padding: 17px 18px;
+                min-height: 102px;
+                align-items: center;
+                gap: 12px;
+                padding: 18px;
             }
 
-            .offers-membership > summary span {
-                display: none;
+            .offers-membership-title {
+                font-size: 1.75rem;
+                line-height: 1.16;
+            }
+
+            .offers-membership > summary::after {
+                width: 38px;
+                height: 38px;
+                font-size: 1.25rem;
             }
 
             .offers-membership-content {
                 padding: 0 14px 18px;
+            }
+
+            .promo-banner {
+                margin-top: 18px;
+                padding: 30px 20px;
+            }
+
+            .promo-banner-title {
+                font-size: 2rem;
+            }
+
+            .promo-banner-discount {
+                font-size: 1.5rem;
+            }
+
+            .von-offer-cta,
+            .club-cta {
+                width: 100%;
+                max-width: 320px;
+            }
+
+            .club-upsell {
+                margin-top: 18px;
+                padding: 34px 20px 30px;
+            }
+
+            .club-benefits {
+                grid-template-columns: 1fr;
             }
 
             .cta-heading {
@@ -2017,6 +2354,15 @@
             }
             .lead-gate-card {
                 padding: 35px 25px;
+            }
+
+            .lead-gate-overlay.show {
+                justify-content: center;
+                align-items: flex-start;
+                overflow-y: auto;
+                overscroll-behavior: contain;
+                -webkit-overflow-scrolling: touch;
+                padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
             }
             .lead-gate-card h2 {
                 font-size: 1.6rem;
@@ -2052,8 +2398,8 @@
                 <img class="logo" src="/logo_white.png" alt="Von &amp; Co Medical Aesthetics Studio" width="1549" height="848" decoding="async" fetchpriority="high">
             </a>
             <h1>Illuminating Results, Expertly Delivered</h1>
-            <p>See what your skin reveals. Powered by the same clinical insight behind every Von & Co Aesthetics consultation</p>
-            <a class="hero-upload-cta" href="#dropZone">Upload a Photo</a>
+            <p>A complimentary photo-based preview of visible skin patterns, matched to treatments and skincare offered at Von &amp; Co Aesthetics.</p>
+            <a class="hero-upload-cta" href="#intakeFields">Upload a Photo</a>
         </div>
     </header>
 
@@ -2063,7 +2409,7 @@
             <h2>Your Skin Story Starts Here</h2>
             <p class="upload-intro">Choose the area you want to preview, then upload one clear photo already on your phone. Taking a new photo is optional.</p>
 
-            <div class="intake-fields">
+            <div class="intake-fields" id="intakeFields">
                 <div class="intake-fields-row">
                     <div class="intake-field">
                         <label for="ageInput">Age <span style="font-weight:400; opacity:0.65;">(optional)</span></label>
@@ -2104,34 +2450,34 @@
                 <div class="camera-option">
                     <span>Prefer to take a photo now?</span>
                     <button class="btn" id="webcamBtn">Use Camera</button>
-                    <div class="camera-option-note">Optional guided framing is available after you open the camera.</div>
+                    <div class="camera-option-note" id="cameraOptionNote">Optional guided facial framing is available after you open the camera.</div>
                 </div>
-                <p class="upload-privacy">Your image is never stored. Most results are ready in under a minute.</p>
+                <p class="upload-privacy">Your image is not retained after analysis. Most results are ready in under a minute.</p>
             </div>
 
             <div class="visia-callout">
-                <div class="visia-callout-header">Powered by VISIA-Style Analysis</div>
+                <div class="visia-callout-header">What This Photo Preview Reviews</div>
                 <p class="visia-callout-sub">Your photo is reviewed for visible surface patterns, then matched to relevant Von & Co treatments and skincare. An in-studio VISIA consultation can provide a more detailed assessment.</p>
-                <ul class="visia-list">
+                <ul class="visia-list" id="visiaFeatureList">
                     <li>
                         <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" stroke="#c1a890" stroke-width="1.5"/><path d="M5.5 9.5L7.5 11.5L12.5 6.5" stroke="#516862" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        Wrinkles & Fine Lines
+                        <span data-visia-feature>Wrinkles &amp; Fine Lines</span>
                     </li>
                     <li>
                         <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" stroke="#c1a890" stroke-width="1.5"/><path d="M5.5 9.5L7.5 11.5L12.5 6.5" stroke="#516862" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        Redness & Rosacea
+                        <span data-visia-feature>Visible Redness</span>
                     </li>
                     <li>
                         <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" stroke="#c1a890" stroke-width="1.5"/><path d="M5.5 9.5L7.5 11.5L12.5 6.5" stroke="#516862" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        Dark Spots & Sun Damage
+                        <span data-visia-feature>Dark Spots &amp; Visible Pigment</span>
                     </li>
                     <li>
                         <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" stroke="#c1a890" stroke-width="1.5"/><path d="M5.5 9.5L7.5 11.5L12.5 6.5" stroke="#516862" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        Texture & Smoothness
+                        <span data-visia-feature>Texture &amp; Smoothness</span>
                     </li>
                     <li>
                         <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" stroke="#c1a890" stroke-width="1.5"/><path d="M5.5 9.5L7.5 11.5L12.5 6.5" stroke="#516862" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        Pore Size & Congestion
+                        <span data-visia-feature>Pore Size &amp; Congestion</span>
                     </li>
                 </ul>
             </div>
@@ -2143,11 +2489,11 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="webcamTitle">Capture Selfie</h2>
-                <button class="close-btn" id="closeWebcam">&times;</button>
+                <button class="close-btn" id="closeWebcam" type="button" aria-label="Close camera">&times;</button>
             </div>
 
             <!-- Mode picker -->
-            <div class="capture-mode-picker">
+            <div class="capture-mode-picker" id="captureModePicker">
                 <button id="modeQuick" onclick="setCaptureMode('quick')">
                     Quick Snap<small>Single photo</small>
                 </button>
@@ -2242,7 +2588,7 @@
         <div class="analysis-recovery-card">
             <div class="analysis-recovery-eyebrow">Your photo is still selected</div>
             <h2 id="analysisRecoveryTitle" tabindex="-1">The analysis needs one more try</h2>
-            <p id="analysisRecoveryMessage">Your photo uploaded successfully, but the analysis service did not finish. Try this photo again—there’s no need to upload it again.</p>
+            <p id="analysisRecoveryMessage">Your photo uploaded successfully, but the analysis service did not finish. Try this photo again. There is no need to upload it again.</p>
             <div class="analysis-recovery-actions">
                 <button class="btn btn-primary" id="retryAnalysisBtn" type="button" onclick="retryAnalysis()">Try This Photo Again</button>
                 <button class="btn btn-secondary" id="chooseAnotherPhotoBtn" type="button" onclick="chooseAnotherPhoto()">Choose Another Photo</button>
@@ -2258,13 +2604,13 @@
             <nav class="results-guide" aria-label="Jump through your results">
                 <a href="#positiveLead">Highlights</a>
                 <a href="#concernsGrid">Findings</a>
-                <a href="#recommendationsSection" class="results-guide-primary">My Plan <span id="resultsPlanCount"></span></a>
+                <a href="#recommendationsSection" class="results-guide-primary">View Plan <span id="resultsPlanCount"></span></a>
                 <a href="#takeHomePlanActions">Report</a>
             </nav>
 
             <div class="positive-lead" id="positiveLead">
-                <div class="positive-lead-eyebrow">What Looks Especially Good</div>
-                <h3>The Qualities Worth Preserving</h3>
+                <div class="positive-lead-eyebrow">Begin With the Positive</div>
+                <h3>What We're Starting With</h3>
                 <div class="positive-highlights" id="positiveHighlights"></div>
             </div>
 
@@ -2292,8 +2638,8 @@
             </div>
 
             <div class="score-interpretation" id="scoreInterpretation"></div>
-            <p class="score-explainer">
-                All scores: higher is better. 90+ Excellent, 75+ Very Good, 60+ Good, below 60 Needs Attention.
+            <p class="score-explainer" id="scoreExplainer">
+                All scores: higher is better. 90+ Excellent, 75+ Very Good, 60+ Good, below 60 Room to Refine.
             </p>
 
             <!-- HAUT.AI-INSPIRED: Quick insights bar -->
@@ -2329,46 +2675,50 @@
             </div>
 
             <details class="offers-membership" id="offersMembership">
-                <summary>Offers &amp; Membership <span>15% off your first visit + The Club</span></summary>
+                <summary>
+                    <span class="offers-membership-summary-copy">
+                        <span class="offers-membership-eyebrow">Offers &amp; Membership</span>
+                        <span class="offers-membership-title">15% off your first visit + The Club</span>
+                    </span>
+                </summary>
                 <div class="offers-membership-content">
-            <!-- PROMO BANNER - evergreen new guest offer -->
-            <div id="promoBanner" style="background:linear-gradient(135deg, rgba(198,141,47,0.12), rgba(198,141,47,0.06)); border-radius:16px; padding:32px 28px; margin-top:8px; text-align:center; border:2px solid var(--gold);">
-                <div style="font-family:Georgia,serif; font-size:2.2rem; font-weight:600; color:var(--evergreen); margin-bottom:8px;">New to Von & Co?</div>
-                <div style="font-size:1.4rem; font-weight:700; color:var(--gold); margin-bottom:12px;">15% Off Your First Visit</div>
-                <div style="font-size:1rem; color:var(--black); opacity:0.7; max-width:400px; margin:0 auto 16px;">Treatments and same-day skincare purchases. No code needed.</div>
-                <a href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" style="display:inline-block; padding:14px 36px; background:var(--gold); color:#fff; border-radius:30px; font-size:1rem; font-weight:600; text-decoration:none; transition:all 0.3s; box-shadow:0 4px 12px rgba(198,141,47,0.3);" onmouseover="this.style.background='var(--sand)'" onmouseout="this.style.background='var(--gold)'">Claim Your 15% Off</a>
-            </div>
+                    <div class="promo-banner" id="promoBanner">
+                        <div class="offer-eyebrow">New guest offer</div>
+                        <div class="promo-banner-title">First-Timer?</div>
+                        <div class="promo-banner-discount">Enjoy 15% off your first visit.</div>
+                        <div class="promo-banner-copy">Treatments and same-day skincare purchases.</div>
+                        <a class="von-offer-cta" href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" rel="noopener noreferrer">Book My Appointment</a>
+                        <div class="promo-banner-terms">*Cannot be combined with other offers.</div>
+                    </div>
 
-            <!-- THE CLUB MEMBERSHIP UPSELL -->
-            <div class="club-upsell" id="clubUpsell" style="background:linear-gradient(135deg, #2c3e3a 0%, var(--evergreen) 40%, #3f5350 100%); color:var(--von-white); border-radius:16px; padding:44px 36px 40px; text-align:center; margin-top:32px; position:relative; overflow:hidden; border:1px solid rgba(198,141,47,0.25);">
-                <div style="position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg, transparent, var(--sand), var(--gold), var(--sand), transparent);"></div>
-                <div style="font-family:Georgia,serif; font-size:2.4rem; font-weight:600; color:#fff; letter-spacing:1px; margin-bottom:6px;">The Club</div>
-                <div style="font-size:0.8rem; text-transform:uppercase; letter-spacing:3px; color:var(--sand); font-weight:600; margin-bottom:22px;">Von & Co Membership</div>
-                <div style="font-size:3.2rem; font-family:Georgia,serif; font-weight:700; color:var(--sand); line-height:1;">$149<span style="font-size:1.2rem; font-weight:400; opacity:0.8;">/month</span></div>
-                <div style="font-size:0.95rem; color:rgba(255,255,255,0.7); margin-top:4px; margin-bottom:24px;">or $1,499/year (save $289)</div>
-                <div style="font-size:1.1rem; color:#fff; line-height:1.7; max-width:500px; margin:0 auto 28px; font-weight:400;">Every dollar you pay converts to <strong style="color:var(--sand);">Club Funds</strong> you spend on any treatment or product. Bank them, share them, or gift them. Your money never disappears.</div>
-                <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin-bottom:28px;">
-                    <div style="background:rgba(255,255,255,0.12); backdrop-filter:blur(4px); border-radius:12px; padding:20px 28px; min-width:140px; flex:1; border:1px solid rgba(198,141,47,0.2);">
-                        <div style="font-size:2.2rem; font-weight:700; color:var(--sand); line-height:1;">20%</div>
-                        <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; color:var(--sand); font-weight:600; margin:4px 0 8px;">off every time</div>
-                        <div style="font-size:0.95rem; color:rgba(255,255,255,0.85); line-height:1.5;">Lasers, Microneedling, Hair Removal</div>
+                    <div class="club-upsell" id="clubUpsell">
+                        <div class="club-kicker">Von &amp; Co membership</div>
+                        <div class="club-title">The Club</div>
+                        <div class="club-price">$149<span>/month</span></div>
+                        <div class="club-price-note">or $1,499/year (save $289)</div>
+                        <div class="club-description">Every dollar you pay becomes <strong>Club Funds</strong> you can spend on any treatment or product. Bank them, share them, or gift them. Your money never disappears.</div>
+                        <div class="club-benefits">
+                            <div class="club-benefit">
+                                <div class="club-benefit-value">20%</div>
+                                <div class="club-benefit-label">off every time</div>
+                                <div class="club-benefit-copy">Lasers, microneedling, and hair removal</div>
+                            </div>
+                            <div class="club-benefit">
+                                <div class="club-benefit-value">15%</div>
+                                <div class="club-benefit-label">off every time</div>
+                                <div class="club-benefit-copy">Injectables, facials, peels, and skincare</div>
+                            </div>
+                        </div>
+                        <a class="club-cta" href="https://www.vonandcoaesthetics.com/membership/" target="_blank" rel="noopener noreferrer">Learn More</a>
+                        <div class="club-note">Member-only events + exclusive specials year-round</div>
                     </div>
-                    <div style="background:rgba(255,255,255,0.12); backdrop-filter:blur(4px); border-radius:12px; padding:20px 28px; min-width:140px; flex:1; border:1px solid rgba(198,141,47,0.2);">
-                        <div style="font-size:2.2rem; font-weight:700; color:var(--sand); line-height:1;">15%</div>
-                        <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; color:var(--sand); font-weight:600; margin:4px 0 8px;">off every time</div>
-                        <div style="font-size:0.95rem; color:rgba(255,255,255,0.85); line-height:1.5;">Injectables, Facials, Peels, Skincare</div>
-                    </div>
-                </div>
-                <a href="https://www.vonandcoaesthetics.com/membership/" target="_blank" style="display:inline-block; padding:18px 48px; background:linear-gradient(135deg, var(--sand), var(--gold)); color:#fff; border-radius:30px; font-size:1.15rem; font-weight:700; text-decoration:none; transition:all 0.3s; box-shadow:0 6px 20px rgba(198,141,47,0.35); letter-spacing:0.5px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 28px rgba(198,141,47,0.45)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 20px rgba(198,141,47,0.35)'">Join The Club</a>
-                <div style="margin-top:16px; font-size:0.88rem; color:rgba(255,255,255,0.6);">Member-only events + exclusive specials year-round</div>
-            </div>
                 </div>
             </details>
 
             <!-- DOWNLOAD/PREVIEW REPORT BUTTONS -->
             <div id="takeHomePlanActions" style="text-align:center; margin-top:35px; scroll-margin-top:100px;">
                 <div style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
-                    <button id="downloadReportBtn" onclick="downloadReport()" style="background:var(--evergreen); color:#fff; border:none; padding:16px 36px; border-radius:30px; font-family:'Fira Sans',sans-serif; font-size:1rem; font-weight:600; cursor:pointer; transition:all 0.3s; box-shadow:0 4px 12px rgba(81,104,98,0.3);" onmouseover="this.style.background='#3f5350'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='var(--evergreen)'; this.style.transform='translateY(0)'">&#128196; View My Treatment Plan</button>
+                    <button id="downloadReportBtn" onclick="downloadReport()" style="background:var(--evergreen); color:#fff; border:none; padding:16px 36px; border-radius:30px; font-family:'Fira Sans',sans-serif; font-size:1rem; font-weight:600; cursor:pointer; transition:all 0.3s; box-shadow:0 4px 12px rgba(81,104,98,0.3);" onmouseover="this.style.background='#3f5350'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='var(--evergreen)'; this.style.transform='translateY(0)'">View &amp; Print My Treatment Plan</button>
                 </div>
                 <p style="font-size:0.78rem; color:var(--black); opacity:0.45; margin-top:10px;">Opens your personalized report. Save or print from there</p>
             </div>
@@ -2391,7 +2741,6 @@
             <p class="cta-text">Your journey begins with a complimentary consultation: an in-depth conversation with one of our expert providers, plus a full VISIA skin analysis at the studio. Our physician-led team has over 35 years of combined aesthetic experience, and we're open 7 days a week because taking care of yourself shouldn't be hard to fit into your life.</p>
             <a href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" class="btn btn-cta">Book My Complimentary Consultation</a>
             <p style="margin-top: 16px; opacity: 0.7; font-size: 0.9rem; color: var(--von-white);">Or call us directly: <a href="tel:2397994866" style="color: var(--sand); text-decoration: none; font-weight: 600;">239.799.4866</a></p>
-            <button onclick="downloadReport()" style="margin-top: 20px; background: transparent; border: 1.5px solid var(--sand); color: var(--sand); padding: 12px 35px; border-radius: 30px; font-family: 'Fira Sans', sans-serif; font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: all 0.3s; opacity: 0; animation: fadeInUp 0.8s ease forwards 0.9s;" onmouseover="this.style.background='var(--sand)'; this.style.color='var(--evergreen)'" onmouseout="this.style.background='transparent'; this.style.color='var(--sand)'">Download My Treatment Plan</button>
         </div>
     </section>
 
@@ -2407,9 +2756,9 @@
                 <button type="button" class="lead-gate-submit" onclick="submitLeadForm()">See My Results</button>
             </form>
             <button class="lead-gate-skip" onclick="skipLeadGate()">Skip for now</button>
-            <div style="margin-top:20px; padding:16px 20px; background:linear-gradient(135deg, rgba(198,141,47,0.12), rgba(198,141,47,0.06)); border-radius:12px; border:1.5px solid var(--gold); text-align:center;">
-                <div style="font-size:1.3rem; font-weight:700; color:var(--gold); margin-bottom:4px;">15% Off Your First Visit</div>
-                <div style="font-size:0.9rem; color:var(--evergreen); font-weight:500;">Treatments + same-day skincare. No code needed.</div>
+            <div class="lead-gate-new-guest">
+                <div class="lead-gate-offer-title">15% off your first visit</div>
+                <div class="lead-gate-offer-copy">Treatments and same-day skincare purchases. No code needed.</div>
             </div>
         </div>
     </div>
@@ -2431,19 +2780,98 @@
         const API_BASE = window.location.origin;
         const concernNames = {
             wrinkles: 'Wrinkles & Fine Lines',
-            redness: 'Redness & Rosacea',
-            darkSpots: 'Dark Spots & Hyperpigmentation',
+            redness: 'Visible Redness',
+            darkSpots: 'Dark Spots & Pigment Variation',
             texture: 'Skin Texture & Smoothness',
             pores: 'Pore Size & Visibility',
             laxity: 'Skin Laxity & Crepiness',
-            sunDamage: 'Sun Damage & Photoaging',
-            veins: 'Visible Veins & Vascularity',
-            scarring: 'Scarring & Marks',
+            sunDamage: 'Visible Sun-Exposure Signs',
+            veins: 'Visible Veins',
+            scarring: 'Visible Textural Marks',
             hairRemoval: 'Unwanted Hair',
-            acne: 'Body Acne & Breakouts',
-            dryness: 'Dryness & Dehydration',
+            acne: 'Visible Breakouts & Congestion',
+            dryness: 'Visible Dryness',
             unevenTone: 'Uneven Skin Tone'
         };
+
+        function escapeHTML(value) {
+            return String(value ?? '').replace(/[&<>"']/g, character => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            })[character]);
+        }
+
+        const SCORE_LEGEND_TEXT = 'All scores: higher is better. 90+ Excellent, 75+ Very Good, 60+ Good, below 60 Room to Refine.';
+
+        function getScoreBand(score) {
+            const normalizedScore = Number.isFinite(Number(score))
+                ? Math.max(0, Math.min(100, Number(score)))
+                : 0;
+
+            if (normalizedScore >= 90) {
+                return {
+                    label: 'Excellent',
+                    color: '#516862',
+                    subtext: 'A strong overall result. Your personalized plan focuses on preserving what looks best.'
+                };
+            }
+            if (normalizedScore >= 75) {
+                return {
+                    label: 'Very Good',
+                    color: '#516862',
+                    subtext: 'Your photo shows several visible strengths, with a few focused opportunities to refine.'
+                };
+            }
+            if (normalizedScore >= 60) {
+                return {
+                    label: 'Good',
+                    color: '#C68D2F',
+                    subtext: 'A solid visible baseline, with targeted options matched to the areas that stand out.'
+                };
+            }
+            return {
+                label: 'Room to Refine',
+                color: '#B36E4F',
+                subtext: 'Your photo highlights a few priorities to discuss during an in-person consultation.'
+            };
+        }
+
+        const areaPreviewKeys = {
+            face: ['wrinkles', 'redness', 'darkSpots', 'texture', 'pores'],
+            neck_chest: ['sunDamage', 'laxity', 'redness', 'texture', 'wrinkles'],
+            hands: ['sunDamage', 'laxity', 'texture', 'veins', 'dryness'],
+            back: ['acne', 'scarring', 'texture', 'unevenTone', 'hairRemoval'],
+            legs: ['veins', 'texture', 'sunDamage', 'hairRemoval', 'dryness']
+        };
+
+        function updateVisiaFeatureList() {
+            const selectedArea = document.getElementById('bodyAreaSelect')?.value || 'face';
+            const labels = areaPreviewKeys[selectedArea] || areaPreviewKeys.face;
+            document.querySelectorAll('#visiaFeatureList [data-visia-feature]').forEach((element, index) => {
+                element.textContent = concernNames[labels[index]];
+            });
+        }
+
+        function updateCameraChoiceCopy() {
+            const selectedArea = document.getElementById('bodyAreaSelect')?.value || 'face';
+            const note = document.getElementById('cameraOptionNote');
+            if (!note) return;
+            note.textContent = selectedArea === 'face'
+                ? 'Optional guided facial framing is available after you open the camera.'
+                : 'Quick Snap takes one clear photo of the selected area.';
+        }
+
+        const bodyAreaSelect = document.getElementById('bodyAreaSelect');
+        bodyAreaSelect.addEventListener('change', () => {
+            updateVisiaFeatureList();
+            updateCameraChoiceCopy();
+        });
+        updateVisiaFeatureList();
+        updateCameraChoiceCopy();
+        document.getElementById('scoreExplainer').textContent = SCORE_LEGEND_TEXT;
 
         const treatments = [
             'Botox', 'Dysport', 'Xeomin', 'Versa', 'Sculptra', 'SkinVive',
@@ -2549,19 +2977,42 @@
             { label: 'Right Side', instruction: 'Turn your head slightly to the right. Show your left cheek', arrows: ['right'] }
         ];
 
+        const captureAreaLabels = {
+            face: 'Face',
+            neck_chest: 'Neck & Chest',
+            hands: 'Hands',
+            back: 'Back',
+            legs: 'Legs'
+        };
+
+        function selectedCaptureArea() {
+            return document.getElementById('bodyAreaSelect')?.value || 'face';
+        }
+
         function setCaptureMode(mode) {
+            const selectedArea = selectedCaptureArea();
+            const isFace = selectedArea === 'face';
+            if (!isFace) mode = 'quick';
+
             captureMode = mode;
             document.getElementById('modeQuick').classList.toggle('active', mode === 'quick');
             document.getElementById('modeGuided').classList.toggle('active', mode === 'guided');
+            document.getElementById('captureModePicker').hidden = !isFace;
+            document.getElementById('modeGuided').hidden = !isFace;
+            document.getElementById('guidedOval').hidden = !isFace;
             document.getElementById('guidedSteps').style.display = mode === 'guided' ? 'flex' : 'none';
             document.getElementById('guidedThumbs').style.display = mode === 'guided' ? 'flex' : 'none';
-            document.getElementById('webcamTitle').textContent = mode === 'guided' ? 'Guided Skin Capture' : 'Capture Selfie';
+            document.getElementById('webcamTitle').textContent = mode === 'guided'
+                ? 'Guided Skin Capture'
+                : (isFace ? 'Capture Selfie' : `Capture ${captureAreaLabels[selectedArea] || 'Skin'} Photo`);
             document.getElementById('analyzeGuidedBtn').style.display = 'none';
 
             if (mode === 'guided') {
                 resetGuidedCapture();
             } else {
-                document.getElementById('webcamInstruction').textContent = 'Position your face in the oval';
+                document.getElementById('webcamInstruction').textContent = isFace
+                    ? 'Position your face in the oval'
+                    : 'Position the selected area clearly in the frame';
                 document.getElementById('arrowLeft').style.display = 'none';
                 document.getElementById('arrowRight').style.display = 'none';
                 captureBtn.textContent = 'Capture';
@@ -2675,7 +3126,7 @@
                 });
                 webcamVideo.srcObject = webcamStream;
                 webcamModal.classList.add('show');
-                setCaptureMode('guided');
+                setCaptureMode(selectedCaptureArea() === 'face' ? 'guided' : 'quick');
                 lightingInterval = setInterval(checkLighting, 800);
             } catch (err) {
                 alert('Unable to access camera. Please check permissions.');
@@ -2848,7 +3299,7 @@
                 : 'We couldn\'t complete your analysis';
             document.getElementById('analysisRecoveryMessage').textContent = message || (
                 isTemporaryServiceIssue
-                    ? 'Your photo uploaded successfully, but the analysis service did not finish. Try this photo again—there’s no need to upload it again.'
+                    ? 'Your photo uploaded successfully, but the analysis service did not finish. Try this photo again. There is no need to upload it again.'
                     : 'This request could not be processed. Please choose another clear, well-lit photo or return later.'
             );
             const retryButton = document.getElementById('retryAnalysisBtn');
@@ -2906,46 +3357,54 @@
             // Fire one bounded API call. The backend owns the Gemini request budget.
             try {
                 const formData = new FormData();
+                const sourceBlob = await fetch(uploadedImage).then(r => r.blob());
 
-                // === Frontend image normalization via canvas ===
-                // This produces a clean, standard JPEG that all APIs accept.
-                // Handles CMYK→RGB, EXIF rotation, and unusual encodings natively.
-                let imageBlob;
-                try {
-                    imageBlob = await new Promise((resolve, reject) => {
-                        const img = new Image();
-                        img.onload = () => {
-                            try {
-                                // Cap at 1200px on longest side to reduce upload size & memory
-                                let w = img.naturalWidth, h = img.naturalHeight;
-                                const MAX = 1200;
-                                if (w > MAX || h > MAX) {
-                                    const scale = MAX / Math.max(w, h);
-                                    w = Math.round(w * scale);
-                                    h = Math.round(h * scale);
-                                }
-                                const canvas = document.createElement('canvas');
-                                canvas.width = w;
-                                canvas.height = h;
-                                const ctx = canvas.getContext('2d');
-                                ctx.drawImage(img, 0, 0, w, h);
-                                canvas.toBlob(
-                                    blob => blob ? resolve(blob) : reject(new Error('canvas toBlob returned null')),
-                                    'image/jpeg',
-                                    0.90
-                                );
-                            } catch (e) { reject(e); }
-                        };
-                        img.onerror = () => reject(new Error('Image load failed'));
-                        img.src = uploadedImage;
-                    });
-                    console.log(`[Analyzer] Canvas-normalized JPEG: ${imageBlob.size} bytes`);
-                } catch (canvasErr) {
-                    console.warn('[Analyzer] Canvas normalization failed, using raw file:', canvasErr);
-                    imageBlob = await fetch(uploadedImage).then(r => r.blob());
+                // Preserve exact bytes for JPEG, PNG, and WebP so the server can
+                // securely recognize a repeat across Chrome and Safari. Only
+                // unsupported browser image formats need a canvas conversion.
+                const supportedUploadTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+                let imageBlob = sourceBlob;
+                let uploadFilename = sourceBlob.type === 'image/png'
+                    ? 'photo.png'
+                    : sourceBlob.type === 'image/webp' ? 'photo.webp' : 'photo.jpg';
+                if (!supportedUploadTypes.has(String(sourceBlob.type || '').toLowerCase())) {
+                    try {
+                        imageBlob = await new Promise((resolve, reject) => {
+                            const img = new Image();
+                            img.onload = () => {
+                                try {
+                                    // Cap at 1200px on longest side to reduce upload size & memory
+                                    let w = img.naturalWidth, h = img.naturalHeight;
+                                    const MAX = 1200;
+                                    if (w > MAX || h > MAX) {
+                                        const scale = MAX / Math.max(w, h);
+                                        w = Math.round(w * scale);
+                                        h = Math.round(h * scale);
+                                    }
+                                    const canvas = document.createElement('canvas');
+                                    canvas.width = w;
+                                    canvas.height = h;
+                                    const ctx = canvas.getContext('2d');
+                                    ctx.drawImage(img, 0, 0, w, h);
+                                    canvas.toBlob(
+                                        blob => blob ? resolve(blob) : reject(new Error('canvas toBlob returned null')),
+                                        'image/jpeg',
+                                        0.90
+                                    );
+                                } catch (e) { reject(e); }
+                            };
+                            img.onerror = () => reject(new Error('Image load failed'));
+                            img.src = uploadedImage;
+                        });
+                        uploadFilename = 'photo.jpg';
+                        console.log(`[Analyzer] Canvas-normalized JPEG: ${imageBlob.size} bytes`);
+                    } catch (canvasErr) {
+                        console.warn('[Analyzer] Canvas normalization failed, using raw file:', canvasErr);
+                        imageBlob = sourceBlob;
+                    }
                 }
 
-                formData.append('image', imageBlob, 'photo.jpg');
+                formData.append('image', imageBlob, uploadFilename);
                 const userAge = enteredAge;
                 if (userAge) formData.append('age', userAge);
                 const bodyArea = document.getElementById('bodyAreaSelect')?.value || 'face';
@@ -3005,7 +3464,7 @@
                 showAnalysisRecovery(
                     isTemporaryServiceIssue,
                     isTemporaryServiceIssue
-                        ? 'Your photo uploaded successfully, but the analysis service did not finish. Try this photo again—there’s no need to upload it again.'
+                        ? 'Your photo uploaded successfully, but the analysis service did not finish. Try this photo again. There is no need to upload it again.'
                         : 'This request could not be processed. Please choose another clear, well-lit photo or return later.'
                 );
             } finally {
@@ -3102,39 +3561,42 @@
             // Area-specific concern templates
             const areaConcerns = {
                 face: {
-                    wrinkles:  {score: rand(15,60), descriptions: ['Fine lines around the eyes and forehead are starting to appear','Minimal fine lines visible with certain expressions','No significant wrinkles detected']},
-                    redness:   {score: rand(10,50), descriptions: ['Some redness visible, possibly from sensitivity or rosacea','Mild redness in the cheek and nose area','Skin tone is generally even with minimal redness']},
-                    darkSpots: {score: rand(15,55), descriptions: ['Sun damage and age spots are becoming noticeable','A few dark spots visible, likely from sun exposure','Minimal hyperpigmentation detected']},
-                    texture:   {score: rand(15,50), descriptions: ['Texture is generally smooth with minor imperfections','Some roughness visible, likely from sun damage or dehydration','Skin texture is excellent']},
-                    pores:     {score: rand(20,55), descriptions: ['Pores are visible but normal size','Some enlarged pores visible in the T-zone','Pore size is within normal range']}
+                    wrinkles:  {score: rand(15,60), descriptions: ['Fine lines are visible around the eyes and forehead','Minimal fine lines visible with certain expressions','Minimal visible lines appear in the photographed area']},
+                    redness:   {score: rand(10,50), descriptions: ['Some visible redness appears through the central face','Mild redness in the cheek and nose area','Skin tone is generally even with minimal redness']},
+                    darkSpots: {score: rand(15,55), descriptions: ['Visible brown spots and pigment variation appear across the complexion','A few dark spots are visible across the photographed area','Minimal pigment variation is visible']},
+                    texture:   {score: rand(15,50), descriptions: ['Texture is generally smooth with minor imperfections','Some roughness and surface dryness are visible','Skin texture appears smooth and refined']},
+                    pores:     {score: rand(20,55), descriptions: ['Pores are subtly visible across the photographed area','Some enlarged pores visible in the T-zone','Pores appear softly diffused']},
+                    laxity:    {score: rand(10,55), descriptions: ['The facial contours look softly defined','Mild contour softness is visible along the jawline','Noticeable contour softness is visible along the jawline and cheeks']},
+                    sunDamage: {score: rand(15,55), descriptions: ['Some visible freckling and pigment variation appear across the complexion','Mild sun-exposure signs are visible, particularly across the cheeks','Pronounced freckling and multiple brown spots are visible']},
+                    unevenTone:{score: rand(10,50), descriptions: ['Some tonal variation is visible across different facial zones','Mild unevenness in visible skin tone appears across the photographed area','The visible tone is largely uniform']}
                 },
                 neck_chest: {
-                    sunDamage: {score: rand(25,65), descriptions: ['Freckling and sun spots visible across the décolletage','Moderate photoaging with brown spots on the chest','Mild sun damage visible on the neck and upper chest']},
-                    laxity:    {score: rand(20,55), descriptions: ['Skin appears crepey with loss of firmness','Mild laxity visible, especially on the neck','Skin still has good elasticity with minor laxity']},
+                    sunDamage: {score: rand(25,65), descriptions: ['Freckling and brown spots are visible across the décolletage','Moderate visible sun-exposure signs appear on the chest','Mild sun-exposure signs are visible on the neck and upper chest']},
+                    laxity:    {score: rand(20,55), descriptions: ['A pronounced crepey appearance is visible','Mild contour softness is visible, especially on the neck','The visible contours look smooth and softly defined']},
                     redness:   {score: rand(10,45), descriptions: ['Redness and flushing visible on the chest area','Mild diffuse redness across the décolletage','Minimal redness observed']},
-                    texture:   {score: rand(15,50), descriptions: ['Rough texture from chronic sun exposure','Mild textural irregularities on the chest','Texture is relatively smooth']},
-                    wrinkles:  {score: rand(15,50), descriptions: ['Horizontal neck lines (necklace lines) are visible','Fine lines developing on the chest','Minimal wrinkling in this area']}
+                    texture:   {score: rand(15,50), descriptions: ['Rough surface texture is visible across the photographed area','Mild textural irregularities on the chest','Texture is relatively smooth']},
+                    wrinkles:  {score: rand(15,50), descriptions: ['Horizontal neck lines (necklace lines) are visible','Fine lines are visible on the chest','Minimal wrinkling in this area']}
                 },
                 hands: {
-                    sunDamage: {score: rand(25,65), descriptions: ['Age spots and freckling visible on the backs of the hands','Brown spots from cumulative sun exposure','Mild sun spots beginning to appear']},
-                    laxity:    {score: rand(20,60), descriptions: ['Thin, crepey skin with visible tendons and veins','Some loss of volume making veins more prominent','Skin still has reasonable thickness and elasticity']},
-                    texture:   {score: rand(15,50), descriptions: ['Rough, dry texture on the backs of the hands','Mild textural changes from sun and aging','Texture is relatively smooth and hydrated']},
-                    veins:     {score: rand(15,50), descriptions: ['Veins and tendons are prominently visible','Some visible veins due to volume loss','Veins are minimally visible']},
-                    dryness:   {score: rand(15,45), descriptions: ['Significant dryness and dehydration visible','Moderate dryness especially around the knuckles','Skin appears adequately moisturized']}
+                    sunDamage: {score: rand(25,65), descriptions: ['Brown spots and freckling are visible on the backs of the hands','Several visible brown spots appear across the backs of the hands','Mild freckling and a few brown spots are visible']},
+                    laxity:    {score: rand(20,60), descriptions: ['A crepey-looking surface appears with visible tendons and veins','Visible contour softness accompanies prominent veins and tendons','The contours look smooth and naturally defined']},
+                    texture:   {score: rand(15,50), descriptions: ['Rough, dry texture on the backs of the hands','Mild textural variation is visible on the backs of the hands','Texture is relatively smooth']},
+                    veins:     {score: rand(15,50), descriptions: ['Veins and tendons are prominently visible','Some veins are visible across the backs of the hands','Veins are minimally visible']},
+                    dryness:   {score: rand(15,45), descriptions: ['Significant surface dryness is visible','Moderate dryness appears around the knuckles','The surface looks smooth with little visible flaking']}
                 },
                 back: {
-                    acne:      {score: rand(20,60), descriptions: ['Active breakouts and congestion on the back','Mild back acne with occasional breakouts','Minimal congestion observed']},
-                    scarring:  {score: rand(15,50), descriptions: ['Post-inflammatory scarring from previous breakouts','Mild scarring and dark marks visible','Minimal scarring present']},
+                    acne:      {score: rand(20,60), descriptions: ['Visible breakouts and congestion appear on the back','Mild breakout-like bumps are visible','Minimal congestion is visible']},
+                    scarring:  {score: rand(15,50), descriptions: ['Visible textural marks appear across the photographed area','Mild textural marks and dark spots are visible','Minimal textural marking is visible']},
                     texture:   {score: rand(15,50), descriptions: ['Rough, uneven texture across the upper back','Mild textural irregularities','Texture is generally smooth']},
-                    unevenTone:{score: rand(15,45), descriptions: ['Noticeable uneven pigmentation and dark marks','Mild discoloration from healed breakouts','Skin tone is relatively even']},
-                    hairRemoval:{score: rand(10,40), descriptions: ['Unwanted hair growth on the upper back','Moderate hair that could benefit from reduction','Minimal unwanted hair']}
+                    unevenTone:{score: rand(15,45), descriptions: ['Noticeable pigment variation and dark marks are visible','Mild tone variation and several dark marks are visible','Skin tone is relatively even']},
+                    hairRemoval:{score: rand(10,40), descriptions: ['Unwanted hair growth on the upper back','Moderate hair growth is visible across the upper back','Minimal visible hair growth']}
                 },
                 legs: {
                     veins:     {score: rand(20,55), descriptions: ['Spider veins visible on the thighs and calves','Mild spider veins beginning to appear','Minimal visible veins']},
-                    texture:   {score: rand(15,45), descriptions: ['Rough, bumpy texture possibly from keratosis pilaris','Mild textural irregularities','Texture is generally smooth']},
-                    sunDamage: {score: rand(15,45), descriptions: ['Sun damage and dark spots visible on the shins','Mild freckling from sun exposure','Minimal sun damage']},
-                    hairRemoval:{score: rand(15,50), descriptions: ['Unwanted hair growth suitable for laser reduction','Moderate hair that could benefit from treatment','Hair is minimal or well-managed']},
-                    dryness:   {score: rand(15,45), descriptions: ['Dry, flaky skin especially on the shins','Moderate dryness visible','Skin appears well-hydrated']}
+                    texture:   {score: rand(15,45), descriptions: ['Rough, bumpy surface texture is visible','Mild textural irregularities','Texture is generally smooth']},
+                    sunDamage: {score: rand(15,45), descriptions: ['Visible dark spots and freckling appear on the shins','Mild freckling is visible across the photographed area','Minimal sun-exposure signs are visible']},
+                    hairRemoval:{score: rand(15,50), descriptions: ['Visible hair growth appears across the photographed area','Moderate hair growth is visible','Minimal visible hair growth']},
+                    dryness:   {score: rand(15,45), descriptions: ['Dry, flaky skin especially on the shins','Moderate dryness visible','The visible surface looks smooth and supple']}
                 }
             };
 
@@ -3149,80 +3611,53 @@
 
             // Set severity from score
             Object.values(concerns).forEach(c => {
-                c.severity = c.score <= 25 ? 'none' : c.score <= 45 ? 'mild' : c.score <= 65 ? 'moderate' : 'significant';
+                c.severity = c.score <= 10 ? 'none' : c.score <= 40 ? 'mild' : c.score <= 60 ? 'moderate' : 'severe';
             });
 
-            // Calculate from concerns, then enforce banned zone (no 63-73)
+            // Use the same transparent formula as completed live results.
             const cScores = Object.values(concerns).map(c => c.score);
             const avgC = cScores.reduce((a,b)=>a+b,0) / cScores.length;
-            let overallScore = Math.round(100 - avgC + rand(-2,2));
-            overallScore = Math.max(38, Math.min(95, overallScore));
-            if (overallScore >= 63 && overallScore <= 73) {
-                overallScore = overallScore <= 68 ? 62 - rand(0,3) : 74 + rand(0,3);
-            }
+            const overallScore = Math.max(0, Math.min(100, Math.round(100 - avgC)));
 
             // Area-specific treatment maps (clinically appropriate per body area)
             const treatmentMaps = {
                 face: {
-                    redness:   [{treatment:'Sciton BBL', reason:'Gold standard for redness, rosacea, and broken capillaries', targets:['redness','darkSpots']},
-                                {treatment:'Sciton Moxi', reason:'Gentle laser to calm redness and even skin tone', targets:['redness','texture']}],
-                    darkSpots: [{treatment:'Sciton BBL', reason:'Targets melanin and pigment for clearer, more even skin', targets:['darkSpots','redness']},
-                                {treatment:'Sciton Halo', reason:'Hybrid fractional laser for deeper sun damage and pigmentation', targets:['darkSpots','texture']},
-                                {treatment:'VI Peel', reason:'Medical-grade peel that lifts surface pigment', targets:['darkSpots','texture']}],
-                    wrinkles:  [{treatment:'Botox', reason:'Relaxes dynamic lines in the forehead, between brows, and around eyes', targets:['wrinkles']},
-                                {treatment:'Sciton Halo', reason:'Full resurfacing laser that smooths fine lines', targets:['wrinkles','texture']},
-                                {treatment:'RF Microneedling', reason:'Stimulates deep collagen for firmer, tighter skin', targets:['wrinkles','texture']}],
-                    texture:   [{treatment:'Sciton Halo', reason:'Gold standard resurfacing laser for smoother skin', targets:['texture','darkSpots']},
-                                {treatment:'HydraFacial', reason:'Deep cleansing and hydration for an immediate glow', targets:['texture','pores']},
-                                {treatment:'Sciton Moxi', reason:'Gentle laser resurfacing for brighter skin', targets:['texture']}],
-                    pores:     [{treatment:'Microneedling', reason:'Collagen induction therapy that minimizes pore size', targets:['pores','texture']},
-                                {treatment:'RF Microneedling', reason:'Deeper collagen remodeling for refined pores', targets:['pores','texture']},
-                                {treatment:'SaltFacial', reason:'Sea salt exfoliation with LED to refine pores', targets:['pores','texture']}]
+                    redness:   [{treatment:'Sciton BBL', reason:'For visible redness, Sciton BBL is a focused light-based option to discuss. An in-person evaluation can confirm candidacy and settings.', targets:['redness']}],
+                    darkSpots: [{treatment:'Sciton BBL', reason:'For visible pigmentation, Sciton BBL is a focused light-based option to discuss. An in-person evaluation can confirm candidacy and settings.', targets:['darkSpots']}],
+                    wrinkles:  [{treatment:'Sciton Moxi', reason:'For visible lines, Sciton Moxi offers a gentle fractional approach to discuss. An in-person evaluation can confirm the right intensity.', targets:['wrinkles']}],
+                    texture:   [{treatment:'Sciton Moxi', reason:'For visible texture, Sciton Moxi offers a gentle fractional approach to discuss. An in-person evaluation can confirm the right intensity.', targets:['texture']}],
+                    pores:     [{treatment:'Microneedling', reason:'For pore visibility, Microneedling is a collagen-supporting option to discuss. An in-person evaluation can confirm whether it fits the area.', targets:['pores']}],
+                    laxity:    [{treatment:'RF Microneedling', reason:'For visible contour softness, RF Microneedling is a focused collagen-remodeling option to discuss. An in-person evaluation can confirm candidacy.', targets:['laxity']}],
+                    sunDamage: [{treatment:'Sciton BBL', reason:'For visible sun-exposure signs, Sciton BBL is a focused light-based option to discuss. An in-person evaluation can confirm candidacy and settings.', targets:['sunDamage']}],
+                    unevenTone:[{treatment:'Sciton BBL', reason:'For visible tone variation, Sciton BBL is a focused light-based option to discuss. An in-person evaluation can confirm candidacy and settings.', targets:['unevenTone']}]
                 },
                 neck_chest: {
-                    sunDamage: [{treatment:'Sciton BBL', reason:'Clears sun spots and pigmentation on the décolletage', targets:['sunDamage','redness']},
-                                {treatment:'Sciton Halo', reason:'Deep resurfacing for stubborn chest sun damage', targets:['sunDamage','texture']}],
-                    laxity:    [{treatment:'RF Microneedling', reason:'Tightens and firms crepey skin on the neck and chest', targets:['laxity','texture']},
-                                {treatment:'Sculptra', reason:'Gradually rebuilds collagen for firmer skin', targets:['laxity']}],
-                    redness:   [{treatment:'Sciton BBL', reason:'Reduces redness and flushing on the chest', targets:['redness','sunDamage']},
-                                {treatment:'Sciton Moxi', reason:'Gentle laser to calm redness', targets:['redness','texture']}],
-                    texture:   [{treatment:'Sciton Moxi', reason:'Gentle resurfacing to smooth the décolletage', targets:['texture','sunDamage']},
-                                {treatment:'Microneedling', reason:'Stimulates collagen for smoother chest skin', targets:['texture','laxity']}],
-                    wrinkles:  [{treatment:'RF Microneedling', reason:'Smooths neck lines and chest wrinkles with collagen stimulation', targets:['wrinkles','laxity']},
-                                {treatment:'Sciton Moxi', reason:'Gentle laser resurfacing for fine lines', targets:['wrinkles','texture']}]
+                    sunDamage: [{treatment:'Sciton BBL', reason:'For visible sun-exposure signs, Sciton BBL is a focused light-based option to discuss. An in-person evaluation can confirm candidacy and settings.', targets:['sunDamage']}],
+                    laxity:    [{treatment:'RF Microneedling', reason:'For visible contour softness, RF Microneedling is a focused collagen-remodeling option to discuss. An in-person evaluation can confirm candidacy.', targets:['laxity']}],
+                    redness:   [{treatment:'Sciton BBL', reason:'For visible redness, Sciton BBL is a focused light-based option to discuss. An in-person evaluation can confirm candidacy and settings.', targets:['redness']}],
+                    texture:   [{treatment:'Sciton Moxi', reason:'For visible texture, Sciton Moxi offers a gentle fractional approach to discuss. An in-person evaluation can confirm the right intensity.', targets:['texture']}],
+                    wrinkles:  [{treatment:'Sciton Moxi', reason:'For visible lines, Sciton Moxi offers a gentle fractional approach to discuss. An in-person evaluation can confirm the right intensity.', targets:['wrinkles']}]
                 },
                 hands: {
-                    sunDamage: [{treatment:'Sciton BBL', reason:'Clears age spots and sun damage on the hands', targets:['sunDamage','unevenTone']},
-                                {treatment:'Sciton Moxi', reason:'Gentle laser to brighten and even skin tone', targets:['sunDamage','texture']}],
-                    laxity:    [{treatment:'Sculptra', reason:'Restores volume and collagen to thin, aging hands', targets:['laxity','veins']},
-                                {treatment:'RF Microneedling', reason:'Tightens and firms skin on the hands', targets:['laxity','texture']}],
-                    texture:   [{treatment:'Microneedling', reason:'Stimulates collagen for smoother skin on the hands', targets:['texture','laxity']},
-                                {treatment:'HydraFacial', reason:'Deep hydration to restore moisture and glow', targets:['texture','dryness']}],
-                    veins:     [{treatment:'Sculptra', reason:'Adds volume to conceal visible veins and tendons', targets:['veins','laxity']}],
-                    dryness:   [{treatment:'HydraFacial', reason:'Intensive hydration treatment for dry hands', targets:['dryness','texture']},
-                                {treatment:'SkinVive', reason:'Injectable hydration that plumps and moisturizes from within', targets:['dryness','texture']}]
+                    sunDamage: [{treatment:'Sciton BBL', reason:'For visible sun-exposure signs, Sciton BBL is a focused light-based option to discuss. An in-person evaluation can confirm candidacy and settings.', targets:['sunDamage']}],
+                    laxity:    [{treatment:'RF Microneedling', reason:'For visible contour softness, RF Microneedling is a focused collagen-remodeling option to discuss. An in-person evaluation can confirm candidacy.', targets:['laxity']}],
+                    texture:   [{treatment:'Microneedling', reason:'For visible texture, Microneedling is a collagen-supporting option to discuss. An in-person evaluation can confirm whether it fits the area.', targets:['texture']}],
+                    veins:     [{treatment:'Sciton BBL', reason:'For visible vascularity, Sciton BBL is a focused light-based option to discuss. An in-person evaluation can confirm candidacy and settings.', targets:['veins']}],
+                    dryness:   []
                 },
                 back: {
-                    acne:      [{treatment:'SaltFacial', reason:'Deep exfoliation and LED therapy to clear back acne', targets:['acne','texture']},
-                                {treatment:'VI Peel', reason:'Medical-grade peel to clear breakouts and decongest', targets:['acne','unevenTone']}],
-                    scarring:  [{treatment:'Microneedling', reason:'Collagen induction to smooth acne scars', targets:['scarring','texture']},
-                                {treatment:'RF Microneedling', reason:'Deeper remodeling for stubborn scarring', targets:['scarring','texture']},
-                                {treatment:'Sciton Halo', reason:'Resurfacing laser to reduce scar visibility', targets:['scarring','texture']}],
-                    texture:   [{treatment:'Microneedling', reason:'Smooths rough, uneven texture on the back', targets:['texture','scarring']},
-                                {treatment:'SaltFacial', reason:'Exfoliation and LED for smoother skin', targets:['texture','acne']}],
-                    unevenTone:[{treatment:'Sciton BBL', reason:'Evens out dark marks and discoloration', targets:['unevenTone','scarring']},
-                                {treatment:'VI Peel', reason:'Brightens and evens post-inflammatory pigmentation', targets:['unevenTone','texture']}],
-                    hairRemoval:[{treatment:'Laser Hair Removal', reason:'Permanent hair reduction for the back area', targets:['hairRemoval']}]
+                    acne:      [{treatment:'Chemical Peels', reason:'For visible surface congestion, a Chemical Peel is a surface-renewal option to discuss. An in-person evaluation can confirm the appropriate peel and depth.', targets:['acne']}],
+                    scarring:  [{treatment:'Microneedling', reason:'For visible textural marks, Microneedling is a collagen-supporting option to discuss. An in-person evaluation can confirm whether it fits the area.', targets:['scarring']}],
+                    texture:   [{treatment:'Microneedling', reason:'For visible texture, Microneedling is a collagen-supporting option to discuss. An in-person evaluation can confirm whether it fits the area.', targets:['texture']}],
+                    unevenTone:[{treatment:'Sciton BBL', reason:'For visible tone variation, Sciton BBL is a focused light-based option to discuss. An in-person evaluation can confirm candidacy and settings.', targets:['unevenTone']}],
+                    hairRemoval:[{treatment:'Laser Hair Removal', reason:'For visible hair growth, Laser Hair Removal is a focused reduction option to discuss. An in-person evaluation can confirm candidacy and settings.', targets:['hairRemoval']}]
                 },
                 legs: {
-                    veins:     [{treatment:'Sciton BBL', reason:'Targets and fades spider veins on the legs', targets:['veins']},
-                                {treatment:'Sciton Moxi', reason:'Gentle laser treatment for vascular concerns', targets:['veins','texture']}],
-                    texture:   [{treatment:'Microneedling', reason:'Smooths bumpy texture and keratosis pilaris', targets:['texture']},
-                                {treatment:'SaltFacial', reason:'Exfoliation to refine rough leg skin', targets:['texture','dryness']}],
-                    sunDamage: [{treatment:'Sciton BBL', reason:'Clears sun spots and freckling on the legs', targets:['sunDamage','unevenTone']},
-                                {treatment:'Sciton Moxi', reason:'Gentle laser for mild leg sun damage', targets:['sunDamage','texture']}],
-                    hairRemoval:[{treatment:'Laser Hair Removal', reason:'Long-term hair reduction for smooth legs', targets:['hairRemoval']}],
-                    dryness:   [{treatment:'HydraFacial', reason:'Intensive hydration for dry, dehydrated skin', targets:['dryness','texture']}]
+                    veins:     [{treatment:'Sciton BBL', reason:'For visible vascularity, Sciton BBL is a focused light-based option to discuss. An in-person evaluation can confirm candidacy and settings.', targets:['veins']}],
+                    texture:   [{treatment:'Microneedling', reason:'For visible texture, Microneedling is a collagen-supporting option to discuss. An in-person evaluation can confirm whether it fits the area.', targets:['texture']}],
+                    sunDamage: [{treatment:'Sciton Moxi', reason:'For visible sun-exposure signs, Sciton Moxi offers a gentle fractional approach to discuss. An in-person evaluation can confirm the right intensity.', targets:['sunDamage']}],
+                    hairRemoval:[{treatment:'Laser Hair Removal', reason:'For visible hair growth, Laser Hair Removal is a focused reduction option to discuss. An in-person evaluation can confirm candidacy and settings.', targets:['hairRemoval']}],
+                    dryness:   []
                 }
             };
 
@@ -3236,14 +3671,14 @@
                 darkSpots: ['Clear-looking complexion', 'The complexion has an appealing clarity worth preserving.'],
                 texture: ['Refined texture', 'The visible surface appears smooth and polished.'],
                 pores: ['Smooth-looking finish', 'The skin has a refined, even-looking finish.'],
-                laxity: ['Supported contours', 'The visible contours retain a naturally supported look.'],
+                laxity: ['Contour definition', 'The visible contours have a softly defined, balanced appearance.'],
                 sunDamage: ['Luminous quality', 'The visible skin has a bright, luminous quality.'],
                 unevenTone: ['Harmonious tone', 'The overall tone looks harmonious and composed.'],
                 veins: ['Elegant definition', 'The area has a naturally elegant definition.'],
-                dryness: ['Soft-looking surface', 'The visible surface has a soft, comfortable-looking finish.'],
+                dryness: ['Smooth-looking surface', 'The visible surface has a smooth-looking, even finish.'],
                 acne: ['Fresh foundation', 'The surrounding skin has a fresh-looking foundation.'],
                 scarring: ['Even-looking surface', 'The visible surface has areas of smooth, even texture.'],
-                hairRemoval: ['Well-kept appearance', 'The area has a clean, well-kept appearance.']
+                hairRemoval: ['Clean visual finish', 'The photographed area has a clean, cohesive visual finish.']
             };
             const positiveHighlights = [...ranked]
                 .sort((a, b) => a[1].score - b[1].score)
@@ -3253,9 +3688,10 @@
             const used = new Set();
 
             for (const [key, data] of ranked) {
-                if (recs.length >= 3 || data.score < 20) break;
+                if (data.score < 20) break;
                 const options = txMap[key] || [];
                 for (const opt of options) {
+                    if (opt.treatment === 'Laser Hair Removal' && data.score < 41) continue;
                     if (!used.has(opt.treatment)) {
                         recs.push({...opt, priority: recs.length + 1});
                         used.add(opt.treatment);
@@ -3265,19 +3701,19 @@
             }
 
             // Accessible entry point if none included
-            const accessible = new Set(['HydraFacial','SaltFacial','Signature Facial']);
+            const accessible = new Set(['HydraFacial Clarifying','HydraFacial Customized','SaltFacial','Signature Facial']);
             if (!Array.from(used).some(t => accessible.has(t)) && bodyArea === 'face') {
-                recs.push({treatment:'HydraFacial', reason:'Hydrating and brightening facial. The perfect complement to any treatment plan', targets:['texture','pores'], priority: recs.length + 1});
+                recs.push({treatment:'HydraFacial Clarifying', reason:'For visible texture and pore visibility, HydraFacial Clarifying is a cleansing and exfoliating option to discuss. An in-person evaluation can confirm the right plan.', targets:['texture','pores'], priority: recs.length + 1});
             }
 
             const areaLabel = {face:'face', neck_chest:'neck and chest', hands:'hands', back:'back', legs:'legs'}[bodyArea] || 'skin';
-            const cNames = {wrinkles:'fine lines', redness:'redness', darkSpots:'pigmentation', texture:'skin texture', pores:'pore visibility', laxity:'skin laxity', sunDamage:'sun damage', veins:'visible veins', scarring:'scarring', hairRemoval:'unwanted hair', acne:'breakouts', dryness:'dryness', unevenTone:'uneven tone'};
+            const cNames = {wrinkles:'visible lines', redness:'visible redness', darkSpots:'visible pigment variation', texture:'visible texture', pores:'pore visibility', laxity:'visible contour softness', sunDamage:'visible sun-exposure signs', veins:'visible vascularity', scarring:'visible textural marks', hairRemoval:'visible hair growth', acne:'visible surface congestion', dryness:'surface dryness', unevenTone:'visible tone variation'};
             const topTwo = ranked.slice(0, 2).filter(r => r[1].score > 20).map(r => cNames[r[0]] || r[0]);
             const topTx = recs.slice(0, 2).map(r => r.treatment);
             const positiveOpening = positiveHighlights[0].detail;
             const summary = topTwo.length && topTx.length
-                ? `${positiveOpening} Your ${areaLabel} shows some signs of ${topTwo.join(' and ')}. A combination of ${topTx.join(' and ')} treatments would help restore a smoother, more youthful appearance. We'd love to see you in the studio for a personalized consultation.`
-                : `${positiveOpening} A targeted maintenance plan can help keep things looking their best.`;
+                ? `${positiveOpening} This sample for the ${areaLabel} highlights ${topTwo.join(' and ')}. The service ideas below are starting points only. An in-person consultation is needed to confirm fit.`
+                : `${positiveOpening} This sample shows how a simple maintenance plan may be presented. An in-person consultation is needed to confirm fit.`;
 
             return {
                 overallScore: overallScore,
@@ -3349,7 +3785,9 @@
 
             // HAUT.AI-INSPIRED: Animated score counter
             const scoreEl = document.getElementById('overallScore');
-            const targetScore = data.overallScore;
+            const targetScore = Number.isFinite(Number(data.overallScore))
+                ? Math.max(0, Math.min(100, Number(data.overallScore)))
+                : 0;
             let currentScore = 0;
             const scoreInterval = setInterval(() => {
                 currentScore += Math.ceil((targetScore - currentScore) / 8);
@@ -3358,32 +3796,18 @@
             }, 40);
 
             const circumference = 565.48;
-            const offset = circumference - (data.overallScore / 100) * circumference;
+            const offset = circumference - (targetScore / 100) * circumference;
+            const scoreBand = getScoreBand(targetScore);
 
             // HAUT.AI-INSPIRED: Dynamic ring color based on score
             const scoreCircle = document.getElementById('scoreCircle');
-            const ringColor = data.overallScore >= 75 ? '#516862' : data.overallScore >= 55 ? '#C68D2F' : '#C58B74';
-            scoreCircle.setAttribute('stroke', ringColor);
+            scoreCircle.setAttribute('stroke', scoreBand.color);
             scoreCircle.style.strokeDashoffset = offset;
 
             // HAUT.AI-INSPIRED: Score interpretation badge
             const interpEl = document.getElementById('scoreInterpretation');
-            let interpText, interpColor;
-            if (data.overallScore >= 85) { interpText = 'Excellent'; interpColor = '#4a6040'; }
-            else if (data.overallScore >= 75) { interpText = 'Very Good'; interpColor = '#516862'; }
-            else if (data.overallScore >= 65) { interpText = 'Good'; interpColor = '#C68D2F'; }
-            else if (data.overallScore >= 55) { interpText = 'Fair'; interpColor = '#b08030'; }
-            else { interpText = 'Priority Focus'; interpColor = '#C58B74'; }
-            interpEl.textContent = interpText;
-            interpEl.style.color = interpColor;
-
-            // Add subtext for score interpretation
-            let interpSubtext;
-            if (data.overallScore >= 85) interpSubtext = 'Your skin looks fantastic. A maintenance plan will keep it there.';
-            else if (data.overallScore >= 75) interpSubtext = 'Your skin is in great shape. A few targeted treatments could take it to the next level.';
-            else if (data.overallScore >= 65) interpSubtext = 'Good foundation. The right treatments can make a visible difference.';
-            else if (data.overallScore >= 55) interpSubtext = 'Several areas where professional treatments would make a real impact.';
-            else interpSubtext = 'Your photo highlights a few clear priorities. An in-person consultation can shape the right plan.';
+            interpEl.textContent = scoreBand.label;
+            interpEl.style.color = scoreBand.color;
 
             let subtextEl = document.getElementById('scoreSubtext');
             if (!subtextEl) {
@@ -3392,7 +3816,7 @@
                 subtextEl.style.cssText = 'text-align:center; font-size:0.88rem; color:#666; margin-top:6px; max-width:400px; margin-left:auto; margin-right:auto;';
                 interpEl.parentNode.insertBefore(subtextEl, interpEl.nextSibling);
             }
-            subtextEl.textContent = interpSubtext;
+            subtextEl.textContent = scoreBand.subtext;
 
             // HAUT.AI-INSPIRED: Quick insights bar
             const insightsBar = document.getElementById('insightsBar');
@@ -3407,17 +3831,17 @@
                 { icon: '✨', label: 'Visible Strength', value: positiveHighlights[0].title },
                 { icon: '⚡', label: 'Primary Focus', value: concernNames[topConcernKey] || topConcernKey },
                 { icon: '✨', label: 'Best Score', value: concernNames[strongestKey] || strongestKey },
-                { icon: '📊', label: 'Avg Skin Health', value: avgHealth >= 75 ? 'Great' : avgHealth >= 55 ? 'Good' : avgHealth >= 40 ? 'Focus' : 'Priority Focus' }
+                { icon: '📊', label: 'Overall View', value: getScoreBand(avgHealth).label }
             ];
             insights.forEach(ins => {
                 const chip = document.createElement('div');
                 chip.className = 'insight-chip';
-                chip.innerHTML = `<span class="insight-icon">${ins.icon}</span><div><div class="insight-label">${ins.label}</div><div class="insight-value">${ins.value}</div></div>`;
+                chip.innerHTML = `<span class="insight-icon">${escapeHTML(ins.icon)}</span><div><div class="insight-label">${escapeHTML(ins.label)}</div><div class="insight-value">${escapeHTML(ins.value)}</div></div>`;
                 insightsBar.appendChild(chip);
             });
 
             // CLEAN UP any dynamically-added elements from a previous analysis
-            ['earlyBookingCTA','midBookingCTA','bottomBookingCTA','comboPlay','visiaUpsell'].forEach(id => {
+            ['comboPlay'].forEach(id => {
                 const old = document.getElementById(id);
                 if (old) old.remove();
             });
@@ -3459,7 +3883,7 @@
 
                 card.innerHTML = `
                     ${isTopPriority ? '<div class="top-priority-badge">Top Priority</div>' : ''}
-                    <div class="concern-name">${concernNames[key]}</div>
+                        <div class="concern-name">${escapeHTML(concernNames[key] || key)}</div>
                     <div style="display:flex; align-items:baseline; gap:8px; margin:4px 0 2px;">
                         <div class="concern-score-number" style="color:${scoreColor}; margin:0;">${healthScore}</div>
                         <span class="concern-severity ${severityClass}" style="margin:0;">${healthLabel}</span>
@@ -3467,7 +3891,7 @@
                     <div class="concern-score-bar" style="margin:8px 0 4px;">
                         <div class="concern-score-fill" style="--score: ${healthScore}%; background-color: ${scoreColor}; width: ${healthScore}%"></div>
                     </div>
-                    <p class="concern-description" style="margin:8px 0 4px; font-size:0.92rem;">${concern.description}</p>
+                    <p class="concern-description" style="margin:8px 0 4px; font-size:0.92rem;">${escapeHTML(concern.description)}</p>
                     <p style="font-size:0.85rem; color:var(--evergreen); font-weight:500; margin:4px 0 0; font-style:italic;">${contextLine}</p>
                 `;
                 concernsGrid.appendChild(card);
@@ -3498,12 +3922,12 @@
 
                 card.innerHTML = `
                     <div class="rec-header">
-                        <h3 class="rec-treatment">${rec.treatment}</h3>
-                        <div class="rec-priority">${idx === 0 ? 'Top Pick' : 'Priority ' + rec.priority}</div>
+                        <h3 class="rec-treatment">${escapeHTML(rec.treatment)}</h3>
+                        <div class="rec-priority">${idx === 0 ? 'Top Pick' : 'Priority ' + escapeHTML(rec.priority)}</div>
                     </div>
-                    <p class="rec-reason">${rec.reason}</p>
+                    <p class="rec-reason">${escapeHTML(rec.reason)}</p>
                     <div class="rec-targets">
-                        ${(rec.targets || []).map(target => `<span class="rec-tag tag-${tagColor}">${concernNames[target] || target}</span>`).join('')}
+                        ${(rec.targets || []).map(target => `<span class="rec-tag tag-${tagColor}">${escapeHTML(concernNames[target] || target)}</span>`).join('')}
                     </div>
                 `;
                 treatmentCards.appendChild(card);
@@ -3516,11 +3940,11 @@
                     pCard.className = 'recommendation-card';
                     pCard.style.animationDelay = `${0.2 + (treatmentRecommendations.length + idx) * 0.15}s`;
                     pCard.innerHTML = `
-                        <div class="rec-header" style="background:linear-gradient(135deg, var(--sand) 0%, var(--gold) 100%);">
-                            <h3 class="rec-treatment">${pr.product}</h3>
-                            <div class="rec-priority" style="background:rgba(255,255,255,0.25); color:#fff;">Skincare</div>
+                        <div class="rec-header rec-header-product">
+                            <h3 class="rec-treatment">${escapeHTML(pr.product)}</h3>
+                            <div class="rec-priority">Skincare</div>
                         </div>
-                        <p class="rec-reason">${pr.reason}</p>
+                        <p class="rec-reason">${escapeHTML(pr.reason)}</p>
                     `;
                     productCards.appendChild(pCard);
                 });
@@ -3530,31 +3954,27 @@
             if (data.suggestedCombo) {
                 const comboDiv = document.createElement('div');
                 comboDiv.id = 'comboPlay';
-                comboDiv.style.cssText = 'background:linear-gradient(135deg, rgba(198,141,47,0.08), rgba(193,168,144,0.12)); border:1px solid var(--sand); border-radius:12px; padding:24px 28px; margin-top:24px; text-align:center;';
-                comboDiv.innerHTML = `<div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:1.5px; color:var(--sand); font-weight:700; margin-bottom:8px;">Recommended Treatment Stack</div>
-                <p style="font-size:0.95rem; color:var(--black); line-height:1.6;">${data.suggestedCombo}</p>`;
+                comboDiv.className = 'combo-play';
+
+                const comboLabel = document.createElement('div');
+                comboLabel.className = 'combo-play-label';
+                comboLabel.textContent = 'Recommended Treatment Stack';
+
+                const comboTitle = document.createElement('h3');
+                comboTitle.className = 'combo-play-title';
+                comboTitle.textContent = data.suggestedCombo;
+
+                const comboCopy = document.createElement('p');
+                comboCopy.className = 'combo-play-copy';
+                comboCopy.textContent = 'These recommended options can be discussed as a coordinated sequence during your in-person consultation.';
+
+                comboDiv.append(comboLabel, comboTitle, comboCopy);
+                // Keep the actionable service and skincare cards first. The
+                // coordinated stack remains available after the individual
+                // recommendations, where it cannot obscure the first service
+                // on a short mobile viewport.
                 recRoot.appendChild(comboDiv);
             }
-
-            // PROMINENT BOOKING CTA
-            const bookingCTA = document.createElement('div');
-            bookingCTA.id = 'bottomBookingCTA';
-            bookingCTA.style.cssText = 'text-align:center; margin-top:32px;';
-            bookingCTA.innerHTML = `<a href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" style="display:inline-block; padding:18px 48px; background:var(--evergreen); color:#fff; border-radius:30px; font-size:1.15rem; font-weight:700; text-decoration:none; transition:all 0.3s; box-shadow:0 6px 20px rgba(81,104,98,0.35); letter-spacing:0.5px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 28px rgba(81,104,98,0.45)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 20px rgba(81,104,98,0.35)'">Book Your Complimentary Consultation</a>`;
-            const offersMembership = document.getElementById('offersMembership');
-            recRoot.parentElement.insertBefore(bookingCTA, offersMembership);
-
-            // VISIA upsell banner
-            const visiaDiv = document.createElement('div');
-            visiaDiv.id = 'visiaUpsell';
-            visiaDiv.style.cssText = 'background:var(--evergreen); border-radius:16px; padding:32px 28px; text-align:center; margin-top:28px; color:var(--von-white);';
-            visiaDiv.innerHTML = `
-                <h3 style="font-family:Georgia,serif; font-size:1.3rem; margin-bottom:10px; color:var(--von-white);">Want the Full Picture?</h3>
-                <p style="font-size:0.92rem; line-height:1.6; opacity:0.9; max-width:500px; margin:0 auto 18px;">Our in-studio VISIA system sees what selfies can't: UV damage, bacteria, and below-surface concerns. Free consultation included.</p>
-                <a href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" target="_blank" style="display:inline-block; padding:14px 34px; background:var(--sand); color:#fff; border-radius:30px; font-size:1rem; font-weight:600; text-decoration:none; transition:all 0.3s; box-shadow:0 4px 12px rgba(0,0,0,0.15);" onmouseover="this.style.background='var(--gold)'" onmouseout="this.style.background='var(--sand)'">Book Your Complimentary VISIA Consultation</a>
-                <div style="margin-top:14px; font-size:0.82rem; opacity:0.6;">100% Complimentary &middot; VISIA Assessment + Provider Consult &middot; ~50 Minutes</div>
-            `;
-            recRoot.parentElement.insertBefore(visiaDiv, offersMembership);
 
             // Store analysis for report download
             window.lastAnalysis = data;
@@ -3569,59 +3989,60 @@
 
         // Build treatment plan HTML entirely on the client (no server call needed)
         function buildReportHTML(patientName, analysis) {
-            const overall = analysis.overallScore || '...';
-            const summary = analysis.summary || '';
+            const overall = escapeHTML(analysis.overallScore || '...');
+            const summary = escapeHTML(analysis.summary || '');
             const concerns = analysis.concerns || {};
             const recs = analysis.recommendations || [];
             const positiveHighlights = Array.isArray(analysis.positiveHighlights)
                 ? analysis.positiveHighlights.slice(0, 3)
                 : [];
             const officialLogo = new URL('/logo.png', window.location.origin).href;
+            const officialDisplayFont = new URL('/arsenica-regular.otf', window.location.origin).href;
 
             const concernLabels = {
                 wrinkles: 'Wrinkles & Fine Lines',
-                redness: 'Redness & Rosacea',
-                darkSpots: 'Dark Spots & Hyperpigmentation',
+                redness: 'Visible Redness',
+                darkSpots: 'Dark Spots & Pigment Variation',
                 texture: 'Skin Texture & Smoothness',
                 pores: 'Pore Size & Visibility',
                 laxity: 'Skin Laxity & Crepiness',
-                sunDamage: 'Sun Damage & Photoaging',
-                veins: 'Visible Veins & Vascularity',
-                scarring: 'Scarring & Marks',
+                sunDamage: 'Visible Sun-Exposure Signs',
+                veins: 'Visible Veins',
+                scarring: 'Visible Textural Marks',
                 hairRemoval: 'Unwanted Hair',
-                acne: 'Body Acne & Breakouts',
-                dryness: 'Dryness & Dehydration',
+                acne: 'Visible Breakouts & Congestion',
+                dryness: 'Visible Dryness',
                 unevenTone: 'Uneven Skin Tone'
             };
 
             let concernRows = '';
             for (const [key, val] of Object.entries(concerns)) {
-                const label = concernLabels[key] || key;
+                const label = escapeHTML(concernLabels[key] || key);
                 const c = val || {};
                 const score = c.score || 0;
-                const severity = (c.severity || 'none').toUpperCase();
-                const desc = c.description || '';
+                const severity = escapeHTML((c.severity || 'none').toUpperCase());
+                const desc = escapeHTML(c.description || '');
                 const color = score <= 30 ? '#c0c8a9' : score <= 60 ? '#C68D2F' : '#C58B74';
                 concernRows += `
-                <tr>
-                    <td style="padding:10px 12px; border-bottom:1px solid #F2F3F5; font-weight:500; color:#4C4C4E;">${label}</td>
-                    <td style="padding:10px 12px; border-bottom:1px solid #F2F3F5; text-align:center;">
+                <tr class="report-result-row">
+                    <td data-label="Concern" style="padding:10px 12px; border-bottom:1px solid #F2F3F5; font-weight:500; color:#4C4C4E;">${label}</td>
+                    <td data-label="Level" style="padding:10px 12px; border-bottom:1px solid #F2F3F5; text-align:center;">
                         <span style="display:inline-block; padding:3px 10px; border-radius:12px; background:${color}20; color:${color}; font-weight:600; font-size:0.85em;">${severity}</span>
                     </td>
-                    <td style="padding:10px 12px; border-bottom:1px solid #F2F3F5; color:#555; font-size:0.9em;">${desc}</td>
+                    <td data-label="Assessment" style="padding:10px 12px; border-bottom:1px solid #F2F3F5; color:#4C4C4E; font-size:0.9em;">${desc}</td>
                 </tr>`;
             }
 
             let recItems = '';
             recs.forEach((rec, i) => {
-                const treatment = rec.treatment || '';
-                const reason = rec.reason || rec.description || '';
+                const treatment = escapeHTML(rec.treatment || '');
+                const reason = escapeHTML(rec.reason || rec.description || '');
                 recItems += `
                 <div class="report-item" style="display:flex; gap:12px; margin-bottom:14px; align-items:flex-start;">
                     <div style="min-width:28px; height:28px; background:#516862; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:0.85em;">${i + 1}</div>
                     <div>
                         <div style="font-weight:600; color:#4C4C4E; margin-bottom:2px;">${treatment}</div>
-                        <div style="color:#555; font-size:0.9em;">${reason}</div>
+                        <div style="color:#4C4C4E; font-size:0.9em;">${reason}</div>
                     </div>
                 </div>`;
             });
@@ -3630,90 +4051,112 @@
             const prods = analysis.productRecommendations || [];
             prods.forEach(pr => {
                 productItems += `
-                <div class="report-item" style="display:flex; gap:12px; margin-bottom:12px; align-items:flex-start; padding:10px 14px; background:#faf8f5; border-radius:8px; border-left:3px solid #c1a890;">
+                <div class="report-item" style="display:flex; gap:12px; margin-bottom:12px; align-items:flex-start; padding:10px 14px; background:#F5F5F5; border-radius:8px; border-left:3px solid #C1A890;">
                     <div>
-                        <div style="font-weight:600; color:#4C4C4E; margin-bottom:2px;">${pr.product}</div>
-                        <div style="color:#555; font-size:0.9em;">${pr.reason}</div>
+                        <div style="font-weight:600; color:#4C4C4E; margin-bottom:2px;">${escapeHTML(pr.product)}</div>
+                        <div style="color:#4C4C4E; font-size:0.9em;">${escapeHTML(pr.reason)}</div>
                     </div>
                 </div>`;
             });
 
             const positiveItems = positiveHighlights.map(item => `
-                <div style="flex:1; min-width:190px; padding:14px 16px; background:#faf8f5; border-left:3px solid #c0c8a9; border-radius:0 8px 8px 0;">
-                    <div style="font-family:Georgia,serif; color:#516862; margin-bottom:3px;">${item.title || ''}</div>
-                    <div style="color:#555; font-size:0.9em; line-height:1.5;">${item.detail || ''}</div>
+                <div style="flex:1; min-width:190px; padding:14px 16px; background:#F5F5F5; border-left:3px solid #C0C8A9; border-radius:0 8px 8px 0;">
+                    <div class="report-display" style="color:#516862; margin-bottom:3px;">${escapeHTML(item.title || '')}</div>
+                    <div style="color:#4C4C4E; font-size:0.9em; line-height:1.5;">${escapeHTML(item.detail || '')}</div>
                 </div>`).join('');
 
             return `<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>Von &amp; Co Aesthetics - Treatment Plan</title>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Von &amp; Co Aesthetics - Treatment Plan</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600&display=swap');
+  @font-face { font-family:'Arsenica'; src:url('${officialDisplayFont}') format('opentype'); font-style:normal; font-weight:400; font-display:swap; }
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'Fira Sans',sans-serif; color:#4C4C4E; background:#fff; }
+  body { font-family:'Fira Sans','Trebuchet MS',sans-serif; color:#4C4C4E; background:#fff; }
   .page { max-width:800px; margin:0 auto; padding:40px; }
+  .report-display { font-family:'Arsenica',Georgia,serif; font-weight:400; }
+  .report-title { color:#516862; font-family:'Arsenica',Georgia,serif; font-size:1.55rem; font-weight:400; line-height:1.15; }
+  table { table-layout:fixed; }
+  th, td { overflow-wrap:anywhere; }
+  @media screen and (max-width:600px) {
+    .page { padding:18px; }
+    .report-header { padding:22px 18px 18px !important; }
+    .report-meta { padding:14px 18px !important; }
+    .report-summary { padding:22px 20px !important; }
+    .report-offers { flex-direction:column; }
+    .report-offer-card { min-width:0 !important; }
+    .report-footer { padding:22px 18px !important; }
+    .report-results-table, .report-results-table tbody { display:block; width:100%; }
+    .report-results-head { display:none; }
+    .report-result-row { display:block; width:100%; margin-bottom:10px; padding:8px 12px; background:#F5F5F5; border-left:3px solid #C0C8A9; border-radius:0 8px 8px 0; }
+    .report-result-row td { display:grid; grid-template-columns:88px minmax(0, 1fr); align-items:start; gap:10px; width:100%; padding:8px 0 !important; border:0 !important; text-align:left !important; font-size:0.95rem !important; line-height:1.4; }
+    .report-result-row td + td { border-top:1px solid #F2F3F5 !important; }
+    .report-result-row td::before { content:attr(data-label); color:#516862; font-size:0.72rem; font-weight:600; letter-spacing:0.7px; line-height:1.4; text-transform:uppercase; }
+  }
   @media print {
-    .page { padding:20px; }
+    .page { max-width:100%; padding:12px; }
+    table { font-size:0.8rem; }
+    th, td { padding-left:6px !important; padding-right:6px !important; }
     .report-section-title { break-after:avoid-page; page-break-after:avoid; }
     .report-item, tr { break-inside:avoid; page-break-inside:avoid; }
   }
 </style>
 </head><body>
 <div class="page">
-  <div style="background:#fff; padding:24px 35px 20px; border:1px solid #ebe9e4; border-radius:12px 12px 0 0; text-align:center;">
+  <div class="report-header" style="background:#fff; padding:24px 35px 20px; border:1px solid #F2F3F5; border-radius:12px 12px 0 0; text-align:center;">
     <img src="${officialLogo}" alt="Von &amp; Co Medical Aesthetics Studio" width="1549" height="848" style="display:block; width:190px; height:auto; margin:0 auto 10px;">
-    <div style="color:#516862; font-size:0.9em; letter-spacing:1px;">PERSONALIZED SKIN ANALYSIS REPORT</div>
+    <div class="report-title">Personalized Skin Analysis Report</div>
   </div>
-  <div style="background:#F2F3F5; padding:16px 35px;">
-    <div><span style="color:#888; font-size:0.85em;">Prepared for </span><strong>${patientName}</strong></div>
+  <div class="report-meta" style="background:#F2F3F5; padding:16px 35px;">
+    <div><span style="color:rgba(76,76,78,0.72); font-size:0.85em;">Prepared for </span><strong>${escapeHTML(patientName)}</strong></div>
   </div>
   <div style="margin:25px 0 20px;">
-    <div style="font-family:Georgia,serif; font-size:1.4em; color:#516862; margin-bottom:12px;">What Looks Especially Good</div>
+    <div class="report-display" style="font-size:1.4em; color:#516862; margin-bottom:12px;">Begin With the Positive</div>
     <div style="display:flex; gap:10px; flex-wrap:wrap;">${positiveItems}</div>
   </div>
   <div style="padding:14px 18px; border:1px solid #F2F3F5; border-radius:8px; margin-bottom:20px;">
-    <span style="color:#888; font-size:0.85em;">Overall Score: </span><strong style="color:#516862; font-size:1.1em;">${overall}/100</strong>
+    <span style="color:rgba(76,76,78,0.72); font-size:0.85em;">Overall Score: </span><strong style="color:#516862; font-size:1.1em;">${overall}/100</strong>
   </div>
-  <div style="padding:25px 35px; border-left:3px solid #c1a890; margin:25px 0; background:#faf8f5; border-radius:0 8px 8px 0;">
-    <div style="font-size:0.8em; text-transform:uppercase; letter-spacing:1.5px; color:#c1a890; margin-bottom:6px;">Summary</div>
-    <p style="color:#333; line-height:1.6; font-size:0.95em;">${summary}</p>
+  <div class="report-summary" style="padding:25px 35px; border-left:3px solid #C1A890; margin:25px 0; background:#F5F5F5; border-radius:0 8px 8px 0;">
+    <div style="font-size:0.8em; text-transform:uppercase; letter-spacing:1.5px; color:#C1A890; margin-bottom:6px;">Summary</div>
+    <p style="color:#4C4C4E; line-height:1.6; font-size:0.95em;">${summary}</p>
   </div>
   <div style="margin:0 0 30px;">
-    <div class="report-section-title" style="font-family:Georgia,serif; font-size:1.4em; color:#516862; margin-bottom:14px; padding:0 0 8px; border-bottom:2px solid #F2F3F5;">Skin Analysis Results</div>
-    <table style="width:100%; border-collapse:collapse;">
-      <tr style="background:#f5f3f0;">
-        <th style="padding:10px 12px; text-align:left; font-size:0.85em; text-transform:uppercase; letter-spacing:0.5px; color:#888;">Concern</th>
-        <th style="padding:10px 12px; text-align:center; font-size:0.85em; text-transform:uppercase; letter-spacing:0.5px; color:#888;">Level</th>
-        <th style="padding:10px 12px; text-align:left; font-size:0.85em; text-transform:uppercase; letter-spacing:0.5px; color:#888;">Assessment</th>
+    <div class="report-section-title report-display" style="font-size:1.4em; color:#516862; margin-bottom:14px; padding:0 0 8px; border-bottom:2px solid #F2F3F5;">Skin Analysis Results</div>
+    <table class="report-results-table" style="width:100%; border-collapse:collapse;">
+      <tr class="report-results-head" style="background:#516862;">
+        <th style="padding:10px 12px; text-align:left; font-size:0.85em; text-transform:uppercase; letter-spacing:0.5px; color:#FFFFFF;">Concern</th>
+        <th style="padding:10px 12px; text-align:center; font-size:0.85em; text-transform:uppercase; letter-spacing:0.5px; color:#FFFFFF;">Level</th>
+        <th style="padding:10px 12px; text-align:left; font-size:0.85em; text-transform:uppercase; letter-spacing:0.5px; color:#FFFFFF;">Assessment</th>
       </tr>
       ${concernRows}
     </table>
   </div>
   <div style="margin:0 0 30px;">
-    <div class="report-section-title" style="font-family:Georgia,serif; font-size:1.4em; color:#516862; margin-bottom:14px; padding:0 0 8px; border-bottom:2px solid #F2F3F5;">Recommended Treatments</div>
+    <div class="report-section-title report-display" style="font-size:1.4em; color:#516862; margin-bottom:14px; padding:0 0 8px; border-bottom:2px solid #F2F3F5;">Recommended Treatments</div>
     ${recItems}
   </div>
   ${productItems ? `<div style="margin:0 0 30px;">
-    <div class="report-section-title" style="font-family:Georgia,serif; font-size:1.4em; color:#516862; margin-bottom:14px; padding:0 0 8px; border-bottom:2px solid #F2F3F5;">Your Skincare Essentials</div>
+    <div class="report-section-title report-display" style="font-size:1.4em; color:#516862; margin-bottom:14px; padding:0 0 8px; border-bottom:2px solid #F2F3F5;">Your Skincare Essentials</div>
     ${productItems}
   </div>` : ''}
-  <div style="display:flex; gap:16px; margin:0 0 25px; flex-wrap:wrap;">
-    <div style="flex:1; min-width:200px; background:linear-gradient(135deg,rgba(198,141,47,0.08),rgba(193,168,144,0.12)); border:1px solid #C68D2F; border-radius:10px; padding:18px 20px; text-align:center;">
-      <div style="font-weight:600; color:#516862; margin-bottom:4px;">New Guest Offer</div>
-      <div style="font-size:0.88em; color:#555;">15% off your first visit, including treatments and same-day skincare.</div>
+  <div class="report-offers" style="display:flex; gap:16px; margin:0 0 25px; flex-wrap:wrap;">
+    <div class="report-offer-card" style="flex:1; min-width:200px; background:#FFFFFF; border:1px solid #516862; border-radius:10px; padding:18px 20px; text-align:center;">
+      <div class="report-display" style="font-size:1.2rem; color:#516862; margin-bottom:4px;">New Guest Offer</div>
+      <div style="font-size:0.88em; color:#4C4C4E;">15% off your first visit, including treatments and same-day skincare.</div>
     </div>
-    <div style="flex:1; min-width:200px; background:#516862; border-radius:10px; padding:18px 20px; text-align:center; color:#fff;">
-      <div style="font-weight:600; margin-bottom:4px;">The Club. $149/month</div>
+    <div class="report-offer-card" style="flex:1; min-width:200px; background:#516862; border-radius:10px; padding:18px 20px; text-align:center; color:#fff;">
+      <div class="report-display" style="font-size:1.2rem; margin-bottom:4px;">The Club. $149/month</div>
       <div style="font-size:0.88em; color:#EBEAE5;">20% off lasers and microneedling. 15% off injectables, facials, and skincare. Funds bank, share, or gift.</div>
     </div>
   </div>
-  <div style="background:#516862; padding:24px 35px; border-radius:0 0 12px 12px; text-align:center; color:#fff;">
-    <div style="font-family:Georgia,serif; font-size:1.3em; margin-bottom:6px;">Ready to Start Your Journey?</div>
+  <div class="report-footer" style="background:#516862; padding:24px 35px; border-radius:0 0 12px 12px; text-align:center; color:#fff;">
+    <div class="report-display" style="font-size:1.3em; margin-bottom:6px;">Ready to Start Your Journey?</div>
     <div style="font-size:0.9em; color:#EBEAE5; margin-bottom:8px;">Book a complimentary consultation with our expert providers.</div>
-    <div style="font-size:1em; font-weight:600; color:#c1a890;">239.799.4866</div>
-    <a href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" style="display:inline-block; margin-top:12px; padding:12px 28px; background:#c1a890; color:#fff; border-radius:25px; font-size:0.95em; font-weight:600; text-decoration:none;">Book Your Complimentary Consultation</a>
+    <div style="font-size:1em; font-weight:600; color:#C1A890;">239.799.4866</div>
+    <a href="https://booking.vonandcoaesthetics.com/webstoreNew/services?utm_source=skin-analyzer" style="display:inline-block; margin-top:12px; padding:12px 28px; background:#C1A890; color:#fff; border-radius:25px; font-size:0.95em; font-weight:600; text-decoration:none;">Book Your Complimentary Consultation</a>
     <div style="font-size:0.8em; color:rgba(255,255,255,0.5); margin-top:8px;">Naples, FL &nbsp;•&nbsp; Open 7 Days a Week</div>
   </div>
-  <div style="text-align:center; margin-top:16px; font-size:0.75em; color:#aaa;">
+  <div style="text-align:center; margin-top:16px; font-size:0.75em; color:rgba(76,76,78,0.56);">
     This AI analysis is a preview and does not replace a professional consultation. Any concerning lesion needs an in-person medical evaluation.
   </div>
 </div>

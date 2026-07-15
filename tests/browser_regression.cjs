@@ -8,8 +8,8 @@ const requestedEngine = process.env.TEST_ENGINE || '';
 const requestedViewport = process.env.TEST_VIEWPORT || '';
 const brittanyPhoto = process.env.BRITTANY_TEST_PHOTO
   || path.resolve('work/test-images/brittany-test-photo.jpeg');
-const artifactDir = path.resolve('work/qa/browser-approved');
-const pdfOutputDir = path.resolve('output/pdf');
+const artifactDir = path.resolve(process.env.BROWSER_ARTIFACT_DIR || 'work/qa/browser-approved');
+const pdfOutputDir = path.resolve(process.env.BROWSER_PDF_DIR || 'output/pdf');
 
 // Deterministic presentation fixture only. It intentionally contains no skin-age field.
 const fixture = {
@@ -28,13 +28,13 @@ const fixture = {
   },
   recommendations: [
     { treatment: 'Sciton BBL', reason: 'An in-person consultation can determine whether this option fits your goals.', targets: ['darkSpots', 'redness'], priority: 1 },
-    { treatment: 'Sciton Moxi', reason: 'An in-person consultation can determine whether this option fits your goals.', targets: ['darkSpots', 'texture'], priority: 2 },
+    { treatment: 'Sciton Halo', reason: 'An in-person consultation can determine whether this option fits your goals.', targets: ['darkSpots', 'texture'], priority: 2 },
   ],
   productRecommendations: [
     { product: 'SkinBetter Even Tone', reason: 'A provider can discuss whether this option fits your routine.' },
     { product: 'Colorescience Face Shield SPF 50', reason: 'A provider can discuss whether this option fits your routine.' },
   ],
-  suggestedCombo: 'Discuss a tailored treatment sequence during an in-person consultation.',
+  suggestedCombo: 'Hero Combo',
   summary: 'Your complexion has a fresh, naturally luminous quality. A tailored plan can build on that foundation while refining visible pigment and redness.',
 };
 
@@ -50,6 +50,22 @@ function launchOptions(engineName) {
   return engineName === 'chromium'
     ? { headless: true, executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' }
     : { headless: true };
+}
+
+function mobileContextOptions(width = 390, height = 844) {
+  return {
+    viewport: { width, height },
+    screen: { width, height },
+    isMobile: true,
+    hasTouch: true,
+    deviceScaleFactor: 3,
+  };
+}
+
+function viewportContextOptions(viewport) {
+  return viewport.name.includes('mobile')
+    ? mobileContextOptions(viewport.width, viewport.height)
+    : { viewport: { width: viewport.width, height: viewport.height } };
 }
 
 function countImageParts(request) {
@@ -93,9 +109,13 @@ async function assertLandingContract(page, engineName, viewport) {
       heroSourceSize: [heroLogoEl.naturalWidth, heroLogoEl.naturalHeight],
       navRenderedRatioError: Math.abs(logoRect.width / logoRect.height - expectedRatio),
       heroRenderedRatioError: Math.abs(heroRect.width / heroRect.height - expectedRatio),
+      heroVisible: heroRect.width > 0 && heroRect.height > 0,
       navFilter: getComputedStyle(navLogoEl).filter,
       heroFilter: getComputedStyle(heroLogoEl).filter,
       navBackground: getComputedStyle(nav).backgroundColor,
+      navBackdropFilter: getComputedStyle(nav).backdropFilter
+        || getComputedStyle(nav).webkitBackdropFilter
+        || 'none',
       ctaBackground: getComputedStyle(cta).backgroundColor,
       ctaFontFamily: getComputedStyle(cta).fontFamily,
       ctaText: cta.textContent.trim(),
@@ -108,6 +128,19 @@ async function assertLandingContract(page, engineName, viewport) {
       navInsideViewport: navInner.getBoundingClientRect().left >= -1
         && navInner.getBoundingClientRect().right <= innerWidth + 1,
       horizontalOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      intakeControlHeights: [
+        document.getElementById('ageInput').getBoundingClientRect().height,
+        document.getElementById('bodyAreaSelect').getBoundingClientRect().height,
+      ],
+      intakeControlFontSizes: [
+        parseFloat(getComputedStyle(document.getElementById('ageInput')).fontSize),
+        parseFloat(getComputedStyle(document.getElementById('bodyAreaSelect')).fontSize),
+      ],
+      cameraClose: {
+        label: document.getElementById('closeWebcam').getAttribute('aria-label'),
+        width: parseFloat(getComputedStyle(document.getElementById('closeWebcam')).width),
+        height: parseFloat(getComputedStyle(document.getElementById('closeWebcam')).height),
+      },
       removedResultElements: document.querySelectorAll(
         '#skinAge, [id*="skinAge"], .skin-age, [class*="skin-age"], #radarChart, #radarContainer, .skin-radar',
       ).length,
@@ -117,6 +150,16 @@ async function assertLandingContract(page, engineName, viewport) {
           & Node.DOCUMENT_POSITION_FOLLOWING
       ),
       uploadText: document.getElementById('dropZone').textContent.replace(/\s+/g, ' ').trim(),
+      heroUploadHref: document.querySelector('.hero-upload-cta').getAttribute('href'),
+      intakeBeforeUpload: Boolean(
+        document.getElementById('intakeFields').compareDocumentPosition(document.getElementById('dropZone'))
+          & Node.DOCUMENT_POSITION_FOLLOWING
+      ),
+      heroUploadInFirstViewport: (() => {
+        const rect = document.querySelector('.hero-upload-cta').getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0 && rect.top >= navRect.bottom && rect.bottom <= innerHeight;
+      })(),
+      preAnalysisUsesUnsupportedConditionLabel: /rosacea|body acne|scarring & marks|dryness & dehydration|photoaging|hyperpigmentation/i.test(document.body.innerText),
     };
   });
 
@@ -125,10 +168,15 @@ async function assertLandingContract(page, engineName, viewport) {
   assert.deepEqual(landing.navSourceSize, [1549, 848], `${engineName}/${viewport.name}: evergreen logo is canonical HD`);
   assert.deepEqual(landing.heroSourceSize, [1549, 848], `${engineName}/${viewport.name}: white logo is canonical HD`);
   assert.ok(landing.navRenderedRatioError < 0.01, `${engineName}/${viewport.name}: header logo preserves aspect ratio`);
-  assert.ok(landing.heroRenderedRatioError < 0.01, `${engineName}/${viewport.name}: hero logo preserves aspect ratio`);
+  if (viewport.name.includes('mobile')) {
+    assert.equal(landing.heroVisible, false, `${engineName}/${viewport.name}: redundant hero logo is removed from the short mobile path`);
+  } else {
+    assert.ok(landing.heroRenderedRatioError < 0.01, `${engineName}/${viewport.name}: hero logo preserves aspect ratio`);
+  }
   assert.equal(landing.navFilter, 'none', `${engineName}/${viewport.name}: evergreen logo is not recolored by CSS`);
   assert.equal(landing.heroFilter, 'none', `${engineName}/${viewport.name}: white logo is not recolored by CSS`);
-  assert.match(landing.navBackground, /rgba?\(255, 255, 255/, `${engineName}/${viewport.name}: green logo sits on a light header`);
+  assert.equal(landing.navBackground, 'rgb(255, 255, 255)', `${engineName}/${viewport.name}: green logo sits on a solid white header`);
+  assert.equal(landing.navBackdropFilter, 'none', `${engineName}/${viewport.name}: fixed header never ghosts page text`);
   assert.equal(landing.ctaBackground, 'rgb(81, 104, 98)', `${engineName}/${viewport.name}: Learn More uses evergreen`);
   assert.match(landing.ctaFontFamily, /Fira Sans/i, `${engineName}/${viewport.name}: Learn More uses the brand sans serif`);
   assert.equal(landing.ctaText, 'Learn More', `${engineName}/${viewport.name}: main-site action is Learn More`);
@@ -139,21 +187,48 @@ async function assertLandingContract(page, engineName, viewport) {
   assert.ok(landing.navSideBuffer[0] >= 16 && landing.navSideBuffer[1] >= 16, `${engineName}/${viewport.name}: header controls retain side buffer`);
   assert.equal(landing.navInsideViewport, true, `${engineName}/${viewport.name}: navigation remains inside viewport`);
   assert.ok(landing.horizontalOverflow <= 1, `${engineName}/${viewport.name}: landing overflow ${landing.horizontalOverflow}px`);
+  assert.ok(
+    landing.intakeControlHeights.every(height => height >= 44),
+    `${engineName}/${viewport.name}: intake controls retain 44px touch targets (${landing.intakeControlHeights.join('px/') }px)`,
+  );
+  assert.ok(
+    Math.abs(landing.intakeControlHeights[0] - landing.intakeControlHeights[1]) <= 1,
+    `${engineName}/${viewport.name}: age and area controls align (${landing.intakeControlHeights.join('px/') }px)`,
+  );
+  assert.ok(
+    landing.intakeControlFontSizes.every(size => size >= 16),
+    `${engineName}/${viewport.name}: intake controls avoid Safari auto-zoom (${landing.intakeControlFontSizes.join('px/') }px)`,
+  );
+  assert.deepEqual(
+    landing.cameraClose,
+    { label: 'Close camera', width: 44, height: 44 },
+    `${engineName}/${viewport.name}: camera close control is labeled and touch sized`,
+  );
   assert.equal(landing.removedResultElements, 0, `${engineName}/${viewport.name}: removed age/radar elements are absent`);
+  assert.equal(landing.preAnalysisUsesUnsupportedConditionLabel, false, `${engineName}/${viewport.name}: pre-analysis copy uses appearance-only labels`);
   assert.equal(landing.mainSiteHref, 'https://www.vonandcoaesthetics.com/', `${engineName}/${viewport.name}: Learn More reaches the main site`);
   assert.equal(landing.uploadBeforeCamera, true, `${engineName}/${viewport.name}: upload is the primary choice before camera capture`);
   assert.match(landing.uploadText, /Upload one clear photo/i, `${engineName}/${viewport.name}: upload card names the one-photo path`);
   assert.match(landing.uploadText, /No camera capture required\./i, `${engineName}/${viewport.name}: upload card makes camera capture optional`);
+  assert.equal(landing.heroUploadHref, '#intakeFields', `${engineName}/${viewport.name}: primary upload CTA begins with area selection`);
+  assert.equal(landing.intakeBeforeUpload, true, `${engineName}/${viewport.name}: area selection remains before file upload`);
+  if (viewport.name === 'small-mobile') {
+    assert.equal(landing.heroUploadInFirstViewport, true, `${engineName}/${viewport.name}: primary upload action is visible without scrolling`);
+  }
 }
 
 async function assertResultContract(page, engineName, viewport, uploadImageParts) {
+  await page.evaluate(async () => {
+    document.getElementById('offersMembership').open = true;
+    await document.fonts.ready;
+  });
   const result = await page.evaluate(expectedCardCount => {
     const positives = document.getElementById('positiveLead');
     const score = document.querySelector('.score-ring-container');
     const improvements = document.getElementById('concernsGrid');
     const report = buildReportHTML('Brittany', window.lastAnalysis);
     const positions = {
-      positive: report.indexOf('What Looks Especially Good'),
+      positive: report.indexOf('Begin With the Positive'),
       score: report.indexOf('Overall Score:'),
       summary: report.indexOf('>Summary<'),
       improvements: report.indexOf('Skin Analysis Results'),
@@ -173,6 +248,33 @@ async function assertResultContract(page, engineName, viewport, uploadImageParts
         return [selector, rect.left, innerWidth - rect.right];
       });
     const resultText = document.getElementById('resultsSection').innerText;
+    const escapeProbe = document.createElement('div');
+    escapeProbe.innerHTML = escapeHTML('<img src=x onerror="window.__unsafe=1">');
+    const escapedReport = buildReportHTML('<img src=x onerror="window.__unsafe=1">', window.lastAnalysis);
+    const offerSummaryTitle = document.querySelector('.offers-membership-title');
+    const promoBanner = document.getElementById('promoBanner');
+    const promoTitle = document.querySelector('.promo-banner-title');
+    const newGuestCta = document.querySelector('.von-offer-cta');
+    const clubUpsell = document.getElementById('clubUpsell');
+    const clubTitle = document.querySelector('.club-title');
+    const clubCta = document.querySelector('.club-cta');
+    const styleSnapshot = element => {
+      const style = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return {
+        backgroundColor: style.backgroundColor,
+        backgroundImage: style.backgroundImage,
+        borderColor: style.borderColor,
+        borderRadius: style.borderRadius,
+        borderWidth: style.borderWidth,
+        color: style.color,
+        fontFamily: style.fontFamily,
+        fontSize: parseFloat(style.fontSize),
+        height: rect.height,
+        letterSpacing: style.letterSpacing,
+        textTransform: style.textTransform,
+      };
+    };
     return {
       positiveCount: document.querySelectorAll('#positiveHighlights .positive-highlight').length,
       firstPositiveTitle: document.querySelector('.positive-highlight-title')?.textContent,
@@ -189,12 +291,28 @@ async function assertResultContract(page, engineName, viewport, uploadImageParts
       reportHasNoAgeOrRadar: !/Estimated Skin Age|Skin Age|radarChart|radarContainer|skin-radar|<canvas/i.test(report),
       resultHasNoAgeOrRadar: !/Estimated Skin Age|Skin Age/i.test(resultText)
         && !document.querySelector('#radarChart, #radarContainer, .skin-radar, canvas'),
-      baselineReportButton: document.getElementById('downloadReportBtn')?.textContent.includes('View My Treatment Plan'),
-      baselineOfferPresent: document.getElementById('promoBanner')?.textContent.includes('15% Off Your First Visit'),
+      baselineReportButton: document.getElementById('downloadReportBtn')?.textContent.includes('View & Print My Treatment Plan'),
+      baselineOfferPresent: document.getElementById('promoBanner')?.textContent.includes('15% off your first visit'),
       baselineClubPresent: document.getElementById('clubUpsell')?.textContent.includes('The Club'),
+      offersOpen: document.getElementById('offersMembership')?.open,
+      offerSummaryText: offerSummaryTitle?.textContent.trim(),
+      offerSummaryStyle: styleSnapshot(offerSummaryTitle),
+      displayFontLoaded: document.fonts.check('24px Arsenica'),
+      promoStyle: styleSnapshot(promoBanner),
+      promoTitleStyle: styleSnapshot(promoTitle),
+      newGuestCtaText: newGuestCta?.textContent.trim(),
+      newGuestCtaStyle: styleSnapshot(newGuestCta),
+      clubStyle: styleSnapshot(clubUpsell),
+      clubTitleStyle: styleSnapshot(clubTitle),
+      clubCtaText: clubCta?.textContent.trim(),
+      clubCtaStyle: styleSnapshot(clubCta),
       planTeaserVisible: document.getElementById('resultsPlanTeaser')?.getBoundingClientRect().height > 0,
+      planGuideText: document.querySelector('.results-guide-primary')?.textContent.replace(/\s+/g, ' ').trim(),
+      planGuideGap: parseFloat(getComputedStyle(document.querySelector('.results-guide-primary')).columnGap),
       planCount: document.getElementById('resultsPlanCount')?.textContent.trim(),
       planSummary: document.getElementById('resultsPlanSummary')?.textContent.trim(),
+      resultUsesUnsupportedConditionLabel: /rosacea|body acne|scarring & marks|dryness & dehydration|photoaging|hyperpigmentation/i.test(resultText),
+      reportUsesUnsupportedConditionLabel: /rosacea|body acne|scarring & marks|dryness & dehydration|photoaging|hyperpigmentation/i.test(report),
       treatmentGroupTitle: document.querySelector('#treatmentRecommendationsGroup .recommendation-group-title')?.textContent.replace(/\s+/g, ' ').trim(),
       productGroupTitle: document.querySelector('#productRecommendationsGroup .recommendation-group-title')?.textContent.replace(/\s+/g, ' ').trim(),
       treatmentCardCount: document.querySelectorAll('#treatmentRecommendationCards .recommendation-card').length,
@@ -204,6 +322,28 @@ async function assertResultContract(page, engineName, viewport, uploadImageParts
       initiallyHiddenFindingCount: document.querySelectorAll('#concernsGrid .concern-card[hidden]').length,
       findingsToggleVisible: !document.getElementById('findingsToggle')?.hidden,
       findingsToggleExpanded: document.getElementById('findingsToggle')?.getAttribute('aria-expanded'),
+      scoreInterpretation: document.getElementById('scoreInterpretation')?.textContent.trim(),
+      scoreLegend: document.getElementById('scoreExplainer')?.textContent.replace(/\s+/g, ' ').trim(),
+      scoreBoundaryLabels: [59, 60, 74, 75, 89, 90].map(score => getScoreBand(score).label),
+      comboTitle: document.querySelector('#comboPlay .combo-play-title')?.textContent.trim(),
+      comboAfterProducts: Boolean(
+        document.getElementById('productRecommendationsGroup')?.compareDocumentPosition(document.getElementById('comboPlay'))
+          & Node.DOCUMENT_POSITION_FOLLOWING
+      ),
+      duplicateDynamicBlocks: document.querySelectorAll('#bottomBookingCTA, #visiaUpsell').length,
+      reportActionCount: document.querySelectorAll('button[onclick="downloadReport()"], button[onclick="downloadReport();"]').length,
+      productHeadersUseBrandClass: [...document.querySelectorAll('#productRecommendationCards .rec-header')]
+        .every(header => header.classList.contains('rec-header-product')),
+      productHeaderColors: [...document.querySelectorAll('#productRecommendationCards .rec-header')]
+        .map(header => [getComputedStyle(header).color, getComputedStyle(header).backgroundColor]),
+      productBadgeColors: [...document.querySelectorAll('#productRecommendationCards .rec-priority')]
+        .map(badge => [getComputedStyle(badge).color, getComputedStyle(badge).backgroundColor]),
+      escapeProbe: {
+        childElements: escapeProbe.childElementCount,
+        text: escapeProbe.textContent,
+        reportContainsRawProbe: escapedReport.includes('<img src=x onerror="window.__unsafe=1">'),
+        reportContainsEscapedProbe: escapedReport.includes('&lt;img src=x onerror=&quot;window.__unsafe=1&quot;&gt;'),
+      },
       horizontalOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       horizontalOffenders,
       contentMargins,
@@ -224,9 +364,42 @@ async function assertResultContract(page, engineName, viewport, uploadImageParts
   assert.equal(result.baselineReportButton, true, `${engineName}/${viewport.name}: original treatment-plan action remains`);
   assert.equal(result.baselineOfferPresent, true, `${engineName}/${viewport.name}: original new-guest offer remains`);
   assert.equal(result.baselineClubPresent, true, `${engineName}/${viewport.name}: original Club block remains`);
+  assert.equal(result.offersOpen, true, `${engineName}/${viewport.name}: offer and membership details open for full layout QA`);
+  assert.equal(result.offerSummaryText, '15% off your first visit + The Club', `${engineName}/${viewport.name}: offer headline remains complete`);
+  assert.equal(result.displayFontLoaded, true, `${engineName}/${viewport.name}: local Arsenica font bytes are loaded`);
+  assert.match(result.offerSummaryStyle.fontFamily, /Arsenica/i, `${engineName}/${viewport.name}: offer headline uses Arsenica`);
+  assert.ok(result.offerSummaryStyle.fontSize >= 27, `${engineName}/${viewport.name}: offer headline is prominent at ${result.offerSummaryStyle.fontSize}px`);
+  assert.equal(result.promoStyle.backgroundColor, 'rgb(255, 255, 255)', `${engineName}/${viewport.name}: new-guest card uses the live-site white treatment`);
+  assert.equal(result.promoStyle.backgroundImage, 'none', `${engineName}/${viewport.name}: new-guest card has no orange gradient`);
+  assert.equal(result.promoStyle.borderRadius, '20px', `${engineName}/${viewport.name}: new-guest card uses the live-site radius`);
+  assert.match(result.promoStyle.borderColor, /81, 104, 98/, `${engineName}/${viewport.name}: new-guest card uses an evergreen border`);
+  assert.match(result.promoTitleStyle.fontFamily, /Arsenica/i, `${engineName}/${viewport.name}: new-guest title uses Arsenica`);
+  assert.equal(result.newGuestCtaText, 'Book My Appointment', `${engineName}/${viewport.name}: new-guest action matches the main site`);
+  assert.ok(result.newGuestCtaStyle.height >= 48, `${engineName}/${viewport.name}: new-guest action is touch sized`);
+  assert.equal(result.newGuestCtaStyle.backgroundColor, 'rgba(0, 0, 0, 0)', `${engineName}/${viewport.name}: new-guest action uses the live-site outline treatment`);
+  assert.match(result.newGuestCtaStyle.borderColor, /81, 104, 98/, `${engineName}/${viewport.name}: new-guest action keeps an evergreen outline`);
+  assert.equal(result.newGuestCtaStyle.borderRadius, '9999px', `${engineName}/${viewport.name}: new-guest action uses the live-site pill radius`);
+  assert.equal(result.newGuestCtaStyle.textTransform, 'none', `${engineName}/${viewport.name}: new-guest action stays in live-site title case`);
+  assert.match(result.newGuestCtaStyle.fontFamily, /Fira Sans/i, `${engineName}/${viewport.name}: new-guest action uses Fira Sans`);
+  assert.equal(result.clubStyle.backgroundColor, 'rgb(81, 104, 98)', `${engineName}/${viewport.name}: Club card uses evergreen`);
+  assert.match(result.clubStyle.backgroundImage, /linear-gradient/i, `${engineName}/${viewport.name}: Club card uses the live-site green gradient`);
+  assert.doesNotMatch(result.clubStyle.backgroundImage, /198, 141, 47|197, 139, 116/, `${engineName}/${viewport.name}: Club gradient contains no gold or orange`);
+  assert.equal(result.clubStyle.borderRadius, '20px', `${engineName}/${viewport.name}: Club card uses the live-site radius`);
+  assert.match(result.clubTitleStyle.fontFamily, /Arsenica/i, `${engineName}/${viewport.name}: Club title uses Arsenica`);
+  assert.equal(result.clubCtaText, 'Learn More', `${engineName}/${viewport.name}: Club action is Learn More`);
+  assert.ok(result.clubCtaStyle.height >= 48, `${engineName}/${viewport.name}: Club action is touch sized`);
+  assert.equal(result.clubCtaStyle.borderWidth, '2px', `${engineName}/${viewport.name}: Club action uses the live-site outline treatment`);
+  assert.equal(result.clubCtaStyle.borderRadius, '9999px', `${engineName}/${viewport.name}: Club action uses the live-site pill radius`);
+  assert.equal(result.clubCtaStyle.color, 'rgb(255, 255, 255)', `${engineName}/${viewport.name}: Club action is white on evergreen`);
+  assert.equal(result.clubCtaStyle.textTransform, 'none', `${engineName}/${viewport.name}: Club action stays in live-site title case`);
+  assert.match(result.clubCtaStyle.fontFamily, /Fira Sans/i, `${engineName}/${viewport.name}: Club action uses Fira Sans`);
   assert.equal(result.planTeaserVisible, true, `${engineName}/${viewport.name}: recommendation teaser is visible in the result overview`);
+  assert.equal(result.planGuideText, 'View Plan (4)', `${engineName}/${viewport.name}: highlighted plan control reads as an action, not a selected tab`);
+  assert.ok(result.planGuideGap >= 3, `${engineName}/${viewport.name}: plan label and count retain visible spacing`);
   assert.equal(result.planCount, '(4)', `${engineName}/${viewport.name}: plan guide shows the total recommendation count`);
   assert.match(result.planSummary, /2 treatment options and 2 at-home skincare picks/i, `${engineName}/${viewport.name}: plan teaser separates treatment and skincare counts`);
+  assert.equal(result.resultUsesUnsupportedConditionLabel, false, `${engineName}/${viewport.name}: result uses appearance-only finding labels`);
+  assert.equal(result.reportUsesUnsupportedConditionLabel, false, `${engineName}/${viewport.name}: report uses appearance-only finding labels`);
   assert.equal(result.treatmentGroupTitle, 'Treatment Options (2)', `${engineName}/${viewport.name}: treatment recommendations have a labeled count`);
   assert.equal(result.productGroupTitle, 'At-Home Skincare (2)', `${engineName}/${viewport.name}: product recommendations have a labeled count`);
   assert.equal(result.treatmentCardCount, 2, `${engineName}/${viewport.name}: treatment cards render in the treatment group`);
@@ -235,6 +408,42 @@ async function assertResultContract(page, engineName, viewport, uploadImageParts
   assert.equal(result.initiallyHiddenFindingCount, 1, `${engineName}/${viewport.name}: remaining findings are preserved behind disclosure`);
   assert.equal(result.findingsToggleVisible, true, `${engineName}/${viewport.name}: findings disclosure is available`);
   assert.equal(result.findingsToggleExpanded, 'false', `${engineName}/${viewport.name}: findings disclosure starts collapsed`);
+  assert.equal(result.scoreInterpretation, 'Very Good', `${engineName}/${viewport.name}: score 76 uses the shared Very Good band`);
+  assert.equal(
+    result.scoreLegend,
+    'All scores: higher is better. 90+ Excellent, 75+ Very Good, 60+ Good, below 60 Room to Refine.',
+    `${engineName}/${viewport.name}: visible score legend matches the shared thresholds`,
+  );
+  assert.deepEqual(
+    result.scoreBoundaryLabels,
+    ['Room to Refine', 'Good', 'Good', 'Very Good', 'Very Good', 'Excellent'],
+    `${engineName}/${viewport.name}: score boundary helper is internally consistent`,
+  );
+  assert.equal(result.comboTitle, 'Hero Combo', `${engineName}/${viewport.name}: canonical combo name renders`);
+  assert.equal(result.comboAfterProducts, true, `${engineName}/${viewport.name}: individual treatment and skincare cards appear before the combo`);
+  assert.equal(result.duplicateDynamicBlocks, 0, `${engineName}/${viewport.name}: duplicate dynamic booking and VISIA blocks are absent`);
+  assert.equal(result.reportActionCount, 1, `${engineName}/${viewport.name}: one treatment-plan action remains`);
+  assert.equal(result.productHeadersUseBrandClass, true, `${engineName}/${viewport.name}: product headers use the accessible brand class`);
+  assert.deepEqual(
+    result.productHeaderColors,
+    Array(fixture.productRecommendations.length).fill(['rgb(81, 104, 98)', 'rgb(235, 234, 229)']),
+    `${engineName}/${viewport.name}: product headers use evergreen on Von White`,
+  );
+  assert.deepEqual(
+    result.productBadgeColors,
+    Array(fixture.productRecommendations.length).fill(['rgb(255, 255, 255)', 'rgb(81, 104, 98)']),
+    `${engineName}/${viewport.name}: product badges use white on evergreen`,
+  );
+  assert.deepEqual(
+    result.escapeProbe,
+    {
+      childElements: 0,
+      text: '<img src=x onerror="window.__unsafe=1">',
+      reportContainsRawProbe: false,
+      reportContainsEscapedProbe: true,
+    },
+    `${engineName}/${viewport.name}: model and guest copy is escaped in results and printable reports`,
+  );
 
   await page.locator('#findingsToggle').click();
   const expandedFindings = await page.evaluate(() => ({
@@ -254,10 +463,10 @@ async function assertResultContract(page, engineName, viewport, uploadImageParts
   }
 }
 
-async function assertPrintableReport(page, context, engineName) {
+async function assertPrintableReport(page, context, engineName, viewport) {
   const reportHtml = await page.evaluate(() => buildReportHTML('Brittany', window.lastAnalysis));
   assert.ok(
-    reportHtml.indexOf('What Looks Especially Good') < reportHtml.indexOf('Overall Score:'),
+    reportHtml.indexOf('Begin With the Positive') < reportHtml.indexOf('Overall Score:'),
     `${engineName}: report source puts positives before score`,
   );
   assert.equal(
@@ -265,9 +474,68 @@ async function assertPrintableReport(page, context, engineName) {
     false,
     `${engineName}: report source excludes estimated age and radar`,
   );
+  assert.match(reportHtml, /Personalized Skin Analysis Report/, `${engineName}/${viewport.name}: report uses the branded title case`);
+  assert.match(reportHtml, /font-family:'Arsenica'/, `${engineName}/${viewport.name}: report embeds the Arsenica display face`);
+  assert.match(reportHtml, /name="viewport"/, `${engineName}/${viewport.name}: report declares a mobile viewport`);
+
+  const serverReportResponse = await context.request.post(`${baseUrl}/api/report`, {
+    data: { name: 'Brittany', analysis: fixture },
+  });
+  assert.equal(serverReportResponse.ok(), true, `${engineName}/${viewport.name}: fallback report endpoint succeeds`);
+  const serverReportHtml = await serverReportResponse.text();
+  for (const requiredCopy of [
+    'Personalized Skin Analysis Report',
+    'Begin With the Positive',
+    'Your Skincare Essentials',
+    'New Guest Offer',
+    'The Club. $149/month',
+    'Book Your Complimentary Consultation',
+    'Any concerning lesion needs an in-person medical evaluation.',
+  ]) {
+    assert.equal(
+      serverReportHtml.includes(requiredCopy),
+      true,
+      `${engineName}/${viewport.name}: fallback report preserves ${requiredCopy}`,
+    );
+  }
+  assert.match(serverReportHtml, /https:\/\/booking\.vonandcoaesthetics\.com\/webstoreNew\/services\?utm_source=skin-analyzer/, `${engineName}/${viewport.name}: fallback report uses the same booking action`);
+  assert.match(serverReportHtml, /https?:\/\/[^"']+\/arsenica-regular\.otf/, `${engineName}/${viewport.name}: fallback report uses an absolute local Arsenica asset`);
+
+  const serverReportPage = await context.newPage();
+  await serverReportPage.setContent(serverReportHtml, { waitUntil: 'domcontentloaded' });
+  await serverReportPage.evaluate(() => document.fonts.ready);
+  const serverReportLayout = await serverReportPage.evaluate(() => {
+    const title = document.querySelector('.report-title');
+    const row = document.querySelector('.report-result-row');
+    const cell = row?.querySelector('td');
+    return {
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      title: title?.textContent.trim(),
+      titleFont: title ? getComputedStyle(title).fontFamily : '',
+      titleFontLoaded: document.fonts.check('24px Arsenica'),
+      rowDisplay: row ? getComputedStyle(row).display : '',
+      cellDisplay: cell ? getComputedStyle(cell).display : '',
+      cellFontSize: cell ? parseFloat(getComputedStyle(cell).fontSize) : 0,
+    };
+  });
+  assert.ok(serverReportLayout.overflow <= 1, `${engineName}/${viewport.name}: fallback report overflow ${serverReportLayout.overflow}px`);
+  assert.equal(serverReportLayout.title, 'Personalized Skin Analysis Report', `${engineName}/${viewport.name}: fallback report title matches`);
+  assert.match(serverReportLayout.titleFont, /Arsenica/i, `${engineName}/${viewport.name}: fallback report title uses Arsenica`);
+  assert.equal(serverReportLayout.titleFontLoaded, true, `${engineName}/${viewport.name}: fallback report loads Arsenica bytes`);
+  if (viewport.name.includes('mobile')) {
+    assert.equal(serverReportLayout.rowDisplay, 'block', `${engineName}/${viewport.name}: fallback report findings stack into cards`);
+    assert.equal(serverReportLayout.cellDisplay, 'grid', `${engineName}/${viewport.name}: fallback report fields retain labels`);
+    assert.ok(serverReportLayout.cellFontSize >= 15, `${engineName}/${viewport.name}: fallback report finding copy stays legible`);
+  }
+  await serverReportPage.screenshot({
+    path: path.join(artifactDir, `${engineName}-${viewport.name}-server-take-home-report-screen.png`),
+    fullPage: true,
+  });
+  await serverReportPage.close();
 
   const reportPage = await context.newPage();
   await reportPage.setContent(reportHtml, { waitUntil: 'domcontentloaded' });
+  await reportPage.evaluate(() => document.fonts.ready);
   const reportLogo = reportPage.locator('img[alt^="Von & Co"]');
   await reportLogo.evaluate(image => image.decode());
   const logoContract = await reportLogo.evaluate(image => ({
@@ -282,6 +550,40 @@ async function assertPrintableReport(page, context, engineName) {
   assert.equal(logoContract.filter, 'none', `${engineName}: report logo has no effect`);
   assert.ok(Math.abs(logoContract.renderedRatio - 1549 / 848) < 0.01, `${engineName}: report logo preserves aspect ratio`);
 
+  const screenLayout = await reportPage.evaluate(() => {
+    const title = document.querySelector('.report-title');
+    const titleStyle = getComputedStyle(title);
+    const resultRow = document.querySelector('.report-result-row');
+    const resultCell = resultRow?.querySelector('td');
+    return {
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      title: title.textContent.trim(),
+      titleFont: titleStyle.fontFamily,
+      titleSize: parseFloat(titleStyle.fontSize),
+      titleFontLoaded: document.fonts.check('24px Arsenica'),
+      resultRowDisplay: resultRow ? getComputedStyle(resultRow).display : '',
+      resultCellDisplay: resultCell ? getComputedStyle(resultCell).display : '',
+      resultCellFontSize: resultCell ? parseFloat(getComputedStyle(resultCell).fontSize) : 0,
+      resultCellLabel: resultCell ? getComputedStyle(resultCell, '::before').content : '',
+    };
+  });
+  assert.ok(screenLayout.overflow <= 1, `${engineName}/${viewport.name}: on-screen report overflow ${screenLayout.overflow}px`);
+  assert.equal(screenLayout.title, 'Personalized Skin Analysis Report', `${engineName}/${viewport.name}: report title is correct`);
+  assert.match(screenLayout.titleFont, /Arsenica/i, `${engineName}/${viewport.name}: rendered report title uses Arsenica`);
+  assert.equal(screenLayout.titleFontLoaded, true, `${engineName}/${viewport.name}: rendered report loads the Arsenica font asset`);
+  assert.ok(screenLayout.titleSize >= 24, `${engineName}/${viewport.name}: rendered report title is prominent at ${screenLayout.titleSize}px`);
+  if (viewport.name.includes('mobile')) {
+    assert.equal(screenLayout.resultRowDisplay, 'block', `${engineName}/${viewport.name}: report findings stack into mobile cards`);
+    assert.equal(screenLayout.resultCellDisplay, 'grid', `${engineName}/${viewport.name}: mobile finding fields use labeled rows`);
+    assert.ok(screenLayout.resultCellFontSize >= 15, `${engineName}/${viewport.name}: mobile finding text remains legible at ${screenLayout.resultCellFontSize}px`);
+    assert.match(screenLayout.resultCellLabel, /Concern/, `${engineName}/${viewport.name}: stacked finding retains its Concern label`);
+  }
+
+  await reportPage.screenshot({
+    path: path.join(artifactDir, `${engineName}-${viewport.name}-take-home-report-screen.png`),
+    fullPage: true,
+  });
+
   await reportPage.emulateMedia({ media: 'print' });
   const reportLayout = await reportPage.evaluate(() => ({
     overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -289,16 +591,16 @@ async function assertPrintableReport(page, context, engineName) {
     hasCanvas: Boolean(document.querySelector('canvas')),
   }));
   assert.ok(reportLayout.overflow <= 1, `${engineName}: printable report overflow ${reportLayout.overflow}px`);
-  assert.match(reportLayout.text, /What Looks Especially Good/, `${engineName}: printable report includes positives`);
+  assert.match(reportLayout.text, /Begin With the Positive/, `${engineName}: printable report includes positives`);
   assert.match(reportLayout.text, /Any concerning lesion needs an in-person medical evaluation\./, `${engineName}: printable report includes disclaimer`);
   assert.doesNotMatch(reportLayout.text, /Estimated Skin Age|Skin Age/i, `${engineName}: printable report has no age estimate`);
   assert.equal(reportLayout.hasCanvas, false, `${engineName}: printable report has no radar canvas`);
 
   await reportPage.screenshot({
-    path: path.join(artifactDir, `${engineName}-take-home-report.png`),
+    path: path.join(artifactDir, `${engineName}-${viewport.name}-take-home-report.png`),
     fullPage: true,
   });
-  if (engineName === 'chromium') {
+  if (engineName === 'chromium' && viewport.name === 'desktop') {
     await reportPage.pdf({
       path: path.join(pdfOutputDir, 'von-co-take-home-report-approved-preview.pdf'),
       format: 'Letter',
@@ -311,7 +613,13 @@ async function assertPrintableReport(page, context, engineName) {
 
 async function runCase(browserType, engineName, viewport) {
   const browser = await browserType.launch(launchOptions(engineName));
-  const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height } });
+  const context = await browser.newContext(viewportContextOptions(viewport));
+  await context.route('https://fonts.googleapis.com/**', route => route.fulfill({
+    status: 200,
+    contentType: 'text/css',
+    body: '',
+  }));
+  await context.route('https://fonts.gstatic.com/**', route => route.abort());
   const page = await context.newPage();
   const pageErrors = [];
   let uploadImageParts = 0;
@@ -335,17 +643,96 @@ async function runCase(browserType, engineName, viewport) {
   await assertLandingContract(page, engineName, viewport);
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: path.join(artifactDir, `${engineName}-${viewport.name}-landing.png`) });
-  await page.locator('#dropZone').scrollIntoViewIfNeeded();
+  if (viewport.name.includes('mobile')) {
+    await page.getByRole('link', { name: 'Upload a Photo' }).click();
+    await page.waitForFunction(() => {
+      const intake = document.getElementById('intakeFields');
+      const area = document.getElementById('bodyAreaSelect');
+      const nav = document.querySelector('.site-nav');
+      if (!intake || !area || !nav) return false;
+      const intakeRect = intake.getBoundingClientRect();
+      const areaRect = area.getBoundingClientRect();
+      const navRect = nav.getBoundingClientRect();
+      return intakeRect.top >= navRect.bottom + 12 && areaRect.bottom <= innerHeight;
+    }, undefined, { timeout: 2000 });
+    const anchorPosition = await page.evaluate(() => ({
+      intakeTop: document.getElementById('intakeFields').getBoundingClientRect().top,
+      areaBottom: document.getElementById('bodyAreaSelect').getBoundingClientRect().bottom,
+      navBottom: document.querySelector('.site-nav').getBoundingClientRect().bottom,
+      viewportHeight: innerHeight,
+    }));
+    assert.ok(
+      anchorPosition.intakeTop >= anchorPosition.navBottom + 12,
+      `${engineName}/${viewport.name}: intake target clears fixed header (${anchorPosition.intakeTop}px vs ${anchorPosition.navBottom}px)`,
+    );
+    assert.ok(
+      anchorPosition.areaBottom <= anchorPosition.viewportHeight,
+      `${engineName}/${viewport.name}: body-area selector is visible before upload (${JSON.stringify(anchorPosition)})`,
+    );
+  } else {
+    await page.locator('#dropZone').scrollIntoViewIfNeeded();
+  }
   await page.waitForTimeout(100);
   await page.screenshot({ path: path.join(artifactDir, `${engineName}-${viewport.name}-upload.png`) });
 
   await page.locator('#fileInput').setInputFiles(brittanyPhoto);
   await page.waitForSelector('#analysisSection.show', { timeout: 10000 });
   await page.waitForSelector('#leadGateOverlay.show', { timeout: 10000 });
+  if (viewport.name.includes('mobile')) {
+    const leadGateTop = await page.evaluate(() => {
+      const overlay = document.getElementById('leadGateOverlay');
+      const card = overlay.querySelector('.lead-gate-card');
+      const cardRect = card.getBoundingClientRect();
+      return {
+        cardTop: cardRect.top,
+        overlayOverflowY: getComputedStyle(overlay).overflowY,
+        overlayScrollable: overlay.scrollHeight > overlay.clientHeight,
+      };
+    });
+    assert.ok(leadGateTop.cardTop >= 0, `${engineName}/${viewport.name}: lead card begins inside the viewport (${leadGateTop.cardTop}px)`);
+    assert.match(leadGateTop.overlayOverflowY, /auto|scroll/, `${engineName}/${viewport.name}: tall lead card can scroll vertically`);
+    await page.evaluate(() => {
+      const overlay = document.getElementById('leadGateOverlay');
+      overlay.scrollTop = overlay.scrollHeight;
+    });
+    await page.waitForTimeout(50);
+    const leadGateBottom = await page.locator('.lead-gate-card').evaluate(card => card.getBoundingClientRect().bottom);
+    assert.ok(leadGateBottom <= viewport.height + 1, `${engineName}/${viewport.name}: lead card bottom remains reachable (${leadGateBottom}px)`);
+  }
   await page.getByRole('button', { name: 'Skip for now' }).click();
   await page.waitForSelector('#resultsSection.show', { timeout: 10000 });
   await page.waitForTimeout(2400);
   await assertResultContract(page, engineName, viewport, uploadImageParts);
+  if (viewport.name.includes('mobile')) {
+    const stickyGuide = await page.evaluate(async () => {
+      const guide = document.querySelector('.results-guide');
+      window.scrollTo(0, 0);
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const documentTop = guide.getBoundingClientRect().top + window.scrollY;
+      const requestedScrollY = documentTop + 220;
+      window.scrollTo(0, requestedScrollY);
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      return {
+        position: getComputedStyle(guide).position,
+        top: guide.getBoundingClientRect().top,
+        configuredTop: getComputedStyle(guide).top,
+        requestedScrollY,
+        actualScrollY: window.scrollY,
+        maxScrollY: document.documentElement.scrollHeight - window.innerHeight,
+        htmlOverflow: [getComputedStyle(document.documentElement).overflowX, getComputedStyle(document.documentElement).overflowY],
+        bodyOverflow: [getComputedStyle(document.body).overflowX, getComputedStyle(document.body).overflowY],
+        container: (() => {
+          const rect = document.querySelector('.results-container').getBoundingClientRect();
+          return { top: rect.top, bottom: rect.bottom, height: rect.height };
+        })(),
+      };
+    });
+    assert.equal(stickyGuide.position, 'sticky', `${engineName}/${viewport.name}: results jump guide uses sticky positioning`);
+    assert.ok(
+      stickyGuide.top >= 79 && stickyGuide.top <= 81,
+      `${engineName}/${viewport.name}: results jump guide remains visible at 80px (${JSON.stringify(stickyGuide)})`,
+    );
+  }
   assert.deepEqual(pageErrors, [], `${engineName}/${viewport.name}: page errors: ${pageErrors.join('; ')}`);
 
   await page.evaluate(() => window.scrollTo(0, document.getElementById('resultsSection').offsetTop - 50));
@@ -353,16 +740,48 @@ async function runCase(browserType, engineName, viewport) {
   await page.screenshot({ path: path.join(artifactDir, `${engineName}-${viewport.name}-results.png`) });
   await page.evaluate(() => document.getElementById('recommendationsSection').scrollIntoView({ block: 'start' }));
   await page.waitForTimeout(150);
+  if (viewport.name === 'small-mobile') {
+    const firstTreatmentCard = await page.evaluate(() => {
+      const navBottom = document.querySelector('.site-nav').getBoundingClientRect().bottom;
+      const rect = document.querySelector('#treatmentRecommendationCards .recommendation-card').getBoundingClientRect();
+      return {
+        top: rect.top,
+        bottom: rect.bottom,
+        navBottom,
+        viewportHeight: innerHeight,
+      };
+    });
+    assert.ok(
+      firstTreatmentCard.top < firstTreatmentCard.viewportHeight && firstTreatmentCard.bottom > firstTreatmentCard.navBottom,
+      `${engineName}/${viewport.name}: the first service card is visible after opening the plan (${JSON.stringify(firstTreatmentCard)})`,
+    );
+  }
   await page.screenshot({ path: path.join(artifactDir, `${engineName}-${viewport.name}-recommendations.png`) });
+  await page.locator('#offersMembership').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(100);
+  await page.screenshot({ path: path.join(artifactDir, `${engineName}-${viewport.name}-offers.png`) });
+  await page.locator('#offersMembership > summary').screenshot({
+    path: path.join(artifactDir, `${engineName}-${viewport.name}-offer-summary.png`),
+  });
+  await page.locator('#promoBanner').screenshot({
+    path: path.join(artifactDir, `${engineName}-${viewport.name}-new-guest-card.png`),
+  });
+  const screenshotNavOverride = await page.addStyleTag({ content: '.site-nav { visibility: hidden !important; }' });
+  await page.locator('#clubUpsell').screenshot({
+    path: path.join(artifactDir, `${engineName}-${viewport.name}-club-card.png`),
+  });
+  await screenshotNavOverride.evaluate(style => style.remove());
   await page.screenshot({ path: path.join(artifactDir, `${engineName}-${viewport.name}-full.png`), fullPage: true });
 
-  if (viewport.name === 'desktop') await assertPrintableReport(page, context, engineName);
+  if (['desktop', 'mobile', 'small-mobile'].includes(viewport.name)) {
+    await assertPrintableReport(page, context, engineName, viewport);
+  }
   await browser.close();
 }
 
 async function runOriginalGuidedOneImageContract(browserType, engineName) {
   const browser = await browserType.launch(launchOptions(engineName));
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const context = await browser.newContext(mobileContextOptions());
   const page = await context.newPage();
   let imagePartCount = 0;
   await page.route('**/api/health', route => route.fulfill({
@@ -385,9 +804,51 @@ async function runOriginalGuidedOneImageContract(browserType, engineName) {
   await browser.close();
 }
 
+async function runBodyAreaCameraContract(browserType, engineName) {
+  const browser = await browserType.launch(launchOptions(engineName));
+  const context = await browser.newContext(mobileContextOptions());
+  const page = await context.newPage();
+  await page.route('**/api/health', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ status: 'ok', mode: 'live' }),
+  }));
+  await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+
+  const cameraContract = await page.evaluate(() => {
+    const area = document.getElementById('bodyAreaSelect');
+    area.value = 'legs';
+    area.dispatchEvent(new Event('change', { bubbles: true }));
+    setCaptureMode('guided');
+
+    return {
+      mode: captureMode,
+      pickerHidden: document.getElementById('captureModePicker').hidden,
+      guidedButtonHidden: document.getElementById('modeGuided').hidden,
+      ovalHidden: document.getElementById('guidedOval').hidden,
+      stepsDisplay: getComputedStyle(document.getElementById('guidedSteps')).display,
+      thumbsDisplay: getComputedStyle(document.getElementById('guidedThumbs')).display,
+      title: document.getElementById('webcamTitle').textContent,
+      instruction: document.getElementById('webcamInstruction').textContent,
+      optionNote: document.getElementById('cameraOptionNote').textContent,
+    };
+  });
+
+  assert.equal(cameraContract.mode, 'quick', `${engineName}: non-face capture cannot enter guided facial mode`);
+  assert.equal(cameraContract.pickerHidden, true, `${engineName}: non-face capture hides the facial mode picker`);
+  assert.equal(cameraContract.guidedButtonHidden, true, `${engineName}: non-face capture hides Guided Capture`);
+  assert.equal(cameraContract.ovalHidden, true, `${engineName}: non-face capture hides the facial oval`);
+  assert.equal(cameraContract.stepsDisplay, 'none', `${engineName}: non-face capture hides facial pose steps`);
+  assert.equal(cameraContract.thumbsDisplay, 'none', `${engineName}: non-face capture hides facial pose thumbnails`);
+  assert.equal(cameraContract.title, 'Capture Legs Photo', `${engineName}: non-face camera title names the selected area`);
+  assert.equal(cameraContract.instruction, 'Position the selected area clearly in the frame', `${engineName}: non-face instruction is anatomy-neutral`);
+  assert.equal(cameraContract.optionNote, 'Quick Snap takes one clear photo of the selected area.', `${engineName}: non-face camera copy explains the one-photo path`);
+  await browser.close();
+}
+
 async function runDemoDisclosureContract(browserType, engineName) {
   const browser = await browserType.launch(launchOptions(engineName));
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const context = await browser.newContext(mobileContextOptions());
   const page = await context.newPage();
   await page.route('**/api/health', route => route.fulfill({
     status: 200,
@@ -419,13 +880,67 @@ async function runDemoDisclosureContract(browserType, engineName) {
   }));
   assert.notEqual(disclosure.display, 'none', `${engineName}: sample-result disclosure is visible`);
   assert.match(disclosure.text, /sample results, not a real analysis/i, `${engineName}: disclosure is explicit`);
+
+  const demoAudit = await page.evaluate(() => {
+    const areas = ['face', 'neck_chest', 'hands', 'back', 'legs'];
+    const patterns = [
+      ['medical condition', /\b(?:rosacea|melasma|acne|dermatitis|eczema|psoriasis|keratosis pilaris|skin cancer|melanoma|malignan(?:t|cy)|basal cell|squamous cell)\b/i],
+      ['unsupported inferred state', /\b(?:hyperpigmentation|photoaging|scarring|scars?|dehydration|dehydrated)\b/i],
+      ['marketing overclaim', /\b(?:gold standard|permanent(?:ly)? reduction|perfect(?:ly)?|flawless|safe for all skin tones|all skin tones safe|makes? skin act younger)\b/i],
+      ['unsupported cause', /\b(?:due to|caused by|likely from|from (?:chronic|cumulative) sun exposure|from volume loss)\b/i],
+      ['unmeasured property', /\b(?:good|reasonable|strong|healthy) (?:elasticity|thickness)|\b(?:well-hydrated|adequately moisturized)\b/i],
+    ];
+    const violations = [];
+    const sampleCounts = {};
+    const select = document.getElementById('bodyAreaSelect');
+    const collectGuestCopy = data => [
+      data?.summary,
+      data?.suggestedCombo,
+      ...(data?.positiveHighlights || []).flatMap(item => [item?.title, item?.detail]),
+      ...Object.values(data?.concerns || {}).map(item => item?.description),
+      ...(data?.recommendations || []).flatMap(item => [item?.treatment, item?.reason]),
+      ...(data?.productRecommendations || []).flatMap(item => [item?.product, item?.reason]),
+    ].filter(value => typeof value === 'string').join(' ');
+    const scan = (area, surface, copy) => {
+      for (const [label, pattern] of patterns) {
+        const match = String(copy || '').match(pattern);
+        if (match && violations.length < 25) {
+          violations.push({ area, surface, label, match: match[0], copy: String(copy).slice(0, 500) });
+        }
+      }
+    };
+
+    for (const area of areas) {
+      select.value = area;
+      let representative = null;
+      for (let index = 0; index < 500; index += 1) {
+        const sample = generateDemoResults();
+        representative ||= sample;
+        scan(area, 'generated guest copy', collectGuestCopy(sample));
+      }
+      sampleCounts[area] = 500;
+      displayResults({ ...representative, _isDemo: true, _isLive: false });
+      const renderedText = [
+        document.body.innerText,
+        new DOMParser().parseFromString(buildReportHTML('Demo Guest', representative), 'text/html').body.innerText,
+      ].join(' ');
+      scan(area, 'rendered page and report', renderedText);
+    }
+    return { violations, sampleCounts };
+  });
+  assert.deepEqual(
+    demoAudit.sampleCounts,
+    { face: 500, neck_chest: 500, hands: 500, back: 500, legs: 500 },
+    `${engineName}: frontend demo generator is sampled 500 times for every body area`,
+  );
+  assert.deepEqual(demoAudit.violations, [], `${engineName}: demo results and reports use supported appearance-only copy`);
   await page.screenshot({ path: path.join(artifactDir, `${engineName}-demo-disclosure.png`) });
   await browser.close();
 }
 
 async function runRejectionContract(browserType, engineName) {
   const browser = await browserType.launch(launchOptions(engineName));
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const context = await browser.newContext(mobileContextOptions());
   const page = await context.newPage();
   let analyzeRequests = 0;
   const rejectionReason = 'Our skin analysis is designed for adults (18+).';
@@ -463,7 +978,7 @@ async function runRejectionContract(browserType, engineName) {
 
 async function runServerTimeoutRecoveryContract(browserType, engineName) {
   const browser = await browserType.launch(launchOptions(engineName));
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const context = await browser.newContext(mobileContextOptions());
   const page = await context.newPage();
   let analyzeRequests = 0;
 
@@ -536,7 +1051,7 @@ async function runServerTimeoutRecoveryContract(browserType, engineName) {
 
 async function runClientAbortRecoveryContract(browserType, engineName) {
   const browser = await browserType.launch(launchOptions(engineName));
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const context = await browser.newContext(mobileContextOptions());
   const page = await context.newPage();
   let analyzeRequests = 0;
   await page.addInitScript(() => {
@@ -580,7 +1095,7 @@ async function runClientAbortRecoveryContract(browserType, engineName) {
 
 async function runNonretryableProviderContract(browserType, engineName) {
   const browser = await browserType.launch(launchOptions(engineName));
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const context = await browser.newContext(mobileContextOptions());
   const page = await context.newPage();
   let analyzeRequests = 0;
 
@@ -621,7 +1136,7 @@ async function runNonretryableProviderContract(browserType, engineName) {
 
 async function runAcceleratedTimerContract(browserType, engineName) {
   const browser = await browserType.launch(launchOptions(engineName));
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const context = await browser.newContext(mobileContextOptions());
   const page = await context.newPage();
   await page.addInitScript(() => {
     const nativeSetInterval = window.setInterval.bind(window);
@@ -676,6 +1191,8 @@ async function runAcceleratedTimerContract(browserType, engineName) {
     if (!requestedViewport || requestedViewport === 'desktop') {
       await runOriginalGuidedOneImageContract(browserType, engineName);
       process.stdout.write(`PASS ${engineName} original guided one-image contract\n`);
+      await runBodyAreaCameraContract(browserType, engineName);
+      process.stdout.write(`PASS ${engineName} non-face Quick Snap contract\n`);
       await runDemoDisclosureContract(browserType, engineName);
       process.stdout.write(`PASS ${engineName} demo disclosure contract\n`);
       await runRejectionContract(browserType, engineName);
